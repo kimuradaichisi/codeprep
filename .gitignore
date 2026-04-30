@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+out/
+dist/
+*.vsix
+.claw/
+coverage/
+results/
+
+# Build artifacts
+*.tsbuildinfo
+.vscode-test/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# CLAW System Logs and State
+.claw/logs/
+.claw/dev/*.sqlite*
+.claw/dev/brain_vectors/
+.claw/questions.md
+.claw/assumptions.md
+
+# Development
+.history/
+.ai/
+.env
+example.txt
+workplan.md
+
+docs/

@@ -1,0 +1,316 @@
+{
+  "name": "codeprep-vscode",
+  "displayName": "CodePrep",
+  "description": "Select files via GUI and prepare context for LLMs.",
+  "version": "0.1.0",
+  "publisher": "codeprep",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codeprep/codeprep.git"
+  },
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:codeprep.fileTree",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codeprep-helper",
+          "title": "CodePrep",
+          "icon": "$(library)"
+        }
+      ]
+    },
+    "views": {
+      "codeprep-helper": [
+        {
+          "id": "codeprep.fileTree",
+          "name": "File Explorer"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "codeprep.fileTree",
+        "contents": "CodePrep へようこそ。\n生成対象のファイルをツリーから選択してください。ワークスペース全体のファイルを一括で含めることも可能です。\n[すべて選択](command:codeprep.selectAll)\n[設定を開く](command:codeprep.openSettings)",
+        "when": "codeprep.selectionEmpty"
+      }
+    ],
+    "commands": [
+      {
+        "command": "codeprep.openSettings",
+        "title": "Open Settings",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "codeprep.selectAll",
+        "title": "Select All",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "codeprep.clearAll",
+        "title": "Clear All",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "codeprep.invertSelection",
+        "title": "Invert Selection"
+      },
+      {
+        "command": "codeprep.generate",
+        "title": "Generate & Copy",
+        "icon": "$(run)"
+      },
+      {
+        "command": "codeprep.selectGitDiff",
+        "title": "Select Modified Files",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "codeprep.selectPrompt",
+        "title": "Select Prompt",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "codeprep.addToSelection",
+        "title": "Add to CodePrep"
+      },
+      {
+        "command": "codeprep.savePreset",
+        "title": "Save Preset",
+        "icon": "$(save)"
+      },
+      {
+        "command": "codeprep.loadPreset",
+        "title": "Load Preset",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "codeprep.exportPresets",
+        "title": "Export Presets",
+        "icon": "$(export)"
+      },
+      {
+        "command": "codeprep.importPresets",
+        "title": "Import Presets",
+        "icon": "$(import)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "codeprep.openSettings",
+          "when": "view == codeprep.fileTree",
+          "group": "navigation@0"
+        },
+        {
+          "command": "codeprep.selectAll",
+          "when": "view == codeprep.fileTree && codeprep.showSelectAll",
+          "group": "navigation@1"
+        },
+        {
+          "command": "codeprep.invertSelection",
+          "when": "view == codeprep.fileTree && codeprep.showInvertSelection",
+          "group": "navigation@2"
+        },
+        {
+          "command": "codeprep.exportPresets",
+          "when": "view == codeprep.fileTree && codeprep.showExportPresets",
+          "group": "navigation@3"
+        },
+        {
+          "command": "codeprep.importPresets",
+          "when": "view == codeprep.fileTree && codeprep.showImportPresets",
+          "group": "navigation@4"
+        },
+        {
+          "command": "codeprep.selectGitDiff",
+          "when": "view == codeprep.fileTree && codeprep.showSelectGitDiff",
+          "group": "navigation@5"
+        },
+        {
+          "command": "codeprep.selectPrompt",
+          "when": "view == codeprep.fileTree && codeprep.showSelectPrompt",
+          "group": "navigation@6"
+        },
+        {
+          "command": "codeprep.generate",
+          "when": "view == codeprep.fileTree && codeprep.showGenerate",
+          "group": "navigation@7"
+        },
+        {
+          "command": "codeprep.savePreset",
+          "when": "view == codeprep.fileTree && codeprep.showSavePreset",
+          "group": "navigation@8"
+        },
+        {
+          "command": "codeprep.loadPreset",
+          "when": "view == codeprep.fileTree && codeprep.showLoadPreset",
+          "group": "navigation@9"
+        },
+        {
+          "command": "codeprep.clearAll",
+          "when": "view == codeprep.fileTree && codeprep.showClearAll",
+          "group": "navigation@10"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "codeprep.generate",
+          "group": "inline"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "codeprep.addToSelection",
+          "group": "7_modification",
+          "when": "resourceScheme == file"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CodePrep Settings",
+      "properties": {
+        "codeprep.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/out/**",
+            "**/dist/**"
+          ],
+          "description": "Patterns to exclude from the tree view and selection."
+        },
+        "codeprep.customPrompts": {
+          "type": "object",
+          "default": {
+            "Code Review": "You are an expert software engineer. Please review the following code for bugs, security issues, and performance bottlenecks.",
+            "Refactor": "You are a refactoring expert. Please suggest ways to improve the readability and maintainability of the following code.",
+            "Document": "Please generate comprehensive documentation for the following code, including JSDoc comments and a high-level overview."
+          },
+          "description": "Define your custom prompts here as key-value pairs (Label: Prompt Content)."
+        },
+        "codeprep.visibleButtons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "codeprep.selectAll",
+              "codeprep.clearAll",
+              "codeprep.generate",
+              "codeprep.selectGitDiff",
+              "codeprep.selectPrompt",
+              "codeprep.savePreset",
+              "codeprep.loadPreset",
+              "codeprep.invertSelection",
+              "codeprep.exportPresets",
+              "codeprep.importPresets"
+            ]
+          },
+          "default": [
+            "codeprep.selectAll",
+            "codeprep.selectGitDiff",
+            "codeprep.selectPrompt",
+            "codeprep.generate",
+            "codeprep.clearAll"
+          ],
+          "description": "Select which buttons are visible in the view title bar (Max 6 recommended by VSCode UI)."
+        },
+        "codeprep.outputFormat": {
+          "type": "string",
+          "enum": [
+            "markdown",
+            "xml",
+            "json"
+          ],
+          "default": "markdown",
+          "description": "Select the output format for the generated content."
+        },
+        "codeprep.useNativeEngine": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use the built-in engine for faster processing."
+        },
+        "codeprep.outputFilePath": {
+          "type": "string",
+          "default": "codeprep-output.txt",
+          "description": "The default filename for the generated output."
+        },
+        "codeprep.tokenLimit": {
+          "type": "integer",
+          "default": 100000,
+          "description": "Display a warning when the estimated token count exceeds this limit."
+        },
+        "codeprep.nativeEngine.removeComments": {
+          "type": "boolean",
+          "default": false,
+          "description": "(Native Engine) Remove comments from the source code."
+        },
+        "codeprep.nativeEngine.includeEmptyLines": {
+          "type": "boolean",
+          "default": true,
+          "description": "(Native Engine) Include empty lines in the output."
+        },
+        "codeprep.autoRefreshTree": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh the file tree when files are created, changed, or deleted."
+        },
+        "codeprep.excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "^node_modules/",
+            "^\\.git/",
+            "\\.vsix$"
+          ],
+          "description": "List of regex patterns to exclude from the file tree. (e.g. ^node_modules/)"
+        },
+        "codeprep.enablePreview": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show a preview in a new editor tab before saving or copying."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "vitest run"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.39",
+    "@types/vscode": "^1.84.0",
+    "@vitest/coverage-v8": "latest",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^8.56.0",
+    "glob": "^13.0.6",
+    "mocha": "^11.7.5",
+    "typescript": "^4.9.4",
+    "vitest": "latest"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
+    "@typescript-eslint/parser": "^8.59.1"
+  }
+}
