@@ -31,6 +31,13 @@ export class PromptCollection {
   }
 
   /**
+   * 指定した名前のプロンプトを削除する
+   */
+  public remove(name: string): void {
+    this.templates.delete(name);
+  }
+
+  /**
    * 名前と内容のレコード形式からコレクションを生成する
    */
   public static fromRecord(record: Record<string, string>): PromptCollection {

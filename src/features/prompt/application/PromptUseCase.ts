@@ -51,4 +51,18 @@ export class PromptUseCase {
     const collection = await this.repository.loadAll();
     return collection.findByName(name)?.content;
   }
+
+  /**
+   * 指定した名前のプロンプトを削除して保存する
+   */
+  public async deletePrompt(name: string): Promise<void> {
+    const collection = await this.repository.loadAll();
+    collection.remove(name);
+    await this.repository.saveAll(collection);
+    
+    // 現在選択されているプロンプトが削除された場合、選択を解除する
+    if (this.selectedPromptName === name) {
+      this.selectedPromptName = undefined;
+    }
+  }
 }

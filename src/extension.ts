@@ -168,21 +168,58 @@ export async function activate(context: vscode.ExtensionContext) {
         const collection = await promptUseCase.getAvailablePrompts();
         const items = collection.all.map(t => ({
           label: t.name,
-          detail: t.summary,
+          description: t.summary,
           content: t.content
         }));
 
+        const clearItem = {
+          label: "$(clear-all) Clear Selection",
+          description: "プロンプトの使用を解除する",
+          content: undefined
+        };
+
+        const selected = await vscode.window.showQuickPick([clearItem, ...items], {
+          placeHolder: '使用するプロンプトを選択してください'
+        });
+
+        if (selected) {
+          if (selected === clearItem) {
+            promptUseCase.selectPrompt(undefined);
+            vscode.window.showInformationMessage('CodePrep: プロンプトの選択を解除しました。');
+          } else {
+            promptUseCase.selectPrompt(selected.label);
+            vscode.window.showInformationMessage(`CodePrep: プロンプト "${selected.label}" を選択しました。`);
+          }
+        }
+      }),
+
+      vscode.commands.registerCommand('codeprep.deletePrompt', async () => {
+        const collection = await promptUseCase.getAvailablePrompts();
+        const items = collection.all.map(t => ({
+          label: t.name,
+          description: t.summary
+        }));
+
         if (items.length === 0) {
-          vscode.window.showInformationMessage('No custom prompts defined in settings.');
+          vscode.window.showInformationMessage('CodePrep: 削除できるカスタムプロンプトがありません。');
           return;
         }
 
         const selected = await vscode.window.showQuickPick(items, {
-          placeHolder: 'Select a custom prompt'
+          placeHolder: '削除するプロンプトを選択してください'
         });
 
         if (selected) {
-          promptUseCase.selectPrompt(selected.label);
+          const confirm = await vscode.window.showWarningMessage(
+            `プロンプト "${selected.label}" を削除してもよろしいですか？`,
+            { modal: true },
+            '削除'
+          );
+
+          if (confirm === '削除') {
+            await promptUseCase.deletePrompt(selected.label);
+            vscode.window.showInformationMessage(`CodePrep: プロンプト "${selected.label}" を削除しました。`);
+          }
         }
       }),
 

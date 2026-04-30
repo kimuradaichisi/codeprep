@@ -103,6 +103,11 @@
         "icon": "$(import)"
       },
       {
+        "command": "codeprep.deletePrompt",
+        "title": "Delete Prompt",
+        "icon": "$(trash)"
+      },
+      {
         "command": "codeprep.refreshTree",
         "title": "Refresh Tree",
         "icon": "$(refresh)"
