@@ -1,305 +1,264 @@
 import * as vscode from 'vscode';
-import { SelectionService } from './services/SelectionService';
-import { CommandService } from './services/CommandService';
-import { PromptService } from './services/PromptService';
-import { TokenService } from './services/TokenService';
-import { NativeEngine } from './engines/NativeEngine';
-import { FileTreeProvider } from './providers/FileTreeProvider';
-import { PreviewProvider } from './providers/PreviewProvider';
-import { getRelativePath } from './utils/path';
-import { GitUtils } from './utils/git';
 import * as path from 'path';
 
-export async function activate(context: vscode.ExtensionContext) {
-    console.log('CodePrep: Extension is being activated...');
-    try {
-    const getWorkspaceRoot = () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    
-    const selectionService = new SelectionService(context.workspaceState);
-    const promptService = new PromptService();
-    const tokenService = new TokenService();
-    const nativeEngine = new NativeEngine();
-    const previewProvider = new PreviewProvider();
-    
-    const commandService = new CommandService(promptService, nativeEngine, tokenService, previewProvider);
-    const treeProvider = new FileTreeProvider(getWorkspaceRoot(), selectionService);
+// Features
+import { Selection } from './features/selection/domain/Selection';
+import { FileNode } from './features/ui/models/FileNode';
+import { SelectionUseCase } from './features/selection/application/SelectionUseCase';
+import { VSCodeSelectionRepository } from './features/selection/infrastructure/VSCodeSelectionRepository';
+import { VSCodeFileValidator } from './features/selection/infrastructure/VSCodeFileValidator';
+import { VSCodeWorkspaceRepository } from './features/selection/infrastructure/VSCodeWorkspaceRepository';
 
-    console.log('CodePrep: Registering TreeView with ID: codeprep.fileTree');
+import { OutputEngine } from './features/engine/domain/OutputEngine';
+import { TokenUseCase } from './features/token/application/TokenUseCase';
+import { VSCodeStatusBarPresenter } from './features/token/infrastructure/VSCodeStatusBarPresenter';
+
+import { PromptUseCase } from './features/prompt/application/PromptUseCase';
+import { VSCodePromptRepository } from './features/prompt/infrastructure/VSCodePromptRepository';
+
+// UI
+import { FileTreeProvider } from './features/ui/FileTreeProvider';
+import { PreviewProvider } from './features/ui/PreviewProvider';
+import { GitUtils } from './utils/git';
+
+export async function activate(context: vscode.ExtensionContext) {
+  try {
+    const getWorkspaceRoot = () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const root = getWorkspaceRoot();
+
+    // 1. Initialize Selection Feature
+    const selection = new Selection();
+    const selectionRepo = new VSCodeSelectionRepository(context.workspaceState);
+    const fileValidator = new VSCodeFileValidator(root || '');
+    const workspaceRepo = new VSCodeWorkspaceRepository(root || '');
+    const selectionUseCase = new SelectionUseCase(selection, selectionRepo, fileValidator);
+
+    // 2. Initialize Engine & Token Feature
+    const engine = new OutputEngine();
+    const tokenPresenter = new VSCodeStatusBarPresenter();
+    const tokenUseCase = new TokenUseCase(tokenPresenter);
+    context.subscriptions.push(tokenPresenter);
+
+    // 3. Initialize Prompt Feature
+    const promptRepo = new VSCodePromptRepository();
+    const promptUseCase = new PromptUseCase(promptRepo);
+
+    // 4. Initialize UI
+    const treeProvider = new FileTreeProvider(root, selection);
+    const previewProvider = new PreviewProvider();
     const treeView = vscode.window.createTreeView('codeprep.fileTree', {
-        treeDataProvider: treeProvider,
-        showCollapseAll: true,
-        manageCheckboxStateManually: true
+      treeDataProvider: treeProvider,
+      showCollapseAll: true,
+      manageCheckboxStateManually: true
     });
 
-    let statsTimeout: NodeJS.Timeout | undefined;
-    const updateStatsDisplay = async () => {
-        if (statsTimeout) {
-            clearTimeout(statsTimeout);
+    // Helper: Update Status and Contexts
+    const refreshUI = async () => {
+      try {
+        const selectedPaths = selection.getPaths();
+        await vscode.commands.executeCommand('setContext', 'codeprep.selectionEmpty', selectedPaths.length === 0);
+        
+        // ガードレール: 選択数が極端に多い場合はステータスバーの更新（大量のstat発行）をスキップする
+        if (selectedPaths.length > 10000) {
+          console.warn(`CodePrep: Too many files selected (${selectedPaths.length}). Skipping token calculation.`);
+          tokenUseCase.update([], 0); 
+          treeProvider.refresh();
+          return;
         }
 
-        statsTimeout = setTimeout(async () => {
-            const root = getWorkspaceRoot();
-            if (!root) {
-                await vscode.commands.executeCommand('setContext', 'codeprep.selectionEmpty', true);
-                tokenService.updateStatistics([]);
-                return;
-            }
-
-            const selectedPaths = Array.from(selectionService.getSelection());
-            await vscode.commands.executeCommand('setContext', 'codeprep.selectionEmpty', selectedPaths.length === 0);
-
-            const files: { path: string; size: number }[] = [];
-            for (const relPath of selectedPaths) {
-                try {
-                    const fullPath = path.join(root, relPath);
-                    const stat = await vscode.workspace.fs.stat(vscode.Uri.file(fullPath));
-                    files.push({ path: relPath, size: stat.size });
-                } catch { /* ignore */ }
-            }
-            tokenService.updateStatistics(files);
-        }, 300); // 300ms デバウンス
+        // ファイル情報の取得を並列化し、ディレクトリを除外する
+        const fileInfos = await Promise.all(selectedPaths.map(async p => {
+          if (!root) return null;
+          try {
+            const uri = vscode.Uri.file(path.join(root, p));
+            const stat = await vscode.workspace.fs.stat(uri);
+            if (stat.type === vscode.FileType.Directory) return null;
+            return { path: p, size: stat.size };
+          } catch (e) {
+            return null;
+          }
+        }));
+        
+        const files = fileInfos.filter((f): f is { path: string, size: number } => f !== null);
+        
+        const config = vscode.workspace.getConfiguration('codeprep');
+        tokenUseCase.update(files, config.get('tokenLimit', 100000));
+        treeProvider.refresh();
+      } catch (e) {
+        console.error('CodePrep: UI Refresh Error', e);
+      }
     };
 
     const updateButtonContexts = async () => {
-        const config = vscode.workspace.getConfiguration('codeprep');
-        const visibleButtons = config.get<string[]>('visibleButtons', []);
-        
-        const buttonContextMap: Record<string, string> = {
-            'codeprep.selectAll': 'codeprep.showSelectAll',
-            'codeprep.clearAll': 'codeprep.showClearAll',
-            'codeprep.generate': 'codeprep.showGenerate',
-            'codeprep.selectGitDiff': 'codeprep.showSelectGitDiff',
-            'codeprep.selectPrompt': 'codeprep.showSelectPrompt',
-            'codeprep.savePreset': 'codeprep.showSavePreset',
-            'codeprep.loadPreset': 'codeprep.showLoadPreset',
-            'codeprep.invertSelection': 'codeprep.showInvertSelection',
-            'codeprep.exportPresets': 'codeprep.showExportPresets',
-            'codeprep.importPresets': 'codeprep.showImportPresets'
-        };
+      const config = vscode.workspace.getConfiguration('codeprep');
+      const visibleButtons = config.get<string[]>('visibleButtons', []);
+      const buttonContextMap: Record<string, string> = {
+        'codeprep.refreshTree': 'codeprep.showRefreshTree',
+        'codeprep.selectAll': 'codeprep.showSelectAll',
+        'codeprep.clearAll': 'codeprep.showClearAll',
+        'codeprep.generate': 'codeprep.showGenerate',
+        'codeprep.selectGitDiff': 'codeprep.showSelectGitDiff',
+        'codeprep.selectPrompt': 'codeprep.showSelectPrompt',
+        'codeprep.savePreset': 'codeprep.showSavePreset',
+        'codeprep.loadPreset': 'codeprep.showLoadPreset',
+        'codeprep.invertSelection': 'codeprep.showInvertSelection',
+        'codeprep.exportPresets': 'codeprep.showExportPresets',
+        'codeprep.importPresets': 'codeprep.showImportPresets'
+      };
 
-        for (const [commandId, contextKey] of Object.entries(buttonContextMap)) {
-            await vscode.commands.executeCommand('setContext', contextKey, visibleButtons.includes(commandId));
-        }
+      for (const [commandId, contextKey] of Object.entries(buttonContextMap)) {
+        await vscode.commands.executeCommand('setContext', contextKey, visibleButtons.includes(commandId));
+      }
     };
 
+    // 5. Register Commands
     context.subscriptions.push(
-        vscode.workspace.registerTextDocumentContentProvider(PreviewProvider.scheme, previewProvider),
+      vscode.workspace.onDidChangeConfiguration(async (e) => {
+        if (e.affectsConfiguration('codeprep.visibleButtons')) {
+          await updateButtonContexts();
+        }
+      }),
 
-        vscode.workspace.onDidChangeWorkspaceFolders(() => {
-            treeProvider.setRoot(getWorkspaceRoot());
-            updateStatsDisplay();
-        }),
+      vscode.commands.registerCommand('codeprep.refreshTree', async () => {
+        treeProvider.refresh();
+      }),
 
-        treeView.onDidChangeCheckboxState(async (event) => {
-            const isChecked = (state: vscode.TreeItemCheckboxState) => 
-                state === vscode.TreeItemCheckboxState.Checked || (state as any) === 1;
+      vscode.commands.registerCommand('codeprep.selectAll', async () => {
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "CodePrep: Selecting all files...",
+          cancellable: false
+        }, async () => {
+          await selectionUseCase.selectAll(workspaceRepo);
+          await refreshUI();
+        });
+      }),
 
-            const updateRecursive = async (node: any, checked: boolean) => {
-                selectionService.setSelection(node.relativePath, checked);
-                if (node.isDirectory) {
-                    const children = await treeProvider.getChildren(node);
-                    for (const child of children) {
-                        await updateRecursive(child, checked);
-                    }
-                }
-            };
+      vscode.commands.registerCommand('codeprep.clearAll', async () => {
+        selection.clear();
+        await refreshUI();
+      }),
 
-            for (const [node, state] of event.items) {
-                await updateRecursive(node as any, isChecked(state));
-            }
-            
-            treeProvider.refresh();
-            await updateStatsDisplay();
-        }),
+      vscode.commands.registerCommand('codeprep.invertSelection', async () => {
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "CodePrep: Inverting selection...",
+          cancellable: false
+        }, async () => {
+          const allFiles = await workspaceRepo.getAllFiles();
+          selection.invert(allFiles);
+          await refreshUI();
+        });
+      }),
 
-        vscode.workspace.onDidChangeConfiguration(async (e) => {
-            if (e.affectsConfiguration('codeprep.visibleButtons')) {
-                await updateButtonContexts();
-            }
-            if (e.affectsConfiguration('codeprep.autoRefreshTree')) {
-                treeProvider.updateWatcher();
-            }
-            if (e.affectsConfiguration('codeprep.excludePatterns') || e.affectsConfiguration('codeprep.exclude')) {
-                treeProvider.refresh();
-            }
-        })
-    );
+      vscode.commands.registerCommand('codeprep.selectGitDiff', async () => {
+        if (root) {
+          await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "CodePrep: Scanning git changes...",
+            cancellable: false
+          }, async () => {
+            await selectionUseCase.selectModifiedFiles(GitUtils, root);
+            await refreshUI();
+          });
+        }
+      }),
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('codeprep.selectAll', async () => {
-            const root = getWorkspaceRoot();
-            if (!root) {
-                vscode.window.showErrorMessage('CodePrep: Please open a folder first.');
-                return;
-            }
-            const allFiles = await getAllWorkspaceFiles(root);
-            selectionService.clear();
-            selectionService.addAll(allFiles);
-            treeProvider.refresh();
-            await updateStatsDisplay();
-        }),
+      vscode.commands.registerCommand('codeprep.selectPrompt', async () => {
+        const collection = await promptUseCase.getAvailablePrompts();
+        const items = collection.all.map(t => ({
+          label: t.name,
+          detail: t.summary,
+          content: t.content
+        }));
 
-        vscode.commands.registerCommand('codeprep.clearAll', async () => {
-            selectionService.clear();
-            treeProvider.refresh();
-            await updateStatsDisplay();
-        }),
+        if (items.length === 0) {
+          vscode.window.showInformationMessage('No custom prompts defined in settings.');
+          return;
+        }
 
-        vscode.commands.registerCommand('codeprep.selectGitDiff', async () => {
-            const root = getWorkspaceRoot();
-            if (!root) {
-                vscode.window.showErrorMessage('CodePrep: Please open a folder first.');
-                return;
-            }
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: 'Select a custom prompt'
+        });
+
+        if (selected) {
+          promptUseCase.selectPrompt(selected.label);
+        }
+      }),
+
+      vscode.commands.registerCommand('codeprep.generate', async () => {
+        const selectedPaths = selection.getPaths();
+        if (selectedPaths.length === 0) return;
+
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "CodePrep: Packing files...",
+          cancellable: false
+        }, async (progress) => {
+          const filesWithContent = await Promise.all(selectedPaths.map(async p => {
             try {
-                const modifiedFiles = await GitUtils.getModifiedFiles(root);
-                if (modifiedFiles.length === 0) {
-                    vscode.window.showInformationMessage('No modified files found in Git.');
-                    return;
-                }
-                await selectionService.selectFiles(modifiedFiles);
-                treeProvider.refresh();
-                await updateStatsDisplay();
-                vscode.window.showInformationMessage('CodePrep: Selected files modified in Git.');
-            } catch (error: any) {
-                vscode.window.showErrorMessage(`Git Error: ${error.message}`);
+              const uri = vscode.Uri.file(path.join(root || '', p));
+              const stat = await vscode.workspace.fs.stat(uri);
+              if (stat.type === vscode.FileType.Directory) return null;
+              const content = (await vscode.workspace.fs.readFile(uri)).toString();
+              return { path: p, content };
+            } catch (e) {
+              return null;
             }
-        }),
+          }));
 
-        vscode.commands.registerCommand('codeprep.selectPrompt', async () => {
-            await promptService.selectPrompt();
-        }),
+          const files = filesWithContent.filter((f): f is { path: string, content: string } => f !== null);
+          if (files.length === 0) {
+            vscode.window.showWarningMessage('No files selected to generate content.');
+            return;
+          }
 
-        vscode.commands.registerCommand('codeprep.generate', async () => {
-            const root = getWorkspaceRoot();
-            if (!root) {
-                vscode.window.showErrorMessage('CodePrep: Please open a folder first.');
-                return;
+          const config = vscode.workspace.getConfiguration('codeprep');
+          const options = {
+            format: config.get('outputFormat', 'markdown') as any,
+            outputMode: config.get('outputMode', 'everything') as any,
+            includeMetadata: config.get('includeMetadata', true),
+            removeComments: config.get('removeComments', false),
+            includeEmptyLines: config.get('includeEmptyLines', true)
+          };
+
+          const promptName = promptUseCase.getSelectedPrompt();
+          const promptContent = promptName ? await promptUseCase.getPromptContent(promptName) : undefined;
+          const result = engine.generate(files, options, promptContent);
+          await vscode.env.clipboard.writeText(result.content);
+          vscode.window.showInformationMessage('CodePrep: Pack completed and copied to clipboard.');
+        });
+      }),
+
+      vscode.workspace.registerTextDocumentContentProvider(PreviewProvider.scheme, previewProvider),
+      treeView.onDidChangeCheckboxState(async (e) => {
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Window,
+          title: "CodePrep: Updating selection..."
+        }, async () => {
+          for (const [node, state] of e.items) {
+            const checked = state === vscode.TreeItemCheckboxState.Checked;
+            const item = node as any;
+            if (item.isDirectory) {
+              await selectionUseCase.updateDirectorySelection(workspaceRepo, item.relativePath, checked);
+              treeProvider.refresh(node as FileNode); // 明示的にこのノードとその配下を更新
+            } else {
+              selection.set(item.relativePath, checked);
+              treeProvider.refresh(node as FileNode); // ファイルも念のため更新
             }
-            const selectedPaths = Array.from(selectionService.getSelection());
-            if (selectedPaths.length === 0) {
-                vscode.window.showWarningMessage('CodePrep: No files selected.');
-                return;
-            }
-            await commandService.execute(root, selectedPaths);
-        }),
-
-        vscode.commands.registerCommand('codeprep.savePreset', async () => {
-            const name = await vscode.window.showInputBox({ prompt: 'Enter preset name' });
-            if (name) {
-                await selectionService.savePreset(name);
-                vscode.window.showInformationMessage(`Preset "${name}" saved.`);
-            }
-        }),
-
-        vscode.commands.registerCommand('codeprep.loadPreset', async () => {
-            const root = getWorkspaceRoot();
-            if (!root) {
-                vscode.window.showErrorMessage('CodePrep: Please open a folder first.');
-                return;
-            }
-            const presets = selectionService.getPresetList();
-            if (presets.length === 0) {
-                vscode.window.showInformationMessage('CodePrep: No presets found.');
-                return;
-            }
-            const selected = await vscode.window.showQuickPick(presets, { placeHolder: 'Select a preset to load' });
-            if (selected) {
-                await selectionService.loadPreset(selected, root);
-                treeProvider.refresh();
-                await updateStatsDisplay();
-            }
-        }),
-
-        vscode.commands.registerCommand('codeprep.exportPresets', async () => {
-            const presets = promptService.getAllPresets();
-            if (Object.keys(presets).length === 0) {
-                vscode.window.showInformationMessage('No custom prompts to export.');
-                return;
-            }
-            const uri = await vscode.window.showSaveDialog({
-                defaultUri: vscode.Uri.file('codeprep-prompts.json'),
-                filters: { 'JSON': ['json'] }
-            });
-            if (uri) {
-                const content = JSON.stringify({ version: '1.0', prompts: presets }, null, 2);
-                await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
-                vscode.window.showInformationMessage('Presets exported successfully.');
-            }
-        }),
-
-        vscode.commands.registerCommand('codeprep.importPresets', async () => {
-            const uris = await vscode.window.showOpenDialog({
-                canSelectMany: false,
-                filters: { 'JSON': ['json'] }
-            });
-            if (uris && uris[0]) {
-                try {
-                    const fileContent = await vscode.workspace.fs.readFile(uris[0]);
-                    const data = JSON.parse(Buffer.from(fileContent).toString('utf8'));
-                    if (data.prompts) {
-                        await promptService.importPresets(data.prompts);
-                        vscode.window.showInformationMessage('Presets imported successfully.');
-                    } else {
-                        throw new Error('Invalid format: missing "prompts" key.');
-                    }
-                } catch (e: any) {
-                    vscode.window.showErrorMessage(`Import failed: ${e.message}`);
-                }
-            }
-        }),
-
-        vscode.commands.registerCommand('codeprep.invertSelection', async () => {
-            const root = getWorkspaceRoot();
-            if (!root) {
-                vscode.window.showErrorMessage('CodePrep: Please open a folder first.');
-                return;
-            }
-            const allFiles = await getAllWorkspaceFiles(root);
-            selectionService.invert(allFiles);
-            treeProvider.refresh();
-            await updateStatsDisplay();
-        }),
-
-        vscode.commands.registerCommand('codeprep.addToSelection', async (uri: vscode.Uri) => {
-            const root = getWorkspaceRoot();
-            if (!root || !uri) return;
-            const relPath = getRelativePath(root, uri.fsPath);
-            selectionService.setSelection(relPath, true);
-            treeProvider.refresh();
-            await updateStatsDisplay();
-        }),
-
-        vscode.commands.registerCommand('codeprep.openSettings', () => {
-            vscode.commands.executeCommand('workbench.action.openSettings', '@ext:codeprep.codeprep-vscode');
-        }),
-
-        vscode.commands.registerCommand('codeprep.expandAll', () => {
-            treeProvider.setExpandAll(true);
-            // Reset flag after a short delay so subsequent manual collapses work
-            setTimeout(() => treeProvider.setExpandAll(false), 500);
-        }),
-
-        treeView,
-        tokenService
+          }
+          await refreshUI();
+        });
+      })
     );
 
-    updateButtonContexts();
-    setImmediate(() => {
-        updateStatsDisplay();
-    });
-    } catch (error: any) {
-        vscode.window.showErrorMessage(`CodePrep Activation Error: ${error.message}`);
-        console.error('CodePrep Activation Error:', error);
-    }
-}
-
-async function getAllWorkspaceFiles(workspaceRoot: string): Promise<string[]> {
-    const config = vscode.workspace.getConfiguration('codeprep');
-    const excludes = config.get<string[]>('exclude', []);
-    const excludePattern = `{${excludes.join(',')}}`;
-    const files = await vscode.workspace.findFiles('**/*', excludePattern);
-    return files.map(f => getRelativePath(workspaceRoot, f.fsPath));
+    await updateButtonContexts();
+    await refreshUI();
+  } catch (error) {
+    console.error('CodePrep activation failed:', error);
+    vscode.window.showErrorMessage(`CodePrep の起動に失敗しました: ${error}`);
+  }
 }
 
 export function deactivate() {}
+

@@ -47,19 +47,32 @@ describe('SelectionUseCase', () => {
     expect(selection.count).toBe(1);
   });
 
-  it('全選択ができること', async () => {
-    const wsRepo = { getAllFiles: vi.fn().mockResolvedValue(['a.ts', 'b.ts']) };
+  it('階層構造を持つファイル群を全選択できること', async () => {
+    const wsRepo = { getAllFiles: vi.fn().mockResolvedValue(['src/a.ts', 'docs/b.md']) };
     await useCase.selectAll(wsRepo);
-    expect(selection.count).toBe(2);
-    expect(selection.has('a.ts')).toBe(true);
+    
+    // 期待されるパス: 'src/a.ts', 'src', 'docs/b.md', 'docs'
+    expect(selection.count).toBe(4);
+    expect(selection.has('src/a.ts')).toBe(true);
+    expect(selection.has('src')).toBe(true);
+    expect(selection.has('docs/b.md')).toBe(true);
+    expect(selection.has('docs')).toBe(true);
   });
 
-  it('選択を反転できること', async () => {
-    selection.set('a.ts', true);
-    const wsRepo = { getAllFiles: vi.fn().mockResolvedValue(['a.ts', 'b.ts']) };
+  it('ディレクトリを含めて選択を反転できること', async () => {
+    const wsRepo = { getAllFiles: vi.fn().mockResolvedValue(['src/a.ts', 'src/b.ts']) };
+    // 最初は src/a.ts と src のみが選択されている状態
+    selection.set('src/a.ts', true);
+    selection.set('src', true);
+    
     await useCase.invertSelection(wsRepo);
-    expect(selection.has('a.ts')).toBe(false);
-    expect(selection.has('b.ts')).toBe(true);
+    
+    // 全パスは ['src/a.ts', 'src/b.ts', 'src']
+    // 反転後は 'src/b.ts' のみが選択されているはず
+    expect(selection.has('src/a.ts')).toBe(false);
+    expect(selection.has('src')).toBe(false);
+    expect(selection.has('src/b.ts')).toBe(true);
+    expect(selection.count).toBe(1);
   });
 
   it('Gitで変更されたファイルを選択できること', async () => {
@@ -67,5 +80,20 @@ describe('SelectionUseCase', () => {
     await useCase.selectModifiedFiles(gitUtils, '/root');
     expect(selection.has('mod.ts')).toBe(true);
     expect(selection.count).toBe(1);
+  });
+
+  it('should update directory selection recursively including subdirectories', async () => {
+    // 構造: dir/sub/a.ts
+    const mockRepo = {
+        getFilesUnder: vi.fn().mockResolvedValue(['dir/sub/a.ts'])
+    };
+    await useCase.updateDirectorySelection(mockRepo as any, 'dir', true);
+    
+    expect(mockRepo.getFilesUnder).toHaveBeenCalledWith('dir');
+    // 'dir/sub/a.ts', 'dir/sub', 'dir' の3つが選択されるはず
+    expect(selection.count).toBe(3);
+    expect(selection.has('dir/sub/a.ts')).toBe(true);
+    expect(selection.has('dir/sub')).toBe(true);
+    expect(selection.has('dir')).toBe(true);
   });
 });

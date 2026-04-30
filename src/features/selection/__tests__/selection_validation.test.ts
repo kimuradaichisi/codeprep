@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SelectionService } from '../../../services/SelectionService';
 import * as vscode from 'vscode';
 
 vi.mock('vscode', () => ({
@@ -34,56 +33,56 @@ vi.mock('vscode', () => ({
     },
 }));
 
-describe('SelectionService Full Coverage', () => {
-    let selectionService: SelectionService;
-    let mockMemento: any;
+import { Selection } from '../domain/Selection';
+import { SelectionUseCase } from '../application/SelectionUseCase';
+import { ISelectionRepository } from '../domain/ISelectionRepository';
+import { IFileValidator } from '../domain/IFileValidator';
+
+describe('SelectionUseCase Integration-like Tests', () => {
+    let selection: Selection;
+    let useCase: SelectionUseCase;
+    let mockRepository: ISelectionRepository;
+    let mockValidator: IFileValidator;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockMemento = {
-            get: vi.fn((key: string, defaultValue: any) => defaultValue),
-            update: vi.fn().mockResolvedValue(undefined),
+        selection = new Selection();
+        mockRepository = {
+            savePaths: vi.fn().mockResolvedValue(undefined),
+            loadPaths: vi.fn(),
+            getPresetList: vi.fn().mockReturnValue([]),
+            addToPresetList: vi.fn().mockResolvedValue(undefined),
         };
-        selectionService = new SelectionService(mockMemento);
+        mockValidator = {
+            exists: vi.fn().mockResolvedValue(true),
+            isExcluded: vi.fn().mockReturnValue(false),
+        };
+        // @ts-ignore (実際にはapplication/SelectionUseCase.tsにあるはず)
+        useCase = new SelectionUseCase(selection, mockRepository, mockValidator);
     });
 
-    it('should clear selection', () => {
-        selectionService.setSelection('test.ts', true);
-        expect(selectionService.isSelected('test.ts')).toBe(true);
-        selectionService.clear();
-        expect(selectionService.getSelection().size).toBe(0);
+    it('選択をクリアできること', () => {
+        selection.set('test.ts', true);
+        expect(selection.count).toBe(1);
+        selection.clear();
+        expect(selection.count).toBe(0);
     });
 
-    it('should handle preset lifecycle (save, list)', async () => {
-        selectionService.setSelection('file1.ts', true);
+    it('プリセットの保存ができること', async () => {
+        selection.set('file1.ts', true);
+        await useCase.savePreset('preset1');
+        expect(mockRepository.savePaths).toHaveBeenCalledWith('preset1', ['file1.ts']);
+        expect(mockRepository.addToPresetList).toHaveBeenCalledWith('preset1');
+    });
+
+    it('プリセットのロード時にバリデーションが行われること', async () => {
+        vi.mocked(mockRepository.loadPaths).mockResolvedValue(['valid.ts', 'invalid.ts']);
+        vi.mocked(mockValidator.exists).mockImplementation(async (p) => p === 'valid.ts');
+
+        const result = await useCase.loadPreset('myPreset');
         
-        await selectionService.savePreset('preset1');
-        expect(mockMemento.update).toHaveBeenCalledWith('codeprep.preset.preset1', ['file1.ts']);
-        expect(mockMemento.update).toHaveBeenCalledWith('codeprep.presets', ['preset1']);
-
-        mockMemento.get.mockReturnValue(['preset1']);
-        await selectionService.savePreset('preset1');
-        expect(mockMemento.update).toHaveBeenCalledTimes(3); 
-    });
-
-    it('should return empty list if no presets exist', () => {
-        mockMemento.get.mockImplementation((key: string, def: any) => def);
-        expect(selectionService.getPresetList()).toEqual([]);
-    });
-
-    it('should return false on loadPreset if preset does not exist', async () => {
-        mockMemento.get.mockReturnValue(null);
-        const result = await selectionService.loadPreset('ghost', '/root');
-        expect(result).toBe(false);
-    });
-
-    it('should validate and filter paths during loadPreset', async () => {
-        mockMemento.get.mockReturnValue(['valid.ts', 'node_modules/bad.ts']);
-        (vscode.workspace.fs.stat as any).mockResolvedValue({});
-
-        await selectionService.loadPreset('myPreset', '/root');
-        
-        expect(selectionService.isSelected('valid.ts')).toBe(true);
-        expect(selectionService.isSelected('node_modules/bad.ts')).toBe(false);
+        expect(result).toBe(true);
+        expect(selection.has('valid.ts')).toBe(true);
+        expect(selection.has('invalid.ts')).toBe(false);
     });
 });

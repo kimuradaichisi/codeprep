@@ -1,4 +1,5 @@
 import { OutputOptions } from './OutputOptions';
+import { OutputResult } from './OutputResult';
 import { generateTree } from '../../../utils/treeGenerator';
 
 export class OutputEngine {
@@ -6,15 +7,20 @@ export class OutputEngine {
     files: { path: string; content: string }[],
     options: OutputOptions,
     prompt?: string
-  ): string {
+  ): OutputResult {
+    let content = '';
     switch (options.format) {
       case 'xml':
-        return this.generateXML(files, options, prompt);
+        content = this.generateXML(files, options, prompt);
+        break;
       case 'json':
-        return this.generateJSON(files, options, prompt);
+        content = this.generateJSON(files, options, prompt);
+        break;
       default:
-        return this.generateMarkdown(files, options, prompt);
+        content = this.generateMarkdown(files, options, prompt);
+        break;
     }
+    return new OutputResult(content, options.format);
   }
 
   private generateMarkdown(

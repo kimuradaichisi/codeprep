@@ -15,8 +15,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:codeprep.fileTree",
-    "onStartupFinished"
+    "*"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -102,10 +101,20 @@
         "command": "codeprep.importPresets",
         "title": "Import Presets",
         "icon": "$(import)"
+      },
+      {
+        "command": "codeprep.refreshTree",
+        "title": "Refresh Tree",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "codeprep.refreshTree",
+          "when": "view == codeprep.fileTree",
+          "group": "navigation@0"
+        },
         {
           "command": "codeprep.openSettings",
           "when": "view == codeprep.fileTree",
@@ -219,6 +228,7 @@
             ]
           },
           "default": [
+            "codeprep.refreshTree",
             "codeprep.selectAll",
             "codeprep.selectGitDiff",
             "codeprep.selectPrompt",
@@ -294,6 +304,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
+    "test:e2e": "node ./out/test/runTest.js",
     "test:unit": "vitest run"
   },
   "devDependencies": {

@@ -15,9 +15,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { FileTreeProvider } from '../../../providers/FileTreeProvider';
-import { SelectionService } from '../../../services/SelectionService';
-import { FileNode } from '../../../models/FileNode';
+import { FileTreeProvider } from '../FileTreeProvider';
+import { Selection } from '../../selection/domain/Selection';
+import { FileNode } from '../models/FileNode';
 
 vi.mock('vscode', () => {
     class MockTreeItem {
@@ -58,12 +58,11 @@ vi.mock('vscode', () => {
 
 describe('FileTreeProvider', () => {
     let provider: FileTreeProvider;
-    let selectionService: SelectionService;
+    let selection: Selection;
 
     beforeEach(() => {
-        const mockMemento = { get: vi.fn(), update: vi.fn() } as any;
-        selectionService = new SelectionService(mockMemento);
-        provider = new FileTreeProvider('/root', selectionService);
+        const selection = new Selection();
+        provider = new FileTreeProvider('/root', selection);
     });
 
     it('should be defined', () => {

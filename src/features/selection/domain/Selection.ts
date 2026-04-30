@@ -16,6 +16,16 @@ export class Selection {
     }
   }
 
+  public setMany(paths: string[], checked: boolean): void {
+    for (const p of paths) {
+      if (checked) {
+        this.selectedPaths.add(p);
+      } else {
+        this.selectedPaths.delete(p);
+      }
+    }
+  }
+
   public addAll(paths: string[]): void {
     paths.forEach((p) => this.selectedPaths.add(p));
   }

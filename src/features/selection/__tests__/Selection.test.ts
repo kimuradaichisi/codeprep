@@ -13,6 +13,18 @@ describe('Selection (Domain)', () => {
     expect(selection.getPaths()).toEqual([]);
   });
 
+  it('setManyで複数のパスを一括で選択・解除できること', () => {
+    selection.setMany(['a.ts', 'b.ts'], true);
+    expect(selection.count).toBe(2);
+    expect(selection.has('a.ts')).toBe(true);
+    expect(selection.has('b.ts')).toBe(true);
+
+    selection.setMany(['a.ts', 'c.ts'], false);
+    expect(selection.count).toBe(1);
+    expect(selection.has('b.ts')).toBe(true);
+    expect(selection.has('a.ts')).toBe(false);
+  });
+
   it('単一のパスを選択・解除できること', () => {
     selection.set('file1.ts', true);
     expect(selection.has('file1.ts')).toBe(true);

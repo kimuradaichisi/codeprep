@@ -21,9 +21,12 @@ async function main() {
         const extensionDevelopmentPath = path.resolve(__dirname, '../../');
         const extensionTestsPath = path.resolve(__dirname, './suite/index');
 
+        const testWorkspace = path.resolve(__dirname, '../../.vscode-test/test-workspace');
+
         await runTests({
             extensionDevelopmentPath,
-            extensionTestsPath
+            extensionTestsPath,
+            launchArgs: [testWorkspace]
         });
     } catch (err) {
         console.error('Failed to run tests');

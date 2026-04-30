@@ -1,18 +1,21 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { FileNode } from '../models/FileNode';
-import { SelectionService } from '../services/SelectionService';
+import { FileNode } from './models/FileNode';
+import { Selection } from '../selection/domain/Selection';
+import { getRelativePath, normalizePath } from '../../utils/path';
 
 export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<FileNode | undefined | void> = new vscode.EventEmitter<FileNode | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<FileNode | undefined | void> = this._onDidChangeTreeData.event;
     private watcher: vscode.FileSystemWatcher | undefined;
+    private workspaceRoot: string | undefined;
     private expandAll: boolean = false;
 
     constructor(
-        private workspaceRoot: string | undefined,
-        private readonly selectionService: SelectionService
+        workspaceRoot: string | undefined,
+        private readonly selection: Selection
     ) {
+        this.workspaceRoot = workspaceRoot ? normalizePath(workspaceRoot) : undefined;
         this.updateWatcher();
     }
 
@@ -20,7 +23,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
      * ワークスペースルートを更新します。
      */
     public setRoot(root: string | undefined): void {
-        this.workspaceRoot = root;
+        this.workspaceRoot = root ? normalizePath(root) : undefined;
         this.updateWatcher();
         this.refresh();
     }
@@ -48,8 +51,8 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         }
     }
 
-    refresh(): void {
-        this._onDidChangeTreeData.fire();
+    refresh(element?: FileNode): void {
+        this._onDidChangeTreeData.fire(element);
     }
 
     public setExpandAll(expand: boolean): void {
@@ -73,7 +76,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         treeItem.resourceUri = element.uri;
         treeItem.contextValue = element.isDirectory ? 'directory' : 'file';
         
-        const isSelected = this.selectionService.isSelected(element.relativePath);
+        const isSelected = this.selection.has(normalizePath(element.relativePath));
         treeItem.checkboxState = isSelected ? vscode.TreeItemCheckboxState.Checked : vscode.TreeItemCheckboxState.Unchecked;
         
         treeItem.iconPath = element.isDirectory ? new vscode.ThemeIcon('folder') : new vscode.ThemeIcon('file');
@@ -111,7 +114,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
             const nodes: FileNode[] = [];
             for (const [name, type] of children) {
                 const fullPath = path.join(folderPath, name);
-                const relativePath = path.relative(this.workspaceRoot, fullPath);
+                const relativePath = normalizePath(getRelativePath(this.workspaceRoot, fullPath));
 
                 // 1. Legacy check
                 if (this.isExcludedOptimized(relativePath, preparedPatterns)) {
@@ -142,8 +145,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         }
     }
 
-    private isExcludedOptimized(relativePath: string, preparedPatterns: string[][]): boolean {
-        const normalizedPath = relativePath.replace(/\\/g, '/');
+    private isExcludedOptimized(normalizedPath: string, preparedPatterns: string[][]): boolean {
         const pathParts = normalizedPath.split('/');
 
         return preparedPatterns.some(segments => {
@@ -151,8 +153,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         });
     }
 
-    private isExcludedByRegex(relativePath: string, regexes: RegExp[]): boolean {
-        const normalizedPath = relativePath.replace(/\\/g, '/');
+    private isExcludedByRegex(normalizedPath: string, regexes: RegExp[]): boolean {
         return regexes.some(regex => regex.test(normalizedPath));
     }
 
