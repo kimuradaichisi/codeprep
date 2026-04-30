@@ -15,7 +15,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { PromptService } from '../../services/PromptService';
+import { PromptService } from '../../../services/PromptService';
 
 // VSCode モジュールのモック化
 vi.mock('vscode', () => {

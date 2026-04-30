@@ -6,9 +6,10 @@
 
 ## 2. テスト範囲
 ### 2.1 ユニットテスト (Unit Tests)
-- **対象**: `src/services`, `src/engines`, `src/utils` 配下の純粋なロジック。
-- **目的**: 外部依存（VSCode API）をモックし、計算ロジックや状態遷移の正当性を検証する。
+- **対象**: `src/features`, `src/shared` 配下のドメインロジックおよびユースケース。
+- **目的**: 外部依存（VSCode API）を隔離・モックし、ビジネスロジックの正当性を高速に検証する。
 - **ツール**: Vitest
+- **配置**: 各機能ディレクトリ内の `__tests__/` に配置。
 
 ### 2.2 E2Eテスト (Integration/E2E Tests)
 - **対象**: `extension.ts`, `providers`, `contributes` (コマンド、メニュー)。

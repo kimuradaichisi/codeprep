@@ -15,9 +15,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { FileTreeProvider } from '../../providers/FileTreeProvider';
-import { SelectionService } from '../../services/SelectionService';
-import { FileNode } from '../../models/FileNode';
+import { FileTreeProvider } from '../../../providers/FileTreeProvider';
+import { SelectionService } from '../../../services/SelectionService';
+import { FileNode } from '../../../models/FileNode';
 
 vi.mock('vscode', () => {
     class MockTreeItem {

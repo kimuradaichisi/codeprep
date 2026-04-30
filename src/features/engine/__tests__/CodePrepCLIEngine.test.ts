@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CodePrepCLIEngine } from '../../engines/CodePrepCLIEngine';
+import { CodePrepCLIEngine } from '../../../engines/CodePrepCLIEngine';
 import { exec } from 'child_process';
 
 // child_process のモック化

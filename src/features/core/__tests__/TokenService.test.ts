@@ -15,7 +15,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { TokenService } from '../../services/TokenService';
+import { TokenService } from '../../../services/TokenService';
 
 vi.mock('vscode', () => {
     const mockStatusBarItem = {

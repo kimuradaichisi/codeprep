@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SelectionService } from '../../services/SelectionService';
+import { SelectionService } from '../../../services/SelectionService';
 import * as vscode from 'vscode';
 
 vi.mock('vscode', () => ({

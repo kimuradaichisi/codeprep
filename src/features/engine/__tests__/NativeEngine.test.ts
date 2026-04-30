@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NativeEngine } from '../../engines/NativeEngine';
+import { NativeEngine } from '../../../engines/NativeEngine';
 import * as vscode from 'vscode';
 
 // 設定値を管理するための変数

@@ -15,7 +15,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { CommandService } from '../../services/CommandService';
+import { CommandService } from '../../../services/CommandService';
 
 vi.mock('vscode', () => {
     return {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GitUtils } from '../../utils/git';
+import { GitUtils } from '../../../utils/git';
 import * as child_process from 'child_process';
 import * as vscode from 'vscode';
 
