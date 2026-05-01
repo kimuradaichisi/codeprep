@@ -33,7 +33,7 @@ export class GitCommands {
   }
 
   private async copyCommitPrompt() {
-    const diff = await GitUtils.getDiff(this.root!);
+    const diff = await GitUtils.getDiff(this.root || '', ['package.json', 'package-lock.json']);
     if (!diff) return vscode.window.showInformationMessage('差分がありません。');
     
     const prompt = `以下のgit diffに基づき、コミットメッセージを提案してください。

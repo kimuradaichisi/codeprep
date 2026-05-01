@@ -37,7 +37,11 @@ describe('CommandRegistry Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     selectionUseCase = { 
-      currentSelection: { getPaths: vi.fn().mockReturnValue(['file.ts']), clear: vi.fn() },
+      currentSelection: {
+        getPaths: vi.fn().mockReturnValue(['file.ts']),
+        clear: vi.fn(),
+        set: vi.fn()
+      },
       selectModifiedFiles: vi.fn(),
       selectAll: vi.fn(),
       invertSelection: vi.fn(),
@@ -45,7 +49,13 @@ describe('CommandRegistry Integration Tests', () => {
       loadPreset: vi.fn(),
       getPresetList: vi.fn().mockReturnValue(['p1'])
     };
-    promptUseCase = { getSelectedPrompt: vi.fn(), getPromptContent: vi.fn() };
+    promptUseCase = { 
+      getAvailablePrompts: vi.fn().mockResolvedValue({ 
+        names: ['p1'], 
+        findByName: vi.fn().mockReturnValue({ summary: 'sum' }) 
+      }),
+      selectPrompt: vi.fn()
+    };
     uiController = { refresh: vi.fn() };
     engine = { generate: vi.fn().mockReturnValue({ content: 'res' }) };
 
@@ -84,4 +94,36 @@ describe('CommandRegistry Integration Tests', () => {
     expect(selectionUseCase.selectAll).toHaveBeenCalled();
     expect(uiController.refresh).toHaveBeenCalled();
   });
+
+  it('addToSelection: 右クリックからファイルを追加できること', async () => {
+    const uri = { fsPath: '/root/src/app.ts' } as vscode.Uri;
+    await getHandler('codeprep.addToSelection')(uri);
+
+    expect(selectionUseCase.currentSelection.set).toHaveBeenCalledWith('src/app.ts', true);
+    expect(uiController.refresh).toHaveBeenCalled();
+  });
+
+  it('すべてのコマンドがvscodeに登録されていること', () => {
+    const registeredCommands = (vscode.commands.registerCommand as any).mock.calls.map((c: any) => c[0]);
+    const expectedCommands = [
+      'codeprep.selectionMenu',
+      'codeprep.presetMenu',
+      'codeprep.gitMenu',
+      'codeprep.refreshTree',
+      'codeprep.generate',
+      'codeprep.openSettings',
+      'codeprep.selectPrompt',
+      'codeprep.addToSelection',
+      'codeprep.selectAll',
+      'codeprep.clearAll',
+      'codeprep.invertSelection',
+      'codeprep.savePreset',
+      'codeprep.loadPreset',
+      'codeprep.selectByGrep'
+    ];
+    expectedCommands.forEach(cmd => {
+      expect(registeredCommands).toContain(cmd);
+    });
+  });
+
 });

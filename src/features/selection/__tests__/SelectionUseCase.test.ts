@@ -99,4 +99,26 @@ describe('SelectionUseCase', () => {
     expect(selection.has('dir/sub')).toBe(true);
     expect(selection.has('dir')).toBe(true);
   });
+
+  it('Grep結果に基づいてファイルとその親ディレクトリを選択できること', async () => {
+    const searchRepo = { search: vi.fn().mockResolvedValue(['src/components/Button.tsx']) };
+    const count = await useCase.selectByGrep(searchRepo as any, 'button');
+
+    expect(count).toBe(1);
+    expect(selection.has('src/components/Button.tsx')).toBe(true);
+    expect(selection.has('src/components')).toBe(true);
+    expect(selection.has('src')).toBe(true);
+  });
+
+  it('Git変更に関連するテストファイルも含めて選択できること', async () => {
+    const gitUtils = {
+      getModifiedFiles: vi.fn().mockResolvedValue(['src/logic.ts']),
+      findRelatedTests: vi.fn().mockResolvedValue(['tests/logic.test.ts'])
+    };
+    await useCase.selectModifiedFiles(gitUtils, '/root', true); // tests = true
+    
+    expect(selection.has('src/logic.ts')).toBe(true);
+    expect(selection.has('tests/logic.test.ts')).toBe(true);
+  });
+
 });

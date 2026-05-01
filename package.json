@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -44,6 +44,16 @@
       }
     ],
     "commands": [
+      {
+        "command": "codeprep.selectionMenu",
+        "title": "Selection Actions...",
+        "icon": "$(list-selection)"
+      },
+      {
+        "command": "codeprep.presetMenu",
+        "title": "Preset Actions...",
+        "icon": "$(library)"
+      },
       {
         "command": "codeprep.openSettings",
         "title": "Open Settings",
@@ -120,66 +130,13 @@
     ],
     "menus": {
       "view/title": [
-        {
-          "command": "codeprep.refreshTree",
-          "when": "view == codeprep.fileTree",
-          "group": "navigation@0"
-        },
-        {
-          "command": "codeprep.openSettings",
-          "when": "view == codeprep.fileTree",
-          "group": "navigation@0"
-        },
-        {
-          "command": "codeprep.selectAll",
-          "when": "view == codeprep.fileTree && codeprep.showSelectAll",
-          "group": "navigation@1"
-        },
-        {
-          "command": "codeprep.invertSelection",
-          "when": "view == codeprep.fileTree && codeprep.showInvertSelection",
-          "group": "navigation@2"
-        },
-        {
-          "command": "codeprep.exportPresets",
-          "when": "view == codeprep.fileTree && codeprep.showExportPresets",
-          "group": "navigation@3"
-        },
-        {
-          "command": "codeprep.importPresets",
-          "when": "view == codeprep.fileTree && codeprep.showImportPresets",
-          "group": "navigation@4"
-        },
-        {
-          "command": "codeprep.gitMenu",
-          "when": "view == codeprep.fileTree && codeprep.showSelectGitDiff",
-          "group": "navigation@1"
-        },
-        {
-          "command": "codeprep.selectPrompt",
-          "when": "view == codeprep.fileTree && codeprep.showSelectPrompt",
-          "group": "navigation@6"
-        },
-        {
-          "command": "codeprep.generate",
-          "when": "view == codeprep.fileTree && codeprep.showGenerate",
-          "group": "navigation@7"
-        },
-        {
-          "command": "codeprep.savePreset",
-          "when": "view == codeprep.fileTree && codeprep.showSavePreset",
-          "group": "navigation@8"
-        },
-        {
-          "command": "codeprep.loadPreset",
-          "when": "view == codeprep.fileTree && codeprep.showLoadPreset",
-          "group": "navigation@9"
-        },
-        {
-          "command": "codeprep.clearAll",
-          "when": "view == codeprep.fileTree && codeprep.showClearAll",
-          "group": "navigation@10"
-        }
+        { "command": "codeprep.refreshTree", "when": "view == codeprep.fileTree", "group": "navigation@0" },
+        { "command": "codeprep.openSettings", "when": "view == codeprep.fileTree", "group": "navigation@0" },
+        { "command": "codeprep.selectionMenu", "when": "view == codeprep.fileTree", "group": "navigation@1" },
+        { "command": "codeprep.gitMenu", "when": "view == codeprep.fileTree", "group": "navigation@2" },
+        { "command": "codeprep.selectPrompt", "when": "view == codeprep.fileTree", "group": "navigation@3" },
+        { "command": "codeprep.generate", "when": "view == codeprep.fileTree", "group": "navigation@4" },
+        { "command": "codeprep.presetMenu", "when": "view == codeprep.fileTree", "group": "navigation@5" }
       ],
       "view/item/context": [
         {
@@ -334,6 +291,7 @@
     "@types/vscode": "^1.84.0",
     "@vitest/coverage-v8": "latest",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.9.1",
     "eslint": "^8.56.0",
     "glob": "^13.0.6",
     "mocha": "^11.7.5",
