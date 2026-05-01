@@ -28,7 +28,7 @@ async function main() {
             extensionTestsPath,
             launchArgs: [testWorkspace]
         });
-    } catch (err) {
+    } catch {
         console.error('Failed to run tests');
         process.exit(1);
     }

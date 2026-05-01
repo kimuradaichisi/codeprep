@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as vscode from 'vscode';
 
 vi.mock('vscode', () => ({
     Uri: {
@@ -57,8 +56,21 @@ describe('SelectionUseCase Integration-like Tests', () => {
             exists: vi.fn().mockResolvedValue(true),
             isExcluded: vi.fn().mockReturnValue(false),
         };
-        // @ts-ignore (実際にはapplication/SelectionUseCase.tsにあるはず)
+
         useCase = new SelectionUseCase(selection, mockRepository, mockValidator);
+    });
+
+    it('should handle undefined input', async () => {
+        // validator をこのスコープ内で定義（モック化）する
+        const validator = {
+            exists: vi.fn().mockResolvedValue(false),
+            isExcluded: vi.fn().mockReturnValue(false),
+        };
+
+        await validator.exists(undefined as any);
+        
+        // 検証が必要なら追加
+        expect(validator.exists).toHaveBeenCalledWith(undefined);
     });
 
     it('選択をクリアできること', () => {

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VSCodeSelectionRepository } from '../infrastructure/VSCodeSelectionRepository';
-import * as vscode from 'vscode';
 
 vi.mock('vscode', () => ({
   Memento: vi.fn(),

@@ -5,6 +5,14 @@ import * as path from 'path';
 import { normalizePath } from '../../../utils/path';
 
 /**
+ * Git操作に必要なインターフェース定義
+ */
+interface IGitUtils {
+  getModifiedFiles(root: string): Promise<string[]>;
+  findRelatedTests(root: string, modifiedFiles: string[]): Promise<string[]>;
+}
+
+/**
  * 選択操作のユースケース
  */
 export class SelectionUseCase {
@@ -57,22 +65,51 @@ export class SelectionUseCase {
   private deriveAllPaths(files: string[]): string[] {
     const result = new Set<string>();
     const seenDirs = new Set<string>();
+    
     for (const file of files) {
-      result.add(file);
-      let parent = path.dirname(file).replace(/\\/g, '/');
+      // 1. 最初に一度だけ正規化
+      const normFile = normalizePath(file);
+      if (!normFile || normFile === '.' || normFile === '/') continue;
+      
+      result.add(normFile);
+      
+      // 2. 親ディレクトリの導出ループ
+      let parent = path.dirname(normFile);
+      
+      // path.dirname は既にスラッシュを扱えるため、ループ内での replace を廃止
       while (parent !== '.' && parent !== '/' && parent !== '' && !seenDirs.has(parent)) {
         result.add(parent);
         seenDirs.add(parent);
-        parent = path.dirname(parent).replace(/\\/g, '/');
+        parent = path.dirname(parent);
       }
     }
     return Array.from(result);
   }
 
-  public async selectModifiedFiles(gitUtils: { getModifiedFiles(root: string): Promise<string[]> }, root: string): Promise<void> {
+  /**
+   * Gitで変更されたファイルを選択する
+   */
+  public async selectModifiedFiles(
+    gitUtils: IGitUtils, 
+    root: string, 
+    includeTests: boolean = false
+  ): Promise<void> {
     const modifiedFiles = await gitUtils.getModifiedFiles(root);
+    if (modifiedFiles.length === 0) return;
+
+    let targets = [...modifiedFiles];
+    if (includeTests) {
+      const relatedTests = await gitUtils.findRelatedTests(root, modifiedFiles);
+      targets = Array.from(new Set([...targets, ...relatedTests]));
+    }
+
+    // ディレクトリ階層を含めた全パスを導出（正規化済み）
+    const allPaths = this.deriveAllPaths(targets);
+    
     this.selection.clear();
-    this.selection.addAll(modifiedFiles);
+    this.selection.addAll(allPaths);
+    
+    // 現在の選択状態を永続化（リポジトリに保存メソッドがあれば呼ぶ。現時点ではPreset以外はメモリ保持）
   }
 
   private async addValidPaths(paths: string[]): Promise<void> {
@@ -98,14 +135,11 @@ export class SelectionUseCase {
   ): Promise<void> {
     const normPath = normalizePath(relativePath);
     
-    // まず自身を確実に更新（即座にチェックを反映させるため）
     this.selection.set(normPath, checked);
 
     const files = await repository.getFilesUnder(normPath);
-    // すべての取得パスを正規化
     const allPaths = this.deriveAllPaths(files).map(p => normalizePath(p));
     
-    // 対象ディレクトリ配下のパスのみを選択状態に反映
     const targetPaths = allPaths.filter(p => 
       p === normPath || p.startsWith(normPath + '/')
     );

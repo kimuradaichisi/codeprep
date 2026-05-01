@@ -15,8 +15,6 @@
  */
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { FileTreeProvider } from '../../features/ui/FileTreeProvider';
-import { Selection } from '../../features/selection/domain/Selection';
 
 suite('Extension E2E Test Suite', function() {
     this.timeout(20000);
@@ -65,7 +63,7 @@ suite('Extension E2E Test Suite', function() {
         try {
             const json = JSON.parse(clipboardText);
             assert.ok(json.repository, 'JSON should have repository property');
-        } catch (e) {
+        } catch {
             assert.fail('Generated output is not valid JSON');
         }
         

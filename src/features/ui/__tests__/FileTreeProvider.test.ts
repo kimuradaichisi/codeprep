@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as vscode from 'vscode';
 import { FileTreeProvider } from '../FileTreeProvider';
 import { Selection } from '../../selection/domain/Selection';
-import { FileNode } from '../models/FileNode';
 
 vi.mock('vscode', () => {
     class MockTreeItem {
@@ -58,7 +56,6 @@ vi.mock('vscode', () => {
 
 describe('FileTreeProvider', () => {
     let provider: FileTreeProvider;
-    let selection: Selection;
 
     beforeEach(() => {
         const selection = new Selection();

@@ -1,6 +1,5 @@
 import { IPromptRepository } from '../domain/IPromptRepository';
 import { PromptCollection } from '../domain/PromptCollection';
-import { PromptTemplate } from '../domain/PromptTemplate';
 
 /**
  * プロンプトに関するユースケースを担当するクラス

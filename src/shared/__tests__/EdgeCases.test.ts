@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as vscode from 'vscode';
 import { OutputEngine } from '../../features/engine/domain/OutputEngine';
 import { Selection } from '../../features/selection/domain/Selection';
 

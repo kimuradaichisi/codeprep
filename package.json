@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -111,6 +111,11 @@
         "command": "codeprep.refreshTree",
         "title": "Refresh Tree",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "codeprep.gitMenu",
+        "title": "Git Actions",
+        "icon": "$(git-branch)"
       }
     ],
     "menus": {
@@ -146,9 +151,9 @@
           "group": "navigation@4"
         },
         {
-          "command": "codeprep.selectGitDiff",
+          "command": "codeprep.gitMenu",
           "when": "view == codeprep.fileTree && codeprep.showSelectGitDiff",
-          "group": "navigation@5"
+          "group": "navigation@1"
         },
         {
           "command": "codeprep.selectPrompt",
@@ -307,7 +312,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src --ext ts --cache",
     "test": "node ./out/test/runTest.js",
     "test:e2e": "node ./out/test/runTest.js",
     "test:unit": "vitest run"

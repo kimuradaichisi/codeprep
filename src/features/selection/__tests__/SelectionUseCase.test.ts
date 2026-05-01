@@ -76,7 +76,10 @@ describe('SelectionUseCase', () => {
   });
 
   it('Gitで変更されたファイルを選択できること', async () => {
-    const gitUtils = { getModifiedFiles: vi.fn().mockResolvedValue(['mod.ts']) };
+    const gitUtils = {
+      getModifiedFiles: vi.fn().mockResolvedValue(['mod.ts']),
+      findRelatedTests: vi.fn().mockResolvedValue([]) // 必ず追加
+    };
     await useCase.selectModifiedFiles(gitUtils, '/root');
     expect(selection.has('mod.ts')).toBe(true);
     expect(selection.count).toBe(1);

@@ -10,7 +10,7 @@ import { VSCodeStatusBarPresenter } from './features/token/infrastructure/VSCode
 import { PromptUseCase } from './features/prompt/application/PromptUseCase';
 import { VSCodePromptRepository } from './features/prompt/infrastructure/VSCodePromptRepository';
 import { FileTreeProvider } from './features/ui/FileTreeProvider';
-import { PreviewProvider } from './features/ui/PreviewProvider';
+import { PreviewProvider } from './features/ui/PreviewProvider'; // 追加
 import { UIController } from './features/ui/application/UIController';
 import { registerAllCommands } from './commands/CommandRegistry';
 
@@ -18,20 +18,16 @@ export async function activate(context: vscode.ExtensionContext) {
   try {
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
-    // 1. Domain Models & Infrastructure
     const selection = new Selection();
     const workspaceRepo = new VSCodeWorkspaceRepository(root || '');
     const selectionRepo = new VSCodeSelectionRepository(context.workspaceState);
     const fileValidator = new VSCodeFileValidator(root || '');
-    
-    // 2. Use Cases & Controllers
     const selectionUseCase = new SelectionUseCase(selection, selectionRepo, fileValidator);
     const promptUseCase = new PromptUseCase(new VSCodePromptRepository());
     const tokenPresenter = new VSCodeStatusBarPresenter();
     const tokenUseCase = new TokenUseCase(tokenPresenter);
     const engine = new OutputEngine();
 
-    // 3. UI Provider Registration (これが2枚目の画像エラーを直す鍵)
     const treeProvider = new FileTreeProvider(root, selection);
     const treeView = vscode.window.createTreeView('codeprep.fileTree', {
       treeDataProvider: treeProvider,
@@ -41,13 +37,22 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const uiController = new UIController(selection, tokenUseCase, treeProvider, root);
 
-    // 4. Subscriptions & Event Handlers
+    // コマンドの登録
+    const commands = registerAllCommands(
+      context, selectionUseCase, promptUseCase, uiController, engine, workspaceRepo, root
+    );
+
     context.subscriptions.push(
       treeView,
       tokenPresenter,
+      ...commands,
+      // ★追加: プレビュープロバイダーの登録
       vscode.workspace.registerTextDocumentContentProvider(PreviewProvider.scheme, new PreviewProvider()),
+      // ★追加: 設定変更の監視
       vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration('codeprep.visibleButtons')) uiController.updateButtonContexts();
+        if (e.affectsConfiguration('codeprep.visibleButtons')) {
+          uiController.updateButtonContexts();
+        }
       }),
       treeView.onDidChangeCheckboxState(async (e) => {
         for (const [node, state] of e.items) {
@@ -59,15 +64,11 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         }
         await uiController.refresh();
-      }),
-      // コマンドを一括登録
-      ...registerAllCommands(context, selectionUseCase, promptUseCase, uiController, engine, workspaceRepo, root)
+      })
     );
 
-    // 初期化
     await uiController.updateButtonContexts();
     await uiController.refresh();
-
   } catch (error) {
     console.error('CodePrep activation failed:', error);
   }

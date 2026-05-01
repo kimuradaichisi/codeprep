@@ -140,7 +140,8 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
                 }
                 return a.isDirectory ? -1 : 1;
             });
-        } catch (error) {
+        } catch (_error) {
+            console.error(`CodePrep: Legacy Regex check`, _error);
             return [];
         }
     }
