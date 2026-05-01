@@ -11,7 +11,10 @@ export class SelectionCommands {
   ) {}
 
   async selectAll() {
-    await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "CodePrep: 全選択中..." }, async () => {
+    await vscode.window.withProgress({ 
+      location: vscode.ProgressLocation.Notification, 
+      title: "CodePrep: 全選択中..." 
+    }, async () => {
       await this.useCase.selectAll(this.repo);
       await this.ui.refresh();
     });
@@ -23,7 +26,10 @@ export class SelectionCommands {
   }
 
   async invert() {
-    await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "CodePrep: 選択を反転中..." }, async () => {
+    await vscode.window.withProgress({ 
+      location: vscode.ProgressLocation.Notification, 
+      title: "CodePrep: 反転中..." 
+    }, async () => {
       await this.useCase.invertSelection(this.repo);
       await this.ui.refresh();
     });
@@ -31,7 +37,10 @@ export class SelectionCommands {
 
   async savePreset() {
     const name = await vscode.window.showInputBox({ placeHolder: 'プリセット名を入力' });
-    if (name) await this.useCase.savePreset(name);
+    if (name) {
+      await this.useCase.savePreset(name);
+      vscode.window.showInformationMessage(`Preset "${name}" saved.`);
+    }
   }
 
   async loadPreset() {

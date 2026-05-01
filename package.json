@@ -303,6 +303,16 @@
           "type": "boolean",
           "default": false,
           "description": "Show a preview in a new editor tab before saving or copying."
+        },
+        "codeprep.openAfterGenerate": {
+          "type": "boolean",
+          "default": true,
+          "description": "生成完了後に、内容を新しいエディタタブで開きます。"
+        },
+        "codeprep.openAfterGitAction": {
+          "type": "boolean",
+          "default": true,
+          "description": "Gitアクション（コミットプロンプト生成など）の後に、内容を新しいエディタタブで開きます。"
         }
       }
     }

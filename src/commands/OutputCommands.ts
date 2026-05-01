@@ -18,63 +18,60 @@ export class OutputCommands {
 
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
-      title: "CodePrep: Packing files...",
-      cancellable: false
-    }, async () => {
-      const filesWithContent = await Promise.all(paths.map(async p => {
-        try {
-          const uri = vscode.Uri.file(path.join(this.root || '', p));
-          const stat = await vscode.workspace.fs.stat(uri);
-          
-          if ((stat.type & vscode.FileType.Directory) === vscode.FileType.Directory) {
-            return null;
-          }
+      title: "CodePrep: Generating content...",
+    }, async () => this.runGeneration(paths));
+  }
 
-          const contentRaw = await vscode.workspace.fs.readFile(uri);
-          
-          // 【修正箇所】 .toString() ではなく Buffer.from を使う
-          // または new TextDecoder().decode(contentRaw)
-          const content = Buffer.from(contentRaw).toString('utf8');
-          
-          return { path: p, content };
-        } catch {          
-          return null;
-        }
-      }));
+  private async runGeneration(paths: string[]) {
+    const files = await this.readFiles(paths);
+    if (files.length === 0) return vscode.window.showWarningMessage('No files selected.');
 
-      const files = filesWithContent.filter((f): f is { path: string, content: string } => f !== null);
-      
-      if (files.length === 0) {
-        // 元のコードにあった警告メッセージを復元
-        vscode.window.showWarningMessage('No files selected to generate content.');
-        return;
-      }
+    const options = this.getOptions();
+    const prompt = await this.getPrompt();
+    const result = this.engine.generate(files, options, prompt);
 
-      const config = vscode.workspace.getConfiguration('codeprep');
-      const options = {
-        format: config.get('outputFormat', 'markdown') as any,
-        outputMode: config.get('outputMode', 'everything') as any,
-        includeMetadata: config.get('includeMetadata', true),
-        removeComments: config.get('removeComments', false),
-        includeEmptyLines: config.get('includeEmptyLines', true)
-      };
+    await vscode.env.clipboard.writeText(result.content);
+    await this.handleOutput(result.content, options.format);
+  }
 
-      // プロンプト取得のロジックを元に戻す (undefined を許容)
-      const promptName = this.promptUseCase.getSelectedPrompt();
-      const promptContent = promptName ? await this.promptUseCase.getPromptContent(promptName) : undefined;
-      
-      const result = this.engine.generate(files, options, promptContent);
-      
-      await vscode.env.clipboard.writeText(result.content);
-      // 元の完了メッセージを復元
-      vscode.window.showInformationMessage('CodePrep: Pack completed and copied to clipboard.');
+  private async readFiles(paths: string[]) {
+    const results = await Promise.all(paths.map(async p => {
+      try {
+        const uri = vscode.Uri.file(path.join(this.root || '', p));
+        const stat = await vscode.workspace.fs.stat(uri);
+        if (stat.type & vscode.FileType.Directory) return null;
+        const raw = await vscode.workspace.fs.readFile(uri);
+        return { path: p, content: Buffer.from(raw).toString('utf8') };
+      } catch { return null; }
+    }));
+    return results.filter((f): f is { path: string, content: string } => f !== null);
+  }
 
-      // (オプション) リファクタで追加したエディタ表示機能を残す場合はここに記述
-      const doc = await vscode.workspace.openTextDocument({
-        content: result.content,
-        language: options.format === 'markdown' ? 'markdown' : 'text'
-      });
-      await vscode.window.showTextDocument(doc, { preview: false });
-    });
+  private getOptions() {
+    const config = vscode.workspace.getConfiguration('codeprep');
+    return {
+      format: config.get('outputFormat', 'markdown') as any,
+      outputMode: config.get('outputMode', 'everything') as any,
+      includeMetadata: config.get('includeMetadata', true),
+      removeComments: config.get('removeComments', false),
+      includeEmptyLines: config.get('includeEmptyLines', true)
+    };
+  }
+
+  private async getPrompt() {
+    const name = this.promptUseCase.getSelectedPrompt();
+    return name ? await this.promptUseCase.getPromptContent(name) : undefined;
+  }
+
+  private async handleOutput(content: string, format: string) {
+    const config = vscode.workspace.getConfiguration('codeprep');
+    vscode.window.showInformationMessage('CodePrep: Copied to clipboard.');
+
+    if (config.get('openAfterGenerate', true)) {
+      const lang = format === 'json' ? 'json' : (format === 'xml' ? 'xml' : 'markdown');
+      const doc = await vscode.workspace.openTextDocument({ content, language: lang });
+      // 修正: vscode.ViewColumn.One を使用
+      await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.One });
+    }
   }
 }

@@ -6,25 +6,36 @@ import * as path from 'path';
 const execAsync = promisify(exec);
 
 export class GitUtils {
+  /**
+   * 変更されたファイル一覧を取得。
+   * -c core.quotepath=false を付与することで日本語ファイル名の化けを防止。
+   */
   static async getModifiedFiles(root: string): Promise<string[]> {
     try {
-      const { stdout } = await execAsync('git status --porcelain', { cwd: root });
-      return stdout
-        .split('\n')
-        .map(line => {
-          let filePath = line.substring(3).trim();
-          // ダブルクォートで囲まれている場合は除去 (スペースを含むパス対策)
-          if (filePath.startsWith('"') && filePath.endsWith('"')) {
-            filePath = filePath.slice(1, -1);
-          }
-          // 改名対応
-          return filePath.includes(' -> ') ? filePath.split(' -> ')[1] : filePath;
-        })
-        .filter(line => line.length > 0);
+      // 日本語パス対応のため quotepath=false を設定して実行
+      const cmd = 'git -c core.quotepath=false status --porcelain';
+      const { stdout } = await execAsync(cmd, { cwd: root });
+      
+      return stdout.split('\n')
+        .map(line => this.parseGitStatusLine(line))
+        .filter((f): f is string => f.length > 0);
     } catch (e) {
       vscode.window.showErrorMessage(`CodePrep: Git status error - ${e}`);
       return [];
     }
+  }
+
+  private static parseGitStatusLine(line: string): string {
+    if (line.length < 4) return '';
+    let filePath = line.substring(3).trim();
+    
+    // ダブルクォートの除去（スペース対策）
+    if (filePath.startsWith('"') && filePath.endsWith('"')) {
+      filePath = filePath.slice(1, -1);
+    }
+    
+    // 改名（A -> B）の場合は後のパス（B）を採用
+    return filePath.includes(' -> ') ? filePath.split(' -> ')[1] : filePath;
   }
 
   static async getDiff(root: string): Promise<string> {
@@ -37,37 +48,36 @@ export class GitUtils {
     }
   }
 
+  /**
+   * 変更ファイルに関連するテストファイルを探す。
+   * 命名規則の揺れ（.test.ts, .spec.ts, _test.ts等）に対応。
+   */
   static async findRelatedTests(root: string, modifiedFiles: string[]): Promise<string[]> {
     if (modifiedFiles.length === 0) return [];
 
-    // 1. 変更されたファイルのベース名（拡張子なし）をセットに持つ
-    // 例: "src/domain/User.ts" -> "User"
     const modifiedBaseNames = new Set(
-        modifiedFiles.map(f => path.basename(f, path.extname(f)))
+      modifiedFiles.map(f => path.basename(f, path.extname(f)).toLowerCase())
     );
 
-    // 2. プロジェクト内のテストファイルを「1回だけ」スキャンして全取得
-    // node_modules は第2引数で明示的に除外
+    // 1回だけ全スキャン
     const allTestUris = await vscode.workspace.findFiles(
-        '**/*.{spec,test}.{ts,tsx,js,jsx}', 
-        '**/node_modules/**'
+      '**/*.{spec,test,Test}.{ts,tsx,js,jsx}', 
+      '**/node_modules/**'
     );
 
     const relatedTests: string[] = [];
-
-    // 3. メモリ上で名前の照合を行う（ここが非常に高速）
     for (const uri of allTestUris) {
-        const relativePath = vscode.workspace.asRelativePath(uri, false);
-        const fileName = path.basename(relativePath);
-        
-        // テストファイル名から ".spec.ts" や ".test.ts" などを除いた本体を取り出す
-        const testBaseName = fileName.split('.')[0]; 
+      const relativePath = vscode.workspace.asRelativePath(uri, false);
+      const fileName = path.basename(relativePath).toLowerCase();
+      
+      // テストファイル名（例: user.test.ts）に変更ファイル名（user）が含まれているか照合
+      const isMatch = Array.from(modifiedBaseNames).some(base => 
+        fileName.startsWith(base) || fileName.includes(`${base}_`)
+      );
 
-        if (modifiedBaseNames.has(testBaseName)) {
-        relatedTests.push(relativePath);
-        }
+      if (isMatch) relatedTests.push(relativePath);
     }
 
     return relatedTests;
-    }
+  }
 }

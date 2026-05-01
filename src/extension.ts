@@ -10,7 +10,7 @@ import { VSCodeStatusBarPresenter } from './features/token/infrastructure/VSCode
 import { PromptUseCase } from './features/prompt/application/PromptUseCase';
 import { VSCodePromptRepository } from './features/prompt/infrastructure/VSCodePromptRepository';
 import { FileTreeProvider } from './features/ui/FileTreeProvider';
-import { PreviewProvider } from './features/ui/PreviewProvider'; // 追加
+import { PreviewProvider } from './features/ui/PreviewProvider'; 
 import { UIController } from './features/ui/application/UIController';
 import { registerAllCommands } from './commands/CommandRegistry';
 
@@ -36,31 +36,24 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     const uiController = new UIController(selection, tokenUseCase, treeProvider, root);
-
-    // コマンドの登録
-    const commands = registerAllCommands(
-      context, selectionUseCase, promptUseCase, uiController, engine, workspaceRepo, root
-    );
+    const commands = registerAllCommands(context, selectionUseCase, promptUseCase, uiController, engine, workspaceRepo, root);
 
     context.subscriptions.push(
       treeView,
       tokenPresenter,
       ...commands,
-      // ★追加: プレビュープロバイダーの登録
       vscode.workspace.registerTextDocumentContentProvider(PreviewProvider.scheme, new PreviewProvider()),
-      // ★追加: 設定変更の監視
       vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration('codeprep.visibleButtons')) {
-          uiController.updateButtonContexts();
-        }
+        if (e.affectsConfiguration('codeprep.visibleButtons')) uiController.updateButtonContexts();
       }),
       treeView.onDidChangeCheckboxState(async (e) => {
         for (const [node, state] of e.items) {
           const item = node as any;
+          const isChecked = state === vscode.TreeItemCheckboxState.Checked;
           if (item.isDirectory) {
-            await selectionUseCase.updateDirectorySelection(workspaceRepo, item.relativePath, state === vscode.TreeItemCheckboxState.Checked);
+            await selectionUseCase.updateDirectorySelection(workspaceRepo, item.relativePath, isChecked);
           } else {
-            selection.set(item.relativePath, state === vscode.TreeItemCheckboxState.Checked);
+            selection.set(item.relativePath, isChecked);
           }
         }
         await uiController.refresh();
