@@ -323,7 +323,7 @@
     "glob": "^13.0.6",
     "mocha": "^11.7.5",
     "typescript": "^4.9.4",
-    "vitest": "latest"
+    "vitest": "^4.1.5"
   },
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^8.59.1",
