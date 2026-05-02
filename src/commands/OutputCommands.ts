@@ -73,10 +73,22 @@ export class OutputCommands {
     const config = vscode.workspace.getConfiguration('codeprep');
     vscode.window.showInformationMessage('CodePrep: Copied to clipboard.');
 
-    if (config.get('openAfterGenerate', true)) {
-      const lang = format === 'json' ? 'json' : (format === 'xml' ? 'xml' : 'markdown');
+    if (!config.get('openAfterGenerate', true)) return;
+
+    const ext = format === 'json' ? '.json' : (format === 'xml' ? '.xml' : '.md');
+    const lang = format === 'json' ? 'json' : (format === 'xml' ? 'xml' : 'markdown');
+    const uri = vscode.Uri.parse(`untitled:CodePrep Output${ext}`);
+
+    try {
+      const doc = await vscode.workspace.openTextDocument(uri);
+      const editor = await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.One });
+      await editor.edit(editBuilder => {
+        const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+        editBuilder.replace(fullRange, content);
+      });
+      await vscode.languages.setTextDocumentLanguage(doc, lang);
+    } catch {
       const doc = await vscode.workspace.openTextDocument({ content, language: lang });
-      // 修正: vscode.ViewColumn.One を使用
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.One });
     }
   }

@@ -43,9 +43,18 @@ export class GitCommands {
     await vscode.env.clipboard.writeText(prompt);
     
     if (config.get('openAfterGitAction', true)) {
-      const doc = await vscode.workspace.openTextDocument({ content: prompt, language: 'markdown' });
-      // 修正: vscode.ViewColumn.Beside を使用
-      await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
+      const uri = vscode.Uri.parse('untitled:Commit Message.md');
+      try {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        const editor = await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
+        await editor.edit(eb => {
+          const range = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+          eb.replace(range, prompt);
+        });
+      } catch {
+        const doc = await vscode.workspace.openTextDocument({ content: prompt, language: 'markdown' });
+        await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
+      }
     }
     
     vscode.window.showInformationMessage('プロンプトをコピーしました。');
