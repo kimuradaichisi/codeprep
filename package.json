@@ -198,9 +198,11 @@
         "codeprep.customPrompts": {
           "type": "object",
           "default": {
-            "Code Review": "You are an expert software engineer. Please review the following code for bugs, security issues, and performance bottlenecks.",
-            "Refactor": "You are a refactoring expert. Please suggest ways to improve the readability and maintainability of the following code.",
-            "Document": "Please generate comprehensive documentation for the following code, including JSDoc comments and a high-level overview."
+            "✨ 1. 新機能実装 (Implement Feature)": "## 依頼\n以下のプロジェクト構造とコードを読み取り、新しい機能 [機能名をここに記述] を実装してください。\n\n## 構造\n{{tree}}\n\n## 制約事項\n- 既存の設計パターン（DDD/クリーンアーキテクチャ等）を遵守してください。\n- 型安全性を確保し、anyの使用を避けてください。\n- 実装に関連するユニットテストも併せて提案してください。\n\n## 言語設定\n回答は日本語で行ってください。",
+            "🛠️ 2. リファクタリング (Refactor)": "## 依頼\n提供するコードのリファクタリング案を提示してください。\n\n## 構造\n{{tree}}\n\n## 観点\n- 可読性の向上（命名、関数の分割）\n- 計算量の最適化\n- 疎結合・高凝集な設計への改善\n- 重複コードの排除\n\n## 形式\n修正後のコードだけでなく、なぜそのように変更すべきかの理由を添えてください。",
+            "🐛 3. デバッグ・問題解析 (Bug Fix)": "## 状況\n以下のコードで [問題の内容を記述] という不具合が発生しています。\n\n## 構造\n{{tree}}\n\n## 調査依頼\n- 原因の特定と、その解説\n- 修正プログラムの提示\n- 再発防止のためのテストケースの提案\n\n## 補足\n実行日時: {{datetime}}\n環境: {{language}}",
+            "🧪 4. テストコード生成 (Unit Test)": "## 依頼\n以下のソースコードに対するユニットテストを記述してください。\n\n## 構造\n{{tree}}\n\n## 要件\n- テストフレームワーク: [Vitest/Jest等を記述]\n- 正常系だけでなく、境界値や異常系のテストを含めてください。\n- モックが必要な場合は、その作り方も含めて提示してください。\n- カバレッジを意識した構成にしてください。",
+            "📝 5. コードレビュー (Review)": "## 依頼\nあなたはシニアフルスタックエンジニアです。提出されたコードを厳しく、かつ建設的にレビューしてください。\n\n## 構造\n{{tree}}\n\n## チェックリスト\n- バグの可能性はないか\n- セキュリティ上の脆弱性（インジェクション、機密情報の露出など）はないか\n- パフォーマンス上の懸念はないか\n- 言語ごとのベストプラクティスに従っているか"
           },
           "description": "Define your custom prompts here as key-value pairs (Label: Prompt Content)."
         },
