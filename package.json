@@ -250,52 +250,15 @@
           "default": true,
           "description": "Use the built-in engine for faster processing."
         },
-        "codeprep.outputFilePath": {
-          "type": "string",
-          "default": "codeprep-output.txt",
-          "description": "The default filename for the generated output."
-        },
-        "codeprep.tokenLimit": {
-          "type": "integer",
-          "default": 100000,
-          "description": "Display a warning when the estimated token count exceeds this limit."
-        },
         "codeprep.maxFileSizeKB": {
           "type": "integer",
           "default": 500,
           "description": "巨大ファイル・ガードの閾値 (KB)。このサイズを超えるファイルは、内容が省略されます。"
         },
-        "codeprep.nativeEngine.removeComments": {
-          "type": "boolean",
-          "default": false,
-          "description": "(Native Engine) Remove comments from the source code."
-        },
-        "codeprep.nativeEngine.includeEmptyLines": {
-          "type": "boolean",
-          "default": true,
-          "description": "(Native Engine) Include empty lines in the output."
-        },
         "codeprep.autoRefreshTree": {
           "type": "boolean",
           "default": true,
           "description": "Automatically refresh the file tree when files are created, changed, or deleted."
-        },
-        "codeprep.excludePatterns": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            "^node_modules/",
-            "^\\.git/",
-            "\\.vsix$"
-          ],
-          "description": "List of regex patterns to exclude from the file tree. (e.g. ^node_modules/)"
-        },
-        "codeprep.enablePreview": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show a preview in a new editor tab before saving or copying."
         },
         "codeprep.openAfterGenerate": {
           "type": "boolean",
