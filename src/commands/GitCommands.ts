@@ -36,27 +36,12 @@ export class GitCommands {
     const diff = await GitUtils.getDiff(this.root || '', ['package.json', 'package-lock.json']);
     if (!diff) return vscode.window.showInformationMessage('差分がありません。');
     
-    const prompt = `以下のgit diffに基づき、コミットメッセージを提案してください。
-
-## ルール
-- Conventional Commits 規約に従ってください。
-- フォーマット: <type>(<scope>): <subject>
-- 1行目は要約、3行目以降に具体的な変更内容を箇条書きで記載してください。
-- 言語は日本語で出力してください。
-
-## type の定義
-- feat: 新機能
-- fix: バグ修正
-- refactor: 機能変更を伴わないコード整理
-- perf: パフォーマンス向上
-- test: テストの追加・修正
-- chore: ビルド構成や依存関係の変更、ドキュメント生成など
-
-## git diff
-${diff}`;
+    const config = vscode.workspace.getConfiguration('codeprep');
+    const template = config.get<string>('gitCommitPrompt', '');
+    const prompt = template.replace(/{{diff}}/g, diff);
+    
     await vscode.env.clipboard.writeText(prompt);
     
-    const config = vscode.workspace.getConfiguration('codeprep');
     if (config.get('openAfterGitAction', true)) {
       const doc = await vscode.workspace.openTextDocument({ content: prompt, language: 'markdown' });
       // 修正: vscode.ViewColumn.Beside を使用
