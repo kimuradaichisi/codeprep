@@ -24,7 +24,7 @@ vi.mock('vscode', () => ({
     fs: { stat: vi.fn(), readFile: vi.fn() },
     openTextDocument: vi.fn().mockResolvedValue({ uri: 'untitled' })
   },
-  Uri: { file: vi.fn(p => ({ fsPath: p })), parse: vi.fn(p => ({ fsPath: p })) },
+  Uri: { file: vi.fn(p => ({ fsPath: p, path: p })), parse: vi.fn(p => ({ fsPath: p, path: p })) },
   env: { clipboard: { writeText: vi.fn() } },
   FileType: { File: 1, Directory: 2 },
   ProgressLocation: { Notification: 15 },
@@ -67,14 +67,15 @@ describe('CommandRegistry Integration Tests', () => {
     return call[1];
   };
 
-  it('Gitアクション: commitプロンプトがUntitledエディタで開かれること', async () => {
+  it('Gitアクション: commitプロンプトが既存タブを再利用または新規作成されること', async () => {
     (vscode.window.showQuickPick as any).mockResolvedValue({ id: 'commit', label: 'Commit' });
     (GitUtils.getDiff as any).mockResolvedValue('diff-content');
 
     await getHandler('codeprep.gitMenu')();
 
+    // URI によるオープンを検証
     expect(vscode.workspace.openTextDocument).toHaveBeenCalledWith(
-        expect.objectContaining({ content: expect.stringContaining('diff-content'), language: 'markdown' })
+        expect.objectContaining({ path: expect.stringContaining('Commit Message.md') })
     );
     expect(vscode.window.showTextDocument).toHaveBeenCalledWith(
         expect.anything(),

@@ -90,6 +90,13 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 その後、`npm run compile` を実行してください。
 開発に際しては `npm run test:unit` によるテストのパス、および `npm run lint` の通過が必須となります。
 
+### コミット前遵守フロー
+- テストケースの精査: 新機能に対するテスト不足や、ロジック変更に伴う既存テストの陳腐化をチェックし、必要に応じて修正・追加。
+- テスト実行 (npm run test:unit): 全テストのパスを確認。
+- Lint実行 (npm run lint): コード規約違反がないか確認。
+- コンパイル (npm run compile): 型エラーがないか最終確認。
+- コミット: 上記がすべて通った場合のみ実施。
+
 ## 🆕 What's New (最新の更新)
 
 ### v0.5.0 (2026-05-02)
