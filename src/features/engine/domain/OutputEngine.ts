@@ -62,12 +62,21 @@ export class OutputEngine {
     delimiter: string
   ): string {
     return files.map(file => {
-      let content = file.content;
-      if (options.removeComments) content = this.stripComments(content);
-      if (!options.includeEmptyLines) content = this.stripEmptyLines(content);
-      
+      const content = this.getProcessedContent(file, options);
       return `## File: ${file.path}\n${delimiter}\n${content}\n${delimiter}\n`;
     }).join('\n');
+  }
+
+  private getProcessedContent(file: { content: string }, options: OutputOptions): string {
+    const sizeKB = file.content.length / 1024;
+    if (options.maxFileSizeKB && sizeKB > options.maxFileSizeKB) {
+      return `[WARNING] File size exceeds ${options.maxFileSizeKB}KB. Content omitted for performance.`;
+    }
+
+    let content = file.content;
+    if (options.removeComments) content = this.stripComments(content);
+    if (!options.includeEmptyLines) content = this.stripEmptyLines(content);
+    return content;
   }
 
   private stripComments(content: string): string {
@@ -93,7 +102,10 @@ export class OutputEngine {
       output += `  <instruction>\n${this.escapeXml(prompt)}\n  </instruction>\n`;
     }
     output += `  <structure>\n${generateTree(files.map(f => f.path))}\n  </structure>\n`;
-    output += files.map(f => `  <file path="${f.path}">\n${this.escapeXml(f.content)}\n  </file>`).join('\n');
+    output += files.map(f => {
+      const content = this.getProcessedContent(f, options);
+      return `  <file path="${f.path}">\n${this.escapeXml(content)}\n  </file>`;
+    }).join('\n');
     return output + '\n</repository>\n';
   }
 
@@ -101,7 +113,10 @@ export class OutputEngine {
     return JSON.stringify({
       prompt: prompt || '',
       structure: generateTree(files.map(f => f.path)),
-      repository: files.map(f => ({ path: f.path, content: f.content }))
+      repository: files.map(f => ({
+        path: f.path,
+        content: this.getProcessedContent(f, options)
+      }))
     }, null, 2) + '\n';
   }
 

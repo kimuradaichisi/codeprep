@@ -8,32 +8,28 @@
 現在の数千ファイル規模での遅延を解消し、爆速な体験を提供します。
 
 ### 1.1 Grep 検索の ripgrep 移行
-- [ ] `VSCodeSearchRepository` の実装を `vscode.executeTextSearch` (内蔵 ripgrep) に置換。
-- [ ] 自前でのファイル読み込みループを廃止し、検索メモリ消費を削減。
+- [X] `VSCodeSearchRepository` の実装を `vscode.executeTextSearch` (内蔵 ripgrep) に置換。
+- [X] 自前でのファイル読み込みループを廃止し、検索メモリ消費を削減。
 
 ### 1.2 Git 状態の非同期キャッシュ (GitWatcher 導入)
-- [ ] `Infrastructure` 層に `GitWatcher` クラスを新設。
-- [ ] `FileSystemWatcher` と連動し、Git ステータスをバックグラウンドで更新・保持。
-- [ ] `UIController` / `FileTreeProvider` は `GitUtils` を直接呼ばず、このキャッシュを参照するように変更。
+- [X] `Infrastructure` 層に `GitWatcher` クラスを新設。
+- [X] `FileSystemWatcher` と連動し、Git ステータスをバックグラウンドで更新・保持。
+- [X] `UIController` / `FileTreeProvider` は `GitUtils` を直接呼ばず、このキャッシュを参照するように変更。
 
 ### 1.3 ファイルツリーの最適化
-- [ ] `FileTreeProvider` の `isExcluded` ロジックを、正規表現の事前コンパイル方式に改善。
-- [ ] 大規模フォルダ展開時の `fs.stat` 呼び出しを最小化。
+- [X] `FileTreeProvider` の `isExcluded` ロジックを、正規表現の事前コンパイル方式に改善。
+- [X] 大規模フォルダ展開時の `fs.stat` 呼び出しを最小化。
 
 ---
 
 ## 🚀 フェーズ 2: 高度な LLM コンテキスト生成 (Advanced Features)
 LLM がより理解しやすい、かつトークン効率の良い出力を実現します。
 
-### 2.1 高精度トークンカウンター (A)
-- [ ] `js-tiktoken` を導入。
-- [ ] `TokenUseCase` に `gpt-4o`, `claude-3-5-sonnet` 等のモデル別計算ロジックを追加。
-
-### 2.2 インテリジェント・プロンプト変数 (C)
+### 2.1 インテリジェント・プロンプト変数 (C)
 - [ ] `PromptTemplate` に変数埋め込み機能（`{{language}}`, `{{datetime}}`, `{{tree}}`）を実装。
 - [ ] `Application` 層に `PromptProcessor` を導入し、出力直前に変数置換を実行。
 
-### 2.3 巨大ファイル・ガード (B)
+### 2.2 巨大ファイル・ガード (B)
 - [ ] `OutputOptions` に `maxFileSizeKB` 設定を追加。
 - [ ] 指定サイズを超えるファイルは自動的に「内容を省略し、構造のみ出力」するロジックを `OutputEngine` に追加。
 

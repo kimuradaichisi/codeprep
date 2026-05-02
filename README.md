@@ -83,10 +83,18 @@
 開発の詳細については、リポジトリ内の `AI_AGENTS.md` をご参照ください。
 
 ## 🤝 Contributing
-Issues および Pull Requests は大歓迎です！
+WINDOWS powershellで権限関係でエラーが出る場合
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+```
+その後、`npm run compile` を実行してください。
 開発に際しては `npm run test:unit` によるテストのパス、および `npm run lint` の通過が必須となります。
 
 ## 🆕 What's New (最新の更新)
+
+### v0.5.0 (2026-05-02)
+- 🤖 **インテリジェント・プロンプト変数**: カスタムプロンプト内で `{{language}}` (言語), `{{datetime}}` (日時), `{{tree}}` (選択ファイルのツリー) の変数が自動置換されるようになりました。
+- 🛡️ **巨大ファイル・ガード**: 指定したサイズ（デフォルト 500KB）を超えるファイルは自動的に内容を省略し、LLMへの送信時のフリーズやメモリ不足を防止します。
 
 ### v0.4.0 (2026-05-02)
 - ⚡ **パフォーマンスの劇的な向上**: 検索エンジンを VSCode 内蔵の ripgrep (`vscode.executeTextSearch`) へ移行し、数千ファイル規模のプロジェクトでも瞬時に検索が可能になりました。

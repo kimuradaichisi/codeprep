@@ -6,4 +6,5 @@ export interface OutputOptions {
   removeComments: boolean;
   includeEmptyLines: boolean;
   outputMode: 'everything' | 'structureOnly';
+  maxFileSizeKB?: number;
 }
