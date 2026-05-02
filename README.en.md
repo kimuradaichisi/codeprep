@@ -55,7 +55,10 @@ This project is built on strict **DDD (Domain-Driven Design)** and a unique **"G
 
 ### v0.5.0 (2026-05-02)
 - 🤖 **Intelligent Prompt Variables**: Variables like `{{language}}`, `{{datetime}}`, and `{{tree}}` (file tree) are now automatically replaced within custom prompts.
-- 🛡️ **Big File Guard**: Files exceeding a specified size (default 500KB) are automatically omitted to prevent freezes and out-of-memory issues when sending data to LLMs.
+- 🛡️ **Big File Guard**: Files exceeding a specified size (default 500KB) are automatically omitted to prevent freezes and out-of-memory issues.
+- 📑 **Smart Tab Reuse**: Instead of opening a new editor every time, existing CodePrep output tabs are now smartly reused.
+- 🌍 **Internationalization (i18n)**: UI buttons and tooltips now automatically adapt to your VSCode display language (Japanese/English).
+- ⚙️ **Configurable Git Prompt**: The prompt used for generating commit messages can now be customized via settings.
 
 ### v0.4.0 (2026-05-02)
 - ⚡ **Dramatic Performance Boost**: Migrated the search engine to VSCode's built-in ripgrep (`vscode.executeTextSearch`), enabling instant searches even in projects with thousands of files.
