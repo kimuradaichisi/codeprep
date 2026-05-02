@@ -36,7 +36,7 @@ export class PreviewProvider implements vscode.TextDocumentContentProvider {
     /**
      * VSCodeがURIを読み込む際に呼び出されます。
      */
-    public provideTextDocumentContent(uri: vscode.Uri): string {
+    public provideTextDocumentContent(): string {
         return this.content;
     }
 }

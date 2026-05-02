@@ -2,53 +2,52 @@ import * as vscode from 'vscode';
 import { ISearchRepository } from '../domain/ISearchRepository';
 import { getRelativePath } from '../../../utils/path';
 
+/**
+ * VSCode 内蔵コマンド用の型定義
+ */
+interface TextSearchMatch {
+  uri: vscode.Uri;
+}
+
+interface TextSearchOptions {
+  includes?: string[];
+  excludes?: string[];
+  useIgnoreFiles?: boolean;
+  followSymlinks?: boolean;
+}
+
 export class VSCodeSearchRepository implements ISearchRepository {
   constructor(private workspaceRoot: string) {}
 
   /**
-   * 安定版APIを使用して高速検索を行う。
-   * findFilesで対象を絞り込み、並列で内容をチェックする。
+   * VSCode 内蔵の ripgrep エンジンを使用して高速検索を行う。
    */
   public async search(query: string): Promise<string[]> {
-    const exclude = this.getExcludePattern();
-    const uris = await vscode.workspace.findFiles('**/*', exclude);
-    
-    const results: string[] = [];
-    const CHUNK_SIZE = 50; // 同時オープンファイル数を制限してクラッシュを防止
+    const results = new Set<string>();
+    const options = this.createSearchOptions();
 
-    for (let i = 0; i < uris.length; i += CHUNK_SIZE) {
-      const chunk = uris.slice(i, i + CHUNK_SIZE);
-      const matches = await Promise.all(chunk.map(uri => this.checkFileContains(uri, query)));
-      
-      matches.forEach(match => {
-        if (match) results.push(getRelativePath(this.workspaceRoot, match));
-      });
-    }
-
-    return results;
-  }
-
-  /**
-   * ファイルが指定した文字列を含んでいるかチェックする
-   */
-  private async checkFileContains(uri: vscode.Uri, query: string): Promise<string | null> {
-    try {
-      const contentRaw = await vscode.workspace.fs.readFile(uri);
-      const content = Buffer.from(contentRaw).toString('utf8');
-      
-      // 大文字小文字を区別せずに検索
-      if (content.toLocaleLowerCase().includes(query.toLocaleLowerCase())) {
-        return uri.fsPath;
+    await vscode.commands.executeCommand(
+      'vscode.executeTextSearch',
+      { pattern: query, isCaseSensitive: false },
+      options,
+      {
+        report: (result: TextSearchMatch) => {
+          results.add(getRelativePath(this.workspaceRoot, result.uri.fsPath));
+        }
       }
-    } catch {
-      return null; // 読み取り不可のファイルはスキップ
-    }
-    return null;
+    );
+
+    return Array.from(results);
   }
 
-  private getExcludePattern(): string {
+  private createSearchOptions(): TextSearchOptions {
     const config = vscode.workspace.getConfiguration('codeprep');
-    const excludes = config.get<string[]>('exclude', []);
-    return excludes.length > 0 ? `{${excludes.join(',')}}` : '';
+    return {
+      includes: ['**/*'],
+      excludes: config.get<string[]>('exclude', []),
+      useIgnoreFiles: true,
+      followSymlinks: false
+    };
   }
 }
+

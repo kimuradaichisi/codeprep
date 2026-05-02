@@ -3,6 +3,7 @@ import * as path from 'path';
 import { Selection } from '../../selection/domain/Selection';
 import { TokenUseCase } from '../../token/application/TokenUseCase';
 import { FileTreeProvider } from '../FileTreeProvider';
+import { GitWatcher } from '../../selection/infrastructure/GitWatcher';
 
 export class UIController {
   private debounceTimer: NodeJS.Timeout | undefined;
@@ -12,7 +13,8 @@ export class UIController {
     private readonly selection: Selection,
     private readonly tokenUseCase: TokenUseCase,
     private readonly treeProvider: FileTreeProvider,
-    private readonly root: string | undefined
+    private readonly root: string | undefined,
+    private readonly gitWatcher?: GitWatcher
   ) {}
 
   /**
@@ -20,15 +22,18 @@ export class UIController {
    * ツリーの見た目は即座に更新し、重い統計計算はデバウンスして非同期に実行する。
    */
   public async refresh(): Promise<void> {
-    // 1. ツリーとチェックボックスの見た目は即座に更新（現行の動きを担保）
+    // 0. Git 状態をバックグラウンドで更新開始
+    this.gitWatcher?.updateCache();
+
+    // 1. ツリーとチェックボックスの見た目は即座に更新
     this.treeProvider.refresh();
 
     const selectedPaths = this.selection.getPaths();
     
-    // 2. 空状態のコンテキスト更新（UI表示切替）も即座に行う
+    // 2. 空状態のコンテキスト更新も即座に行う
     await vscode.commands.executeCommand('setContext', 'codeprep.selectionEmpty', selectedPaths.length === 0);
 
-    // 3. 重い統計計算（fs.statのループ）をデバウンス
+    // 3. 重い統計計算をデバウンス
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
     }
@@ -40,7 +45,6 @@ export class UIController {
 
   /**
    * トークン統計の更新を開始する。
-   * チャンク処理を行い、イベントループをブロックしない。
    */
   private async startTokenUpdate(paths: string[]): Promise<void> {
     const requestSymbol = Symbol('TokenUpdate');
@@ -51,11 +55,9 @@ export class UIController {
       return;
     }
 
-    // 10,000ファイル制限（安全策）
     const targets = paths.slice(0, 10000);
     const fileInfos = await this.processFilesInChunks(targets, requestSymbol);
 
-    // リクエストが最新である場合のみ結果を反映
     if (requestSymbol === this.currentRequestSymbol) {
       const config = vscode.workspace.getConfiguration('codeprep');
       this.tokenUseCase.update(fileInfos, config.get('tokenLimit', 100000));
@@ -70,7 +72,6 @@ export class UIController {
     const CHUNK_SIZE = 100;
 
     for (let i = 0; i < paths.length; i += CHUNK_SIZE) {
-      // 別の新しいリクエストが開始されていたら即座に中断
       if (requestSymbol !== this.currentRequestSymbol) break;
 
       const chunk = paths.slice(i, i + CHUNK_SIZE);
@@ -83,8 +84,6 @@ export class UIController {
       }));
 
       results.push(...chunkResults.filter((f): f is { path: string, size: number } => f !== null));
-      
-      // チャンクごとにUIスレッドに制御を戻す
       await new Promise(resolve => setTimeout(resolve, 0));
     }
     return results;
@@ -99,6 +98,7 @@ export class UIController {
       'codeprep.clearAll': 'codeprep.showClearAll',
       'codeprep.generate': 'codeprep.showGenerate',
       'codeprep.selectGitDiff': 'codeprep.showSelectGitDiff',
+      'codeprep.gitMenu': 'codeprep.showGitMenu',
       'codeprep.selectPrompt': 'codeprep.showSelectPrompt',
       'codeprep.savePreset': 'codeprep.showSavePreset',
       'codeprep.loadPreset': 'codeprep.showLoadPreset',
@@ -109,4 +109,4 @@ export class UIController {
       await vscode.commands.executeCommand('setContext', ctx, visibleButtons.includes(cmd));
     }
   }
-}
+}

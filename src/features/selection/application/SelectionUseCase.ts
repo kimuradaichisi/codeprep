@@ -2,19 +2,16 @@ import { Selection } from '../domain/Selection';
 import { ISelectionRepository } from '../domain/ISelectionRepository';
 import { IFileValidator } from '../domain/IFileValidator';
 import { ISearchRepository } from '../domain/ISearchRepository';
+import { GitWatcher } from '../infrastructure/GitWatcher';
 import * as path from 'path';
 import { normalizePath } from '../../../utils/path';
-
-interface IGitUtils {
-  getModifiedFiles(root: string): Promise<string[]>;
-  findRelatedTests(root: string, modifiedFiles: string[]): Promise<string[]>;
-}
 
 export class SelectionUseCase {
   constructor(
     private selection: Selection,
     private repository: ISelectionRepository,
-    private validator: IFileValidator
+    private validator: IFileValidator,
+    private gitWatcher?: GitWatcher
   ) {}
 
   public get currentSelection(): Selection { return this.selection; }
@@ -38,7 +35,6 @@ export class SelectionUseCase {
     const matchedFiles = await searchRepo.search(query);
     if (matchedFiles.length === 0) return 0;
 
-    // 大量ヒット時のパフォーマンス対策：パスのユニーク化をSetで行う
     const allPaths = this.deriveAllPaths(matchedFiles);
     this.selection.addAll(allPaths);
     return matchedFiles.length;
@@ -62,7 +58,6 @@ export class SelectionUseCase {
       if (!normFile || normFile === '.' || normFile === '/') continue;
       
       result.add(normFile);
-      // 親ディレクトリを再帰的に追加
       let parent = path.dirname(normFile);
       while (parent !== '.' && parent !== '/' && parent !== '') {
         if (result.has(parent)) break;
@@ -73,12 +68,19 @@ export class SelectionUseCase {
     return Array.from(result);
   }
 
-  public async selectModifiedFiles(git: IGitUtils, root: string, tests: boolean = false): Promise<void> {
-    const modified = await git.getModifiedFiles(root);
+  public async selectModifiedFiles(git: any, root: string, tests: boolean = false): Promise<void> {
+    let modified: string[] = [];
+    if (this.gitWatcher) {
+      await this.gitWatcher.updateCache();
+      modified = this.gitWatcher.getModifiedFiles();
+    } else {
+      modified = await git.getModifiedFiles(root);
+    }
+    
     if (modified.length === 0) return;
 
     let targets = [...modified];
-    if (tests) {
+    if (tests && git.findRelatedTests) {
       const related = await git.findRelatedTests(root, modified);
       targets = Array.from(new Set([...targets, ...related]));
     }
@@ -102,4 +104,4 @@ export class SelectionUseCase {
     const targetPaths = allPaths.filter(p => p === normPath || p.startsWith(normPath + '/'));
     this.selection.setMany(targetPaths, checked);
   }
-}
+}
