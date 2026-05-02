@@ -76,4 +76,31 @@ describe('OutputEngine', () => {
     // ディレクトリ構造のデリミタも ```` になっているはず
     expect(result.content).toContain('## Directory Structure\n````');
   });
+
+  it('巨大ファイル・ガード: 指定サイズを超える場合、内容を省略して警告を表示すること', () => {
+    // 約2KB のダミーデータを作成
+    const largeContent = 'a'.repeat(2048);
+    const files = [{ path: 'large.ts', content: largeContent }];
+    const options = { ...defaultOptions, maxFileSizeKB: 1 }; // 1KB 制限
+    
+    const result = engine.generate(files, options);
+    
+    expect(result.content).toContain('[WARNING] File size exceeds 1KB');
+    expect(result.content).not.toContain(largeContent);
+  });
+
+  it('XML 形式でも巨大ファイルが省略されること', () => {
+    const files = [{ path: 'large.ts', content: 'a'.repeat(2048) }];
+    const options = { ...defaultOptions, format: 'xml' as const, maxFileSizeKB: 1 };
+    const result = engine.generate(files, options);
+    expect(result.content).toContain('[WARNING] File size exceeds 1KB');
+  });
+
+  it('JSON 形式でも巨大ファイルが省略されること', () => {
+    const files = [{ path: 'large.ts', content: 'a'.repeat(2048) }];
+    const options = { ...defaultOptions, format: 'json' as const, maxFileSizeKB: 1 };
+    const result = engine.generate(files, options);
+    const json = JSON.parse(result.content);
+    expect(json.repository[0].content).toContain('[WARNING] File size exceeds 1KB');
+  });
 });

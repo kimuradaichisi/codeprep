@@ -27,7 +27,7 @@ export class OutputCommands {
     if (files.length === 0) return vscode.window.showWarningMessage('No files selected.');
 
     const options = this.getOptions();
-    const prompt = await this.getPrompt();
+    const prompt = await this.getPrompt(paths);
     const result = this.engine.generate(files, options, prompt);
 
     await vscode.env.clipboard.writeText(result.content);
@@ -54,13 +54,19 @@ export class OutputCommands {
       outputMode: config.get('outputMode', 'everything') as any,
       includeMetadata: config.get('includeMetadata', true),
       removeComments: config.get('removeComments', false),
-      includeEmptyLines: config.get('includeEmptyLines', true)
+      includeEmptyLines: config.get('includeEmptyLines', true),
+      maxFileSizeKB: config.get('maxFileSizeKB', 500)
     };
   }
 
-  private async getPrompt() {
+  private async getPrompt(paths: string[]) {
     const name = this.promptUseCase.getSelectedPrompt();
-    return name ? await this.promptUseCase.getPromptContent(name) : undefined;
+    if (!name) return undefined;
+
+    return await this.promptUseCase.getPromptContent(name, {
+      language: vscode.env.language,
+      files: paths
+    });
   }
 
   private async handleOutput(content: string, format: string) {

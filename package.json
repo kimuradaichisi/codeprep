@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -257,6 +257,11 @@
           "type": "integer",
           "default": 100000,
           "description": "Display a warning when the estimated token count exceeds this limit."
+        },
+        "codeprep.maxFileSizeKB": {
+          "type": "integer",
+          "default": 500,
+          "description": "巨大ファイル・ガードの閾値 (KB)。このサイズを超えるファイルは、内容が省略されます。"
         },
         "codeprep.nativeEngine.removeComments": {
           "type": "boolean",
