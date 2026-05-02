@@ -50,3 +50,12 @@ This project is built on strict **DDD (Domain-Driven Design)** and a unique **"G
    - Cyclomatic complexity **under 5**.
 3. **Zero "Any" Policy**: All external inputs are validated with Type Guards.
 4. **Test-Driven**: 100% unit test pass rate with Vitest is mandatory.
+
+## 🆕 What's New
+
+### v0.4.0 (2026-05-02)
+- ⚡ **Dramatic Performance Boost**: Migrated the search engine to VSCode's built-in ripgrep (`vscode.executeTextSearch`), enabling instant searches even in projects with thousands of files.
+- 🔄 **Asynchronous Git Status Caching**: Introduced `GitWatcher` to handle Git status updates in the background, improving UI responsiveness.
+- 🌳 **Faster Tree Rendering**: Optimized the exclusion logic with pre-compiled patterns for smooth browsing in large-scale repositories.
+- 🎨 **UI Enhancements**: Added dedicated icons (`git-commit`) and decoration colors for Git-modified files. Toolbar buttons can now be fully toggled via settings.
+- 🛠️ **Internal Quality**: Reduced redundant activation events and resolved all ESLint warnings.
