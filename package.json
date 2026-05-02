@@ -124,7 +124,7 @@
       {
         "command": "codeprep.gitMenu",
         "title": "%command.gitMenu%",
-        "icon": "$(git-branch)"
+        "icon": "$(source-control)"
       }
     ],
     "menus": {
