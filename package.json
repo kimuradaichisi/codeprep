@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -14,9 +14,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "*"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -32,7 +30,8 @@
       "codeprep-helper": [
         {
           "id": "codeprep.fileTree",
-          "name": "File Explorer"
+          "name": "File Explorer",
+          "icon": "$(library)"
         }
       ]
     },
@@ -130,13 +129,41 @@
     ],
     "menus": {
       "view/title": [
-        { "command": "codeprep.refreshTree", "when": "view == codeprep.fileTree", "group": "navigation@0" },
-        { "command": "codeprep.openSettings", "when": "view == codeprep.fileTree", "group": "navigation@0" },
-        { "command": "codeprep.selectionMenu", "when": "view == codeprep.fileTree", "group": "navigation@1" },
-        { "command": "codeprep.gitMenu", "when": "view == codeprep.fileTree", "group": "navigation@2" },
-        { "command": "codeprep.selectPrompt", "when": "view == codeprep.fileTree", "group": "navigation@3" },
-        { "command": "codeprep.generate", "when": "view == codeprep.fileTree", "group": "navigation@4" },
-        { "command": "codeprep.presetMenu", "when": "view == codeprep.fileTree", "group": "navigation@5" }
+        {
+          "command": "codeprep.refreshTree",
+          "when": "view == codeprep.fileTree && codeprep.showRefreshTree",
+          "group": "navigation@0"
+        },
+        {
+          "command": "codeprep.openSettings",
+          "when": "view == codeprep.fileTree",
+          "group": "navigation@0"
+        },
+        {
+          "command": "codeprep.selectionMenu",
+          "when": "view == codeprep.fileTree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "codeprep.gitMenu",
+          "when": "view == codeprep.fileTree && codeprep.showGitMenu",
+          "group": "navigation@2"
+        },
+        {
+          "command": "codeprep.selectPrompt",
+          "when": "view == codeprep.fileTree && codeprep.showSelectPrompt",
+          "group": "navigation@3"
+        },
+        {
+          "command": "codeprep.generate",
+          "when": "view == codeprep.fileTree && codeprep.showGenerate",
+          "group": "navigation@4"
+        },
+        {
+          "command": "codeprep.presetMenu",
+          "when": "view == codeprep.fileTree",
+          "group": "navigation@5"
+        }
       ],
       "view/item/context": [
         {
@@ -191,13 +218,15 @@
               "codeprep.loadPreset",
               "codeprep.invertSelection",
               "codeprep.exportPresets",
-              "codeprep.importPresets"
+              "codeprep.importPresets",
+              "codeprep.gitMenu"
             ]
           },
           "default": [
             "codeprep.refreshTree",
             "codeprep.selectAll",
             "codeprep.selectGitDiff",
+            "codeprep.gitMenu",
             "codeprep.selectPrompt",
             "codeprep.generate",
             "codeprep.clearAll"

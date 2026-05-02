@@ -3,6 +3,7 @@ import * as path from 'path';
 import { FileNode } from './models/FileNode';
 import { Selection } from '../selection/domain/Selection';
 import { getRelativePath, normalizePath } from '../../utils/path';
+import { GitWatcher } from '../selection/infrastructure/GitWatcher';
 
 export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     private _onDidChangeTreeData: vscode.EventEmitter<FileNode | undefined | void> = new vscode.EventEmitter<FileNode | undefined | void>();
@@ -10,13 +11,34 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     private watcher: vscode.FileSystemWatcher | undefined;
     private workspaceRoot: string | undefined;
     private expandAll: boolean = false;
+    private compiledExcludes: RegExp[] = [];
 
     constructor(
         workspaceRoot: string | undefined,
-        private readonly selection: Selection
+        private readonly selection: Selection,
+        private readonly gitWatcher?: GitWatcher
     ) {
         this.workspaceRoot = workspaceRoot ? normalizePath(workspaceRoot) : undefined;
+        this.loadConfiguration();
         this.updateWatcher();
+    }
+
+    private loadConfiguration(): void {
+        const config = vscode.workspace.getConfiguration('codeprep');
+        const excludes: string[] = config.get('exclude', []);
+        const regexPatterns: string[] = config.get('excludePatterns', []);
+
+        this.compiledExcludes = [
+            ...excludes.map(p => this.convertToRegex(p)),
+            ...regexPatterns.map(p => new RegExp(p))
+        ];
+    }
+
+    private convertToRegex(pattern: string): RegExp {
+        const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+            .replace(/\*/g, '[^/]*')
+            .replace(/\//g, '[\\\\/]');
+        return new RegExp(`(^|[\\\\/])${escaped}([\\\\/]|$)`);
     }
 
     public setRoot(root: string | undefined): void {
@@ -27,18 +49,15 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
 
     public updateWatcher(): void {
         const config = vscode.workspace.getConfiguration('codeprep');
-        const autoRefresh = config.get<boolean>('autoRefreshTree', true);
-
         if (this.watcher) {
             this.watcher.dispose();
             this.watcher = undefined;
         }
 
-        if (autoRefresh && this.workspaceRoot) {
+        if (config.get<boolean>('autoRefreshTree', true) && this.workspaceRoot) {
             this.watcher = vscode.workspace.createFileSystemWatcher(
                 new vscode.RelativePattern(this.workspaceRoot, '**/*')
             );
-
             this.watcher.onDidCreate(() => this.refresh());
             this.watcher.onDidChange(() => this.refresh());
             this.watcher.onDidDelete(() => this.refresh());
@@ -46,6 +65,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     }
 
     refresh(element?: FileNode): void {
+        this.loadConfiguration();
         this._onDidChangeTreeData.fire(element);
     }
 
@@ -55,22 +75,34 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     }
 
     getTreeItem(element: FileNode): vscode.TreeItem {
-        let collapsibleState = vscode.TreeItemCollapsibleState.None;
-        if (element.isDirectory) {
-            collapsibleState = this.expandAll 
-                ? vscode.TreeItemCollapsibleState.Expanded 
-                : vscode.TreeItemCollapsibleState.Collapsed;
-        }
+        const collapsible = element.isDirectory
+            ? (this.expandAll ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed)
+            : vscode.TreeItemCollapsibleState.None;
 
-        const treeItem = new vscode.TreeItem(element.label, collapsibleState);
-        treeItem.resourceUri = element.uri;
-        treeItem.contextValue = element.isDirectory ? 'directory' : 'file';
+        const item = new vscode.TreeItem(element.label, collapsible);
+        item.resourceUri = element.uri;
+        item.contextValue = element.isDirectory ? 'directory' : 'file';
         
         const isSelected = this.selection.has(normalizePath(element.relativePath));
-        treeItem.checkboxState = isSelected ? vscode.TreeItemCheckboxState.Checked : vscode.TreeItemCheckboxState.Unchecked;
-        treeItem.iconPath = element.isDirectory ? new vscode.ThemeIcon('folder') : new vscode.ThemeIcon('file');
+        item.checkboxState = isSelected ? vscode.TreeItemCheckboxState.Checked : vscode.TreeItemCheckboxState.Unchecked;
+        
+        this.applyIcon(item, element);
 
-        return treeItem;
+        return item;
+    }
+
+    private applyIcon(item: vscode.TreeItem, element: FileNode): void {
+        if (element.isDirectory) {
+            item.iconPath = new vscode.ThemeIcon('folder');
+            return;
+        }
+
+        if (this.gitWatcher?.isModified(element.relativePath)) {
+            item.iconPath = new vscode.ThemeIcon('git-commit', new vscode.ThemeColor('gitDecoration.modifiedResourceForeground'));
+            return;
+        }
+
+        item.iconPath = new vscode.ThemeIcon('file');
     }
 
     async getChildren(element?: FileNode): Promise<FileNode[]> {
@@ -78,35 +110,25 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         const folderPath = element ? element.fullPath : this.workspaceRoot;
         try {
             const children = await vscode.workspace.fs.readDirectory(vscode.Uri.file(folderPath));
-            const config = vscode.workspace.getConfiguration('codeprep');
-            const excludePatterns: string[] = config.get('exclude') || [];
-            const preparedPatterns = excludePatterns.map(p => p.replace(/\\/g, '/').split('/').filter(s => s !== '**' && s !== ''));
-            const regexPatterns: string[] = config.get('excludePatterns') || [];
-            const compiledRegexes = regexPatterns.map(p => new RegExp(p));
-
             const nodes: FileNode[] = [];
+            
             for (const [name, type] of children) {
                 const fullPath = path.join(folderPath, name);
-                const relativePath = normalizePath(getRelativePath(this.workspaceRoot, fullPath));
-                if (this.isExcludedOptimized(relativePath, preparedPatterns)) continue;
-                if (this.isExcludedByRegex(relativePath, compiledRegexes)) continue;
+                const relPath = normalizePath(getRelativePath(this.workspaceRoot, fullPath));
+                if (this.isExcluded(relPath)) continue;
 
-                nodes.push(new FileNode(name, fullPath, relativePath, type === vscode.FileType.Directory));
+                nodes.push(new FileNode(name, fullPath, relPath, type === vscode.FileType.Directory));
             }
             return nodes.sort((a, b) => a.isDirectory === b.isDirectory ? a.label.localeCompare(b.label) : (a.isDirectory ? -1 : 1));
         } catch { return []; }
     }
 
-    private isExcludedOptimized(normalizedPath: string, preparedPatterns: string[][]): boolean {
-        const pathParts = normalizedPath.split('/');
-        return preparedPatterns.some(segments => segments.some(seg => pathParts.includes(seg)));
-    }
-
-    private isExcludedByRegex(normalizedPath: string, regexes: RegExp[]): boolean {
-        return regexes.some(regex => regex.test(normalizedPath));
+    private isExcluded(relPath: string): boolean {
+        return this.compiledExcludes.some(re => re.test(relPath));
     }
 
     public dispose(): void {
         this.watcher?.dispose();
     }
 }
+

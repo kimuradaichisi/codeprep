@@ -4,6 +4,7 @@ import { SelectionUseCase } from './features/selection/application/SelectionUseC
 import { VSCodeSelectionRepository } from './features/selection/infrastructure/VSCodeSelectionRepository';
 import { VSCodeFileValidator } from './features/selection/infrastructure/VSCodeFileValidator';
 import { VSCodeWorkspaceRepository } from './features/selection/infrastructure/VSCodeWorkspaceRepository';
+import { GitWatcher } from './features/selection/infrastructure/GitWatcher';
 import { OutputEngine } from './features/engine/domain/OutputEngine';
 import { TokenUseCase } from './features/token/application/TokenUseCase';
 import { VSCodeStatusBarPresenter } from './features/token/infrastructure/VSCodeStatusBarPresenter';
@@ -18,26 +19,29 @@ export async function activate(context: vscode.ExtensionContext) {
   try {
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
+    const gitWatcher = root ? new GitWatcher(root) : undefined;
     const selection = new Selection();
     const workspaceRepo = new VSCodeWorkspaceRepository(root || '');
     const selectionRepo = new VSCodeSelectionRepository(context.workspaceState);
     const fileValidator = new VSCodeFileValidator(root || '');
-    const selectionUseCase = new SelectionUseCase(selection, selectionRepo, fileValidator);
+    const selectionUseCase = new SelectionUseCase(selection, selectionRepo, fileValidator, gitWatcher);
     const promptUseCase = new PromptUseCase(new VSCodePromptRepository());
     const tokenPresenter = new VSCodeStatusBarPresenter();
     const tokenUseCase = new TokenUseCase(tokenPresenter);
     const engine = new OutputEngine();
 
-    const treeProvider = new FileTreeProvider(root, selection);
+    const treeProvider = new FileTreeProvider(root, selection, gitWatcher);
     const treeView = vscode.window.createTreeView('codeprep.fileTree', {
       treeDataProvider: treeProvider,
       showCollapseAll: true,
       manageCheckboxStateManually: true
     });
 
-    const uiController = new UIController(selection, tokenUseCase, treeProvider, root);
+    const uiController = new UIController(selection, tokenUseCase, treeProvider, root, gitWatcher);
     const commands = registerAllCommands(context, selectionUseCase, promptUseCase, uiController, engine, workspaceRepo, root);
 
+    if (gitWatcher) context.subscriptions.push(gitWatcher);
+    
     context.subscriptions.push(
       treeView,
       tokenPresenter,
@@ -45,6 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.workspace.registerTextDocumentContentProvider(PreviewProvider.scheme, new PreviewProvider()),
       vscode.workspace.onDidChangeConfiguration(e => {
         if (e.affectsConfiguration('codeprep.visibleButtons')) uiController.updateButtonContexts();
+        if (e.affectsConfiguration('codeprep.exclude')) treeProvider.refresh();
       }),
       treeView.onDidChangeCheckboxState(async (e) => {
         for (const [node, state] of e.items) {
@@ -67,4 +72,4 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 }
 
-export function deactivate() {}
+export function deactivate() {}
