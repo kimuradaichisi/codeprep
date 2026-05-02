@@ -50,22 +50,22 @@
       },
       {
         "command": "codeprep.presetMenu",
-        "title": "Preset Actions...",
+        "title": "%command.presetMenu%",
         "icon": "$(library)"
       },
       {
         "command": "codeprep.openSettings",
-        "title": "Open Settings",
+        "title": "%command.openSettings%",
         "icon": "$(settings-gear)"
       },
       {
         "command": "codeprep.selectAll",
-        "title": "Select All",
+        "title": "%command.selectAll%",
         "icon": "$(check-all)"
       },
       {
         "command": "codeprep.clearAll",
-        "title": "Clear All",
+        "title": "%command.clearAll%",
         "icon": "$(clear-all)"
       },
       {
@@ -74,7 +74,7 @@
       },
       {
         "command": "codeprep.generate",
-        "title": "Generate & Copy",
+        "title": "%command.generate%",
         "icon": "$(run)"
       },
       {
@@ -84,7 +84,7 @@
       },
       {
         "command": "codeprep.selectPrompt",
-        "title": "Select Prompt",
+        "title": "%command.selectPrompt%",
         "icon": "$(comment-discussion)"
       },
       {
@@ -118,12 +118,12 @@
       },
       {
         "command": "codeprep.refreshTree",
-        "title": "Refresh Tree",
+        "title": "%command.refreshTree%",
         "icon": "$(refresh)"
       },
       {
         "command": "codeprep.gitMenu",
-        "title": "Git Actions",
+        "title": "%command.gitMenu%",
         "icon": "$(git-branch)"
       }
     ],

@@ -1,0 +1,10 @@
+{
+  "command.refreshTree": "Refresh Tree",
+  "command.openSettings": "Open Settings",
+  "command.selectAll": "Select All",
+  "command.clearAll": "Clear All",
+  "command.gitMenu": "Git Actions...",
+  "command.selectPrompt": "Select Prompt...",
+  "command.generate": "Generate & Copy",
+  "command.presetMenu": "Preset Actions..."
+}

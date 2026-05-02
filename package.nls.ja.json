@@ -1,0 +1,10 @@
+{
+  "command.refreshTree": "ツリーを更新",
+  "command.openSettings": "設定を開く",
+  "command.selectAll": "すべて選択",
+  "command.clearAll": "選択をすべて解除",
+  "command.gitMenu": "Git アクション...",
+  "command.selectPrompt": "プロンプトを選択...",
+  "command.generate": "生成してコピー",
+  "command.presetMenu": "プリセット操作..."
+}
