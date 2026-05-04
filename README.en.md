@@ -23,9 +23,9 @@ Beyond intuitive file selection, it features **Autonomous Patch & Heal** for saf
 4. Run `Generate & Copy`. The content is copied to the clipboard and opened in a new editor.
 
 **Patch Application Flow (AI Response Integration):**
-1. Copy the code block from the AI's response (including the file path and `// ... existing code ...`).
+1. Copy one or more code blocks from the AI's response (including the file path and `// ... existing code ...`).
 2. Click the **"+" icon (Preview Patch from Clipboard)** in the CodePrep sidebar.
-3. Review the changes in the Diff editor and click **"Apply"** in the top right.
+3. Diff editors for all detected files will open in separate tabs. Review the changes and click **"Apply"** in the top right of each tab.
 
 ## ⚙️ Extension Settings
 
@@ -41,14 +41,25 @@ Beyond intuitive file selection, it features **Autonomous Patch & Heal** for saf
 | `codeprep.openAfterGenerate` | `true` | Open the generated content in a new editor tab. |
 | `codeprep.visibleButtons` | `[...]` | Customize visible buttons in the view title bar. |
 
+## ⌨️ Commands
+
+- `CodePrep: Preview Patch from Clipboard` - Parse clipboard and preview patches.
+- `CodePrep: Apply Patch` - Apply pending changes to files.
+- `CodePrep: Open Settings` - Open extension settings.
+- `CodePrep: Select All` / `Clear All` - Select or deselect all files.
+- `CodePrep: Select Prompt` - Choose a custom prompt to insert.
+- `CodePrep: Generate & Copy` - Generate pack, copy to clipboard, and open in editor.
+
+---
+
 ## 🆕 What's New
 
 ### v0.6.0 (2026-05-04)
 - 🩹 **Autonomous Patch & Heal**:
-    - Intelligently merge AI-generated code with omissions like `# ... existing code ...` into your local files.
-    - **Multiple Omissions**: Accurately restores code even with multiple omissions in a single file using anchor points.
+    - **Batch Patching**: Automatically parses multiple code blocks from the clipboard and opens all target files in separate tabs.
+    - **Intelligent Merge**: Restores code omissions like `# ... existing code ...` using fuzzy matching and anchor points.
+    - **Recursive Directory Creation**: Automatically creates new files and their parent directories (mkdir -p) as suggested by the AI.
     - **VSCode Diff Preview**: Visually verify changes in a split editor before applying them.
-    - **Automatic File Creation**: Automatically creates new files and parent directories suggested by the AI.
 - 🤖 **Prompt Auto-Injection**:
     - Automatically append "formatting instructions for patching" to every prompt, ensuring AI responses are always tool-compatible.
 - 🌍 **Full i18n Refactoring**:
