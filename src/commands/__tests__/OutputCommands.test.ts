@@ -50,7 +50,11 @@ describe('OutputCommands (Tab Reuse Integration)', () => {
     mockSelectionUseCase = { currentSelection: { getPaths: vi.fn() } };
     mockPromptUseCase = { getSelectedPrompt: vi.fn(), getPromptContent: vi.fn() };
     mockEngine = { generate: vi.fn() };
-    mockFileSystem = { readFile: vi.fn().mockResolvedValue(ok('c')) };
+    mockFileSystem = { 
+      readFile: vi.fn().mockResolvedValue(ok('c')),
+      getFileSize: vi.fn().mockResolvedValue(ok(100))
+    };
+
     
     outputCommands = new OutputCommands({
         selectionUseCase: mockSelectionUseCase,
@@ -100,5 +104,25 @@ describe('OutputCommands (Tab Reuse Integration)', () => {
     expect(vscode.workspace.openTextDocument).toHaveBeenCalledWith(
       expect.objectContaining({ content: 'res' })
     );
+  });
+
+  it('巨大ファイル・ガード: 閾値を超えたファイルの内容が省略されること', async () => {
+    mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['large.ts']);
+    mockFileSystem.getFileSize = vi.fn().mockResolvedValue(ok(1024 * 1024)); // 1MB
+    mockFileSystem.readFile = vi.fn(); // 呼ばれないはず
+
+    (vscode.workspace.getConfiguration as any).mockReturnValue({
+      get: vi.fn((key, def) => (key === 'maxFileSizeKB' ? 500 : def))
+    });
+
+    mockEngine.generate.mockReturnValue({ content: '[File content omitted: Size exceeds 500KB limit]', format: 'markdown' });
+
+    // 内部でのファイル読み込みを待機するために execute される処理を追跡
+
+    await (outputCommands as any).runGeneration(['large.ts']);
+
+    const callArgs = mockEngine.generate.mock.calls[0][0];
+    expect(callArgs[0].content).toContain('omitted');
+    expect(mockFileSystem.readFile).not.toHaveBeenCalled();
   });
 });

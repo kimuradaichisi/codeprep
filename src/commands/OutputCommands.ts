@@ -36,13 +36,23 @@ export class OutputCommands {
   }
 
   private async readFiles(paths: string[]) {
+    const limitKB = vscode.workspace.getConfiguration('codeprep').get('maxFileSizeKB', 500);
     const results = await Promise.all(paths.map(async p => {
-      const fullPath = path.join(this.deps.root || '', p);
-      const contentResult = await this.deps.fileSystem.readFile(fullPath);
-      return contentResult.isSuccess ? { path: p, content: contentResult.value } : null;
+      return await this.readFileWithGuard(p, limitKB);
     }));
     return results.filter((f): f is { path: string, content: string } => f !== null);
   }
+
+  private async readFileWithGuard(relPath: string, limitKB: number) {
+    const fullPath = path.join(this.deps.root || '', relPath);
+    const sizeResult = await this.deps.fileSystem.getFileSize(fullPath);
+    if (sizeResult.isSuccess && sizeResult.value > limitKB * 1024) {
+      return { path: relPath, content: `[File content omitted: Size exceeds ${limitKB}KB limit]` };
+    }
+    const content = await this.deps.fileSystem.readFile(fullPath);
+    return content.isSuccess ? { path: relPath, content: content.value } : null;
+  }
+
 
   private getOptions() {
     const config = vscode.workspace.getConfiguration('codeprep');
