@@ -3,19 +3,22 @@ import * as path from 'path';
 import { SelectionUseCase } from '../features/selection/application/SelectionUseCase';
 import { OutputEngine } from '../features/engine/domain/OutputEngine';
 import { PromptUseCase } from '../features/prompt/application/PromptUseCase';
+import { IFileSystem } from '../shared/domain/IFileSystem';
+
+export interface OutputCommandsDeps {
+  selectionUseCase: SelectionUseCase;
+  promptUseCase: PromptUseCase;
+  engine: OutputEngine;
+  fileSystem: IFileSystem;
+  root: string | undefined;
+}
 
 export class OutputCommands {
-  constructor(
-    private selectionUseCase: SelectionUseCase,
-    private promptUseCase: PromptUseCase,
-    private engine: OutputEngine,
-    private root: string | undefined
-  ) {}
+  constructor(private readonly deps: OutputCommandsDeps) {}
 
   async generate() {
-    const paths = this.selectionUseCase.currentSelection.getPaths();
+    const paths = this.deps.selectionUseCase.currentSelection.getPaths();
     if (paths.length === 0) return;
-
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
       title: "CodePrep: Generating content...",
@@ -25,24 +28,18 @@ export class OutputCommands {
   private async runGeneration(paths: string[]) {
     const files = await this.readFiles(paths);
     if (files.length === 0) return vscode.window.showWarningMessage('No files selected.');
-
     const options = this.getOptions();
     const prompt = await this.getPrompt(paths);
-    const result = this.engine.generate(files, options, prompt);
-
+    const result = this.deps.engine.generate(files, options, prompt);
     await vscode.env.clipboard.writeText(result.content);
     await this.handleOutput(result.content, options.format);
   }
 
   private async readFiles(paths: string[]) {
     const results = await Promise.all(paths.map(async p => {
-      try {
-        const uri = vscode.Uri.file(path.join(this.root || '', p));
-        const stat = await vscode.workspace.fs.stat(uri);
-        if (stat.type & vscode.FileType.Directory) return null;
-        const raw = await vscode.workspace.fs.readFile(uri);
-        return { path: p, content: Buffer.from(raw).toString('utf8') };
-      } catch { return null; }
+      const fullPath = path.join(this.deps.root || '', p);
+      const contentResult = await this.deps.fileSystem.readFile(fullPath);
+      return contentResult.isSuccess ? { path: p, content: contentResult.value } : null;
     }));
     return results.filter((f): f is { path: string, content: string } => f !== null);
   }
@@ -60,10 +57,9 @@ export class OutputCommands {
   }
 
   private async getPrompt(paths: string[]) {
-    const name = this.promptUseCase.getSelectedPrompt();
+    const name = this.deps.promptUseCase.getSelectedPrompt();
     if (!name) return undefined;
-
-    return await this.promptUseCase.getPromptContent(name, {
+    return await this.deps.promptUseCase.getPromptContent(name, {
       language: vscode.env.language,
       files: paths
     });
@@ -72,24 +68,30 @@ export class OutputCommands {
   private async handleOutput(content: string, format: string) {
     const config = vscode.workspace.getConfiguration('codeprep');
     vscode.window.showInformationMessage('CodePrep: Copied to clipboard.');
-
     if (!config.get('openAfterGenerate', true)) return;
+    await this.openInEditor(content, format);
+  }
 
-    const ext = format === 'json' ? '.json' : (format === 'xml' ? '.xml' : '.md');
-    const lang = format === 'json' ? 'json' : (format === 'xml' ? 'xml' : 'markdown');
-    const uri = vscode.Uri.parse(`untitled:CodePrep Output${ext}`);
-
+  private async openInEditor(content: string, format: string) {
+    const info = this.getFormatInfo(format);
+    const uri = vscode.Uri.parse(`untitled:CodePrep Output${info.ext}`);
     try {
       const doc = await vscode.workspace.openTextDocument(uri);
       const editor = await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.One });
-      await editor.edit(editBuilder => {
-        const fullRange = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
-        editBuilder.replace(fullRange, content);
+      await editor.edit(eb => {
+        eb.replace(new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length)), content);
       });
-      await vscode.languages.setTextDocumentLanguage(doc, lang);
+      await vscode.languages.setTextDocumentLanguage(doc, info.lang);
     } catch {
-      const doc = await vscode.workspace.openTextDocument({ content, language: lang });
+      const doc = await vscode.workspace.openTextDocument({ content, language: info.lang });
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.One });
     }
   }
+
+  private getFormatInfo(format: string) {
+    if (format === 'json') return { ext: '.json', lang: 'json' };
+    if (format === 'xml') return { ext: '.xml', lang: 'xml' };
+    return { ext: '.md', lang: 'markdown' };
+  }
 }
+

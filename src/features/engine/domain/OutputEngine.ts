@@ -1,128 +1,28 @@
 import { OutputOptions } from './OutputOptions';
 import { OutputResult } from './OutputResult';
-import { generateTree } from '../../../utils/treeGenerator';
+import { IFormatter } from './formatters/IFormatter';
+import { MarkdownFormatter } from './formatters/MarkdownFormatter';
+import { XmlFormatter } from './formatters/XmlFormatter';
+import { JsonFormatter } from './formatters/JsonFormatter';
 
 export class OutputEngine {
-  public generate(
-    files: { path: string; content: string }[],
-    options: OutputOptions,
-    prompt?: string
-  ): OutputResult {
-    let content = '';
-    switch (options.format) {
-      case 'xml':
-        content = this.generateXML(files, options, prompt);
-        break;
-      case 'json':
-        content = this.generateJSON(files, options, prompt);
-        break;
-      default:
-        content = this.generateMarkdown(files, options, prompt);
-        break;
-    }
-    return new OutputResult(content, options.format);
-  }
+    private readonly formatters: Map<string, IFormatter>;
 
-  private generateMarkdown(
-    files: { path: string; content: string }[],
-    options: OutputOptions,
-    prompt?: string
-  ): string {
-    const allContent = files.map(f => f.content).join('\n');
-    const delimiter = this.getSafeDelimiter(allContent);
-    let output = prompt ? `${prompt}\n\n` : '';
-
-    if (options.includeMetadata) {
-      output += `## Directory Structure\n${delimiter}\n`;
-      const paths = options.outputMode === 'structureOnly' 
-        ? this.getDirectoryPaths(files) 
-        : files.map(f => f.path);
-      output += generateTree(paths) + `${delimiter}\n\n`;
+    constructor() {
+        this.formatters = new Map<string, IFormatter>([
+            ['markdown', new MarkdownFormatter()],
+            ['xml', new XmlFormatter()],
+            ['json', new JsonFormatter()]
+        ]);
     }
 
-    if (options.outputMode === 'everything') {
-      output += this.generateMarkdownContent(files, options, delimiter);
+    public generate(
+        files: { path: string; content: string }[],
+        options: OutputOptions,
+        prompt?: string
+    ): OutputResult {
+        const formatter = this.formatters.get(options.format) || this.formatters.get('markdown')!;
+        const content = formatter.format(files, options, prompt);
+        return new OutputResult(content, options.format);
     }
-
-    return output.trimEnd() + '\n';
-  }
-
-  private getDirectoryPaths(files: { path: string }[]): string[] {
-    const dirs = new Set<string>();
-    files.forEach(f => {
-      const parts = f.path.split(/[\\/]/);
-      if (parts.length > 1) dirs.add(parts.slice(0, -1).join('/'));
-    });
-    return Array.from(dirs);
-  }
-
-  private generateMarkdownContent(
-    files: { path: string; content: string }[],
-    options: OutputOptions,
-    delimiter: string
-  ): string {
-    return files.map(file => {
-      const content = this.getProcessedContent(file, options);
-      return `## File: ${file.path}\n${delimiter}\n${content}\n${delimiter}\n`;
-    }).join('\n');
-  }
-
-  private getProcessedContent(file: { content: string }, options: OutputOptions): string {
-    const sizeKB = file.content.length / 1024;
-    if (options.maxFileSizeKB && sizeKB > options.maxFileSizeKB) {
-      return `[WARNING] File size exceeds ${options.maxFileSizeKB}KB. Content omitted for performance.`;
-    }
-
-    let content = file.content;
-    if (options.removeComments) content = this.stripComments(content);
-    if (!options.includeEmptyLines) content = this.stripEmptyLines(content);
-    return content;
-  }
-
-  private stripComments(content: string): string {
-    return content
-      .replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '$1')
-      .replace(/^\s*#.*$/gm, '');
-  }
-
-  private stripEmptyLines(content: string): string {
-    return content.split(/\r?\n/).filter(line => line.trim() !== '').join('\n');
-  }
-
-  private getSafeDelimiter(content: string): string {
-    const matches = content.match(/`+/g);
-    if (!matches) return '```';
-    const maxTicks = Math.max(...matches.map(m => m.length));
-    return '`'.repeat(Math.max(3, maxTicks + 1));
-  }
-
-  private generateXML(files: { path: string; content: string }[], options: OutputOptions, prompt?: string): string {
-    let output = '<repository>\n';
-    if (prompt) {
-      output += `  <instruction>\n${this.escapeXml(prompt)}\n  </instruction>\n`;
-    }
-    output += `  <structure>\n${generateTree(files.map(f => f.path))}\n  </structure>\n`;
-    output += files.map(f => {
-      const content = this.getProcessedContent(f, options);
-      return `  <file path="${f.path}">\n${this.escapeXml(content)}\n  </file>`;
-    }).join('\n');
-    return output + '\n</repository>\n';
-  }
-
-  private generateJSON(files: { path: string; content: string }[], options: OutputOptions, prompt?: string): string {
-    return JSON.stringify({
-      prompt: prompt || '',
-      structure: generateTree(files.map(f => f.path)),
-      repository: files.map(f => ({
-        path: f.path,
-        content: this.getProcessedContent(f, options)
-      }))
-    }, null, 2) + '\n';
-  }
-
-  private escapeXml(unsafe: string): string {
-    return unsafe.replace(/[<>&'"]/g, c => ({
-      '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;'
-    }[c] as string));
-  }
 }

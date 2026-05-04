@@ -9,56 +9,78 @@ import { VSCodeSearchRepository } from '../features/selection/infrastructure/VSC
 import { GitCommands } from './GitCommands';
 import { OutputCommands } from './OutputCommands';
 import { SelectionCommands } from './SelectionCommands';
+import { IFileSystem } from '../shared/domain/IFileSystem';
+import { IGitClient } from '../features/git/domain/IGitClient';
 
-export function registerAllCommands(
-  context: vscode.ExtensionContext,
-  selectionUseCase: SelectionUseCase,
-  promptUseCase: PromptUseCase,
-  uiController: UIController,
-  engine: OutputEngine,
-  workspaceRepo: VSCodeWorkspaceRepository,
-  root: string | undefined
-): vscode.Disposable[] {
-  const searchRepo = new VSCodeSearchRepository(root || '');
-  const gitCmd = new GitCommands(selectionUseCase, uiController, root);
-  const outCmd = new OutputCommands(selectionUseCase, promptUseCase, engine, root);
-  const selCmd = new SelectionCommands(selectionUseCase, uiController, workspaceRepo, searchRepo, root);
+export interface RegistryDeps {
+  context: vscode.ExtensionContext;
+  selectionUseCase: SelectionUseCase;
+  promptUseCase: PromptUseCase;
+  uiController: UIController;
+  engine: OutputEngine;
+  workspaceRepo: VSCodeWorkspaceRepository;
+  fileSystem: IFileSystem;
+  gitClient: IGitClient;
+  root: string | undefined;
+}
+
+export function registerAllCommands(d: RegistryDeps): vscode.Disposable[] {
+  const searchRepo = new VSCodeSearchRepository(d.root || '');
+  const gitCmd = new GitCommands(d.selectionUseCase, d.uiController, d.gitClient, d.root);
+  const outCmd = new OutputCommands({ selectionUseCase: d.selectionUseCase, promptUseCase: d.promptUseCase, engine: d.engine, fileSystem: d.fileSystem, root: d.root });
+  const selCmd = new SelectionCommands({ useCase: d.selectionUseCase, ui: d.uiController, repo: d.workspaceRepo, searchRepo, gitClient: d.gitClient, root: d.root });
 
   return [
-    // 1. 統合メニューコマンド
-    vscode.commands.registerCommand('codeprep.selectionMenu', () => selCmd.showSelectionMenu()),
-    vscode.commands.registerCommand('codeprep.presetMenu', () => selCmd.showPresetMenu()),
-    vscode.commands.registerCommand('codeprep.gitMenu', () => gitCmd.showMenu()),
-
-    // 2. 基幹アクション
-    vscode.commands.registerCommand('codeprep.refreshTree', () => uiController.refresh()),
-    vscode.commands.registerCommand('codeprep.generate', () => outCmd.generate()),
-    vscode.commands.registerCommand('codeprep.openSettings', () => 
-      vscode.commands.executeCommand('workbench.action.openSettings', '@ext:codeprep')),
-
-    // 3. 【復活】プロンプト選択
-    vscode.commands.registerCommand('codeprep.selectPrompt', async () => {
-      const prompts = await promptUseCase.getAvailablePrompts();
-      const items = prompts.names.map(name => ({ label: name, description: prompts.findByName(name)?.summary }));
-      const selected = await vscode.window.showQuickPick(items, { placeHolder: '挿入するプロンプトを選択' });
-      if (selected) promptUseCase.selectPrompt(selected.label);
-    }),
-
-    // 4. 【復活】エクスプローラーからの右クリック追加
-    vscode.commands.registerCommand('codeprep.addToSelection', async (uri: vscode.Uri) => {
-      if (uri && root) {
-        const relPath = path.relative(root, uri.fsPath).replace(/\\/g, '/');
-        selectionUseCase.currentSelection.set(relPath, true);
-        await uiController.refresh();
-      }
-    }),
-
-    // 5. 個別コマンド (パレット/ショートカット用)
-    vscode.commands.registerCommand('codeprep.selectAll', () => selCmd.selectAll()),
-    vscode.commands.registerCommand('codeprep.clearAll', () => selCmd.clearAll()),
-    vscode.commands.registerCommand('codeprep.invertSelection', () => selCmd.invert()),
-    vscode.commands.registerCommand('codeprep.savePreset', () => selCmd.savePreset()),
-    vscode.commands.registerCommand('codeprep.loadPreset', () => selCmd.loadPreset()),
-    vscode.commands.registerCommand('codeprep.selectByGrep', () => selCmd.selectByGrep())
+    ...registerMenuCommands(selCmd, gitCmd),
+    ...registerActionCommands(d.uiController, outCmd),
+    ...registerPromptCommands(d.promptUseCase, d.selectionUseCase, d.uiController, d.root),
+    ...registerSelectionUtilityCommands(selCmd)
   ];
 }
+
+
+function registerMenuCommands(selCmd: SelectionCommands, gitCmd: GitCommands): vscode.Disposable[] {
+  return [
+    vscode.commands.registerCommand('codeprep.selectionMenu', () => selCmd.showSelectionMenu()),
+    vscode.commands.registerCommand('codeprep.presetMenu', () => selCmd.showPresetMenu()),
+    vscode.commands.registerCommand('codeprep.gitMenu', () => gitCmd.showMenu())
+  ];
+}
+
+function registerActionCommands(ui: UIController, out: OutputCommands): vscode.Disposable[] {
+  return [
+    vscode.commands.registerCommand('codeprep.refreshTree', () => ui.refresh()),
+    vscode.commands.registerCommand('codeprep.generate', () => out.generate()),
+    vscode.commands.registerCommand('codeprep.openSettings', () => 
+      vscode.commands.executeCommand('workbench.action.openSettings', '@ext:codeprep'))
+  ];
+}
+
+function registerPromptCommands(prompt: PromptUseCase, selection: SelectionUseCase, ui: UIController, root: string | undefined): vscode.Disposable[] {
+  return [
+    vscode.commands.registerCommand('codeprep.selectPrompt', async () => {
+      const p = await prompt.getAvailablePrompts();
+      const items = p.names.map(n => ({ label: n, description: p.findByName(n)?.summary }));
+      const s = await vscode.window.showQuickPick(items, { placeHolder: '挿入するプロンプトを選択' });
+      if (s) prompt.selectPrompt(s.label);
+    }),
+    vscode.commands.registerCommand('codeprep.addToSelection', async (uri: vscode.Uri) => {
+      if (uri && root) {
+        selection.currentSelection.set(path.relative(root, uri.fsPath).replace(/\\/g, '/'), true);
+        await ui.refresh();
+      }
+    })
+  ];
+}
+
+function registerSelectionUtilityCommands(sel: SelectionCommands): vscode.Disposable[] {
+  return [
+    vscode.commands.registerCommand('codeprep.selectAll', () => sel.selectAll()),
+    vscode.commands.registerCommand('codeprep.clearAll', () => sel.clearAll()),
+    vscode.commands.registerCommand('codeprep.invertSelection', () => sel.invert()),
+    vscode.commands.registerCommand('codeprep.savePreset', () => sel.savePreset()),
+    vscode.commands.registerCommand('codeprep.loadPreset', () => sel.loadPreset()),
+    vscode.commands.registerCommand('codeprep.selectByGrep', () => sel.selectByGrep())
+  ];
+}
+

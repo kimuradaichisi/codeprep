@@ -4,95 +4,82 @@ import { Selection } from '../../selection/domain/Selection';
 import { TokenUseCase } from '../../token/application/TokenUseCase';
 import { FileTreeProvider } from '../FileTreeProvider';
 import { GitWatcher } from '../../selection/infrastructure/GitWatcher';
+import { IFileSystem } from '../../../shared/domain/IFileSystem';
+
+export interface UIControllerDeps {
+  selection: Selection;
+  tokenUseCase: TokenUseCase;
+  treeProvider: FileTreeProvider;
+  fileSystem: IFileSystem;
+  root: string | undefined;
+  gitWatcher?: GitWatcher;
+}
 
 export class UIController {
   private debounceTimer: NodeJS.Timeout | undefined;
   private currentRequestSymbol: symbol | undefined;
 
-  constructor(
-    private readonly selection: Selection,
-    private readonly tokenUseCase: TokenUseCase,
-    private readonly treeProvider: FileTreeProvider,
-    private readonly root: string | undefined,
-    private readonly gitWatcher?: GitWatcher
-  ) {}
+  constructor(private readonly deps: UIControllerDeps) {}
 
-  /**
-   * UIをリフレッシュする。
-   * ツリーの見た目は即座に更新し、重い統計計算はデバウンスして非同期に実行する。
-   */
   public async refresh(): Promise<void> {
-    // 0. Git 状態をバックグラウンドで更新開始
-    this.gitWatcher?.updateCache();
-
-    // 1. ツリーとチェックボックスの見た目は即座に更新
-    this.treeProvider.refresh();
-
-    const selectedPaths = this.selection.getPaths();
-    
-    // 2. 空状態のコンテキスト更新も即座に行う
+    this.deps.gitWatcher?.updateCache();
+    this.deps.treeProvider.refresh();
+    const selectedPaths = this.deps.selection.getPaths();
     await vscode.commands.executeCommand('setContext', 'codeprep.selectionEmpty', selectedPaths.length === 0);
-
-    // 3. 重い統計計算をデバウンス
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-    }
-
-    this.debounceTimer = setTimeout(() => {
-      this.startTokenUpdate(selectedPaths);
-    }, 300);
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => this.startTokenUpdate(selectedPaths), 800);
   }
 
-  /**
-   * トークン統計の更新を開始する。
-   */
   private async startTokenUpdate(paths: string[]): Promise<void> {
     const requestSymbol = Symbol('TokenUpdate');
     this.currentRequestSymbol = requestSymbol;
-
-    if (!this.root || paths.length === 0) {
-      this.tokenUseCase.update([], 0);
+    if (!this.deps.root || paths.length === 0) {
+      this.deps.tokenUseCase.update([], 0);
       return;
     }
+    this.deps.tokenUseCase.resetBatch();
+    await this.processFilesInChunks(paths.slice(0, 10000), requestSymbol);
+    this.finalizeBatchUpdate(requestSymbol);
+  }
 
-    const targets = paths.slice(0, 10000);
-    const fileInfos = await this.processFilesInChunks(targets, requestSymbol);
+  private finalizeBatchUpdate(symbol: symbol) {
+    if (symbol !== this.currentRequestSymbol) return;
+    const limit = vscode.workspace.getConfiguration('codeprep').get('tokenLimit', 100000);
+    this.deps.tokenUseCase.commitBatch(limit);
+  }
 
-    if (requestSymbol === this.currentRequestSymbol) {
-      const config = vscode.workspace.getConfiguration('codeprep');
-      this.tokenUseCase.update(fileInfos, config.get('tokenLimit', 100000));
+  private async processFilesInChunks(paths: string[], requestSymbol: symbol) {
+    for (let i = 0; i < paths.length; i += 20) {
+      if (requestSymbol !== this.currentRequestSymbol) break;
+      const chunk = paths.slice(i, i + 20);
+      const results = await this.processChunk(chunk);
+      results.forEach(r => this.deps.tokenUseCase.addFileToBatch(r.path, r.size));
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
   }
 
-  /**
-   * 100ファイルごとにイベントループを解放しながらstatを取得する。
-   */
-  private async processFilesInChunks(paths: string[], requestSymbol: symbol) {
-    const results: { path: string, size: number }[] = [];
-    const CHUNK_SIZE = 100;
 
-    for (let i = 0; i < paths.length; i += CHUNK_SIZE) {
-      if (requestSymbol !== this.currentRequestSymbol) break;
+  private async processChunk(chunk: string[]) {
+    const results = await Promise.all(chunk.map(async p => {
+      const fullPath = path.join(this.deps.root!, p);
+      const sizeResult = await this.deps.fileSystem.getFileSize(fullPath);
+      return sizeResult.isSuccess ? { path: p, size: sizeResult.value } : null;
+    }));
 
-      const chunk = paths.slice(i, i + CHUNK_SIZE);
-      const chunkResults = await Promise.all(chunk.map(async p => {
-        try {
-          const uri = vscode.Uri.file(path.join(this.root!, p));
-          const stat = await vscode.workspace.fs.stat(uri);
-          return (stat.type & vscode.FileType.Directory) ? null : { path: p, size: stat.size };
-        } catch { return null; }
-      }));
-
-      results.push(...chunkResults.filter((f): f is { path: string, size: number } => f !== null));
-      await new Promise(resolve => setTimeout(resolve, 0));
-    }
-    return results;
+    return results.filter((f): f is { path: string, size: number } => f !== null);
   }
 
   public async updateButtonContexts(): Promise<void> {
     const config = vscode.workspace.getConfiguration('codeprep');
     const visibleButtons = config.get<string[]>('visibleButtons', []);
-    const buttonMap: Record<string, string> = {
+    const buttonMap = this.getButtonMap();
+    for (const [cmd, ctx] of Object.entries(buttonMap)) {
+      await vscode.commands.executeCommand('setContext', ctx, visibleButtons.includes(cmd));
+    }
+  }
+
+  private getButtonMap(): Record<string, string> {
+    return {
       'codeprep.refreshTree': 'codeprep.showRefreshTree',
       'codeprep.selectAll': 'codeprep.showSelectAll',
       'codeprep.clearAll': 'codeprep.showClearAll',
@@ -104,9 +91,7 @@ export class UIController {
       'codeprep.loadPreset': 'codeprep.showLoadPreset',
       'codeprep.invertSelection': 'codeprep.showInvertSelection'
     };
-
-    for (const [cmd, ctx] of Object.entries(buttonMap)) {
-      await vscode.commands.executeCommand('setContext', ctx, visibleButtons.includes(cmd));
-    }
   }
-}
+}
+
+

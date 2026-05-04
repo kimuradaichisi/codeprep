@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import { SelectionUseCase } from '../features/selection/application/SelectionUseCase';
 import { UIController } from '../features/ui/application/UIController';
-import { GitUtils } from '../utils/git';
+import { IGitClient } from '../features/git/domain/IGitClient';
 
 export class GitCommands {
   constructor(
     private useCase: SelectionUseCase,
     private ui: UIController,
+    private gitClient: IGitClient,
     private root: string | undefined
   ) {}
 
@@ -27,36 +28,40 @@ export class GitCommands {
       title: `CodePrep: ${label}`
     }, async () => {
       if (id === 'commit') return this.copyCommitPrompt();
-      await this.useCase.selectModifiedFiles(GitUtils, this.root!, id === 'tests');
+      await this.useCase.selectModifiedFiles(this.gitClient, this.root!, id === 'tests');
       await this.ui.refresh();
     });
   }
 
   private async copyCommitPrompt() {
-    const diff = await GitUtils.getDiff(this.root || '', ['package.json', 'package-lock.json']);
-    if (!diff) return vscode.window.showInformationMessage('差分がありません。');
+    const result = await this.gitClient.getDiff(this.root || '', ['package.json', 'package-lock.json']);
+    if (result.isFailure || !result.value) return vscode.window.showInformationMessage('差分がありません。');
     
+    const diff = result.value;
     const config = vscode.workspace.getConfiguration('codeprep');
     const template = config.get<string>('gitCommitPrompt', '');
     const prompt = template.replace(/{{diff}}/g, diff);
     
     await vscode.env.clipboard.writeText(prompt);
-    
-    if (config.get('openAfterGitAction', true)) {
-      const uri = vscode.Uri.parse('untitled:Commit Message.md');
-      try {
-        const doc = await vscode.workspace.openTextDocument(uri);
-        const editor = await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
-        await editor.edit(eb => {
-          const range = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
-          eb.replace(range, prompt);
-        });
-      } catch {
-        const doc = await vscode.workspace.openTextDocument({ content: prompt, language: 'markdown' });
-        await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
-      }
-    }
+    await this.openCommitPromptEditor(prompt, config);
     
     vscode.window.showInformationMessage('プロンプトをコピーしました。');
   }
-}
+
+  private async openCommitPromptEditor(prompt: string, config: vscode.WorkspaceConfiguration) {
+    if (!config.get('openAfterGitAction', true)) return;
+
+    const uri = vscode.Uri.parse('untitled:Commit Message.md');
+    try {
+      const doc = await vscode.workspace.openTextDocument(uri);
+      const editor = await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
+      await editor.edit(eb => {
+        const range = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+        eb.replace(range, prompt);
+      });
+    } catch {
+      const doc = await vscode.workspace.openTextDocument({ content: prompt, language: 'markdown' });
+      await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
+    }
+  }
+}

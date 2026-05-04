@@ -13,12 +13,18 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"] 
+    "types": [
+      "node"
+    ]
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules",
     ".vscode-test",
     "vitest.config.ts",
-    "fix_native_engine.py"
+    "fix_native_engine.py",
+    "scripts"
   ]
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import { OutputCommands } from '../OutputCommands';
+import { ok } from '../../shared/domain/Result';
 
 vi.mock('vscode', () => ({
   window: {
@@ -41,6 +42,7 @@ describe('OutputCommands (Tab Reuse Integration)', () => {
   let mockSelectionUseCase: any;
   let mockPromptUseCase: any;
   let mockEngine: any;
+  let mockFileSystem: any;
   const mockRoot = '/mock/root';
 
   beforeEach(() => {
@@ -48,7 +50,15 @@ describe('OutputCommands (Tab Reuse Integration)', () => {
     mockSelectionUseCase = { currentSelection: { getPaths: vi.fn() } };
     mockPromptUseCase = { getSelectedPrompt: vi.fn(), getPromptContent: vi.fn() };
     mockEngine = { generate: vi.fn() };
-    outputCommands = new OutputCommands(mockSelectionUseCase, mockPromptUseCase, mockEngine, mockRoot);
+    mockFileSystem = { readFile: vi.fn().mockResolvedValue(ok('c')) };
+    
+    outputCommands = new OutputCommands({
+        selectionUseCase: mockSelectionUseCase,
+        promptUseCase: mockPromptUseCase,
+        engine: mockEngine,
+        fileSystem: mockFileSystem,
+        root: mockRoot
+    });
 
     (vscode.workspace.getConfiguration as any).mockReturnValue({
       get: vi.fn((key, def) => (key === 'openAfterGenerate' ? true : def))
@@ -69,15 +79,12 @@ describe('OutputCommands (Tab Reuse Integration)', () => {
     (vscode.window.showTextDocument as any).mockResolvedValue(mockEditor);
 
     mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['a.ts']);
-    (vscode.workspace.fs.stat as any).mockResolvedValue({ type: vscode.FileType.File });
-    (vscode.workspace.fs.readFile as any).mockResolvedValue(new TextEncoder().encode('c'));
     mockEngine.generate.mockReturnValue({ content: 'new-content', format: 'markdown' });
 
     await outputCommands.generate();
 
     expect(vscode.Uri.parse).toHaveBeenCalled();
     expect(mockEditor.edit).toHaveBeenCalled();
-    // setTextDocumentLanguage の検証は VSCode API モックの複雑さにより省略
   });
 
   it('初回作成: 既存タブがない場合、新しいドキュメントを開くこと', async () => {
@@ -86,8 +93,6 @@ describe('OutputCommands (Tab Reuse Integration)', () => {
       .mockResolvedValueOnce({});
 
     mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['a.ts']);
-    (vscode.workspace.fs.stat as any).mockResolvedValue({ type: vscode.FileType.File });
-    (vscode.workspace.fs.readFile as any).mockResolvedValue(new TextEncoder().encode('c'));
     mockEngine.generate.mockReturnValue({ content: 'res', format: 'markdown' });
 
     await outputCommands.generate();

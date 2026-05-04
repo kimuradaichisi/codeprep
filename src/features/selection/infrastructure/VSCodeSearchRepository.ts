@@ -2,19 +2,10 @@ import * as vscode from 'vscode';
 import { ISearchRepository } from '../domain/ISearchRepository';
 import { getRelativePath } from '../../../utils/path';
 
-/**
- * VSCode 内蔵コマンド用の型定義
- */
 interface TextSearchMatch {
   uri: vscode.Uri;
 }
 
-interface TextSearchOptions {
-  includes?: string[];
-  excludes?: string[];
-  useIgnoreFiles?: boolean;
-  followSymlinks?: boolean;
-}
 
 export class VSCodeSearchRepository implements ISearchRepository {
   constructor(private workspaceRoot: string) {}
@@ -24,30 +15,48 @@ export class VSCodeSearchRepository implements ISearchRepository {
    */
   public async search(query: string): Promise<string[]> {
     const results = new Set<string>();
-    const options = this.createSearchOptions();
-
-    await vscode.commands.executeCommand(
-      'vscode.executeTextSearch',
-      { pattern: query, isCaseSensitive: false },
-      options,
-      {
-        report: (result: TextSearchMatch) => {
-          results.add(getRelativePath(this.workspaceRoot, result.uri.fsPath));
-        }
-      }
-    );
-
+    await this.executeSearch(query, (res) => {
+      results.add(getRelativePath(this.workspaceRoot, res.uri.fsPath));
+    });
     return Array.from(results);
   }
 
-  private createSearchOptions(): TextSearchOptions {
-    const config = vscode.workspace.getConfiguration('codeprep');
-    return {
-      includes: ['**/*'],
-      excludes: config.get<string[]>('exclude', []),
-      useIgnoreFiles: true,
-      followSymlinks: false
-    };
+  private async executeSearch(query: string, onMatch: (res: TextSearchMatch) => void): Promise<void> {
+    const q = { pattern: query, isCaseSensitive: false };
+    const opts = { useIgnoreFiles: true };
+    try {
+      await this.runSearchEngine(q, opts, onMatch);
+    } catch {
+      await this.performLocalSearch(query, onMatch);
+    }
   }
+
+  private async runSearchEngine(query: any, opts: any, onMatch: (res: TextSearchMatch) => void) {
+    if (typeof (vscode.workspace as any).findTextInFiles === 'function') {
+      await (vscode.workspace as any).findTextInFiles(query, opts, (r: any) => onMatch({ uri: r.uri }));
+    } else {
+      await (vscode.commands.executeCommand as any)('vscode.executeTextSearch', query, opts, { report: onMatch });
+    }
+  }
+
+  private async performLocalSearch(query: string, onMatch: (res: TextSearchMatch) => void): Promise<void> {
+    const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**');
+    for (const file of files) {
+      try {
+        const content = await vscode.workspace.fs.readFile(file);
+        const text = new TextDecoder().decode(content);
+        if (text.toLowerCase().includes(query.toLowerCase())) {
+          onMatch({ uri: file });
+        }
+      } catch { /* スキップ */ }
+    }
+  }
+
+
+
+
+
+
+
+
 }
-

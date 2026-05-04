@@ -11,30 +11,25 @@ export class PromptProcessor {
    * @param context 置換に使用するコンテキスト情報
    * @returns 置換後のプロンプト
    */
-  public process(
-    template: string,
-    context: {
-      language?: string;
-      files: string[];
-    }
-  ): string {
+  public process(template: string, context: { language?: string; files: string[] }): string {
     let result = template;
-    
-    // {{language}} - 表示言語など
-    if (context.language) {
-      result = result.replace(/{{language}}/g, context.language);
-    }
-    
-    // {{datetime}} - 現在の日時
-    const now = new Date().toLocaleString();
-    result = result.replace(/{{datetime}}/g, now);
-    
-    // {{tree}} - 選択されたファイルのディレクトリ構造
-    if (context.files.length > 0) {
-      const tree = generateTree(context.files);
-      result = result.replace(/{{tree}}/g, tree);
-    }
-    
+    result = this.replaceLanguage(result, context.language);
+    result = this.replaceDateTime(result);
+    result = this.replaceTree(result, context.files);
     return result;
   }
+
+  private replaceLanguage(template: string, language?: string): string {
+    return language ? template.replace(/{{language}}/g, language) : template;
+  }
+
+  private replaceDateTime(template: string): string {
+    return template.replace(/{{datetime}}/g, new Date().toLocaleString());
+  }
+
+  private replaceTree(template: string, files: string[]): string {
+    if (files.length === 0) return template;
+    return template.replace(/{{tree}}/g, generateTree(files));
+  }
+
 }

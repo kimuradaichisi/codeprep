@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import { registerAllCommands } from '../CommandRegistry';
-import { GitUtils } from '../../utils/git';
-
-vi.mock('../../utils/git', () => ({
-  GitUtils: { getDiff: vi.fn(), getModifiedFiles: vi.fn() }
-}));
+import { ok } from '../../shared/domain/Result';
 
 vi.mock('vscode', () => ({
   commands: { registerCommand: vi.fn() },
@@ -33,6 +29,7 @@ vi.mock('vscode', () => ({
 
 describe('CommandRegistry Integration Tests', () => {
   let selectionUseCase: any, promptUseCase: any, uiController: any, engine: any;
+  let fileSystem: any, gitClient: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,8 +55,28 @@ describe('CommandRegistry Integration Tests', () => {
     };
     uiController = { refresh: vi.fn() };
     engine = { generate: vi.fn().mockReturnValue({ content: 'res' }) };
+    fileSystem = {
+        readFile: vi.fn().mockResolvedValue(ok('content')),
+        readDirectory: vi.fn().mockResolvedValue(ok([])),
+        exists: vi.fn().mockResolvedValue(true)
+    };
+    gitClient = {
+        getModifiedFiles: vi.fn().mockResolvedValue(ok(['mod.ts'])),
+        getDiff: vi.fn().mockResolvedValue(ok('diff')),
+        findRelatedTests: vi.fn().mockResolvedValue(ok([]))
+    };
 
-    registerAllCommands({} as any, selectionUseCase, promptUseCase, uiController, engine, {} as any, '/root');
+    registerAllCommands({
+      context: {} as any,
+      selectionUseCase,
+      promptUseCase,
+      uiController,
+      engine,
+      workspaceRepo: {} as any,
+      fileSystem,
+      gitClient,
+      root: '/root'
+    });
   });
 
   const getHandler = (id: string) => {
@@ -69,7 +86,7 @@ describe('CommandRegistry Integration Tests', () => {
 
   it('Gitアクション: commitプロンプトが既存タブを再利用または新規作成されること', async () => {
     (vscode.window.showQuickPick as any).mockResolvedValue({ id: 'commit', label: 'Commit' });
-    (GitUtils.getDiff as any).mockResolvedValue('diff-content');
+    gitClient.getDiff.mockResolvedValue(ok('diff-content'));
 
     await getHandler('codeprep.gitMenu')();
 
@@ -127,4 +144,4 @@ describe('CommandRegistry Integration Tests', () => {
     });
   });
 
-});
+});

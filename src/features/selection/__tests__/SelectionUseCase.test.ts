@@ -3,6 +3,7 @@ import { SelectionUseCase } from '../application/SelectionUseCase';
 import { Selection } from '../domain/Selection';
 import { ISelectionRepository } from '../domain/ISelectionRepository';
 import { IFileValidator } from '../domain/IFileValidator';
+import { ok } from '../../../shared/domain/Result';
 
 describe('SelectionUseCase', () => {
   let useCase: SelectionUseCase;
@@ -76,11 +77,12 @@ describe('SelectionUseCase', () => {
   });
 
   it('Gitで変更されたファイルを選択できること', async () => {
-    const gitUtils = {
-      getModifiedFiles: vi.fn().mockResolvedValue(['mod.ts']),
-      findRelatedTests: vi.fn().mockResolvedValue([]) // 必ず追加
+    const gitClient = {
+      getModifiedFiles: vi.fn().mockResolvedValue(ok(['mod.ts'])),
+      getDiff: vi.fn(),
+      findRelatedTests: vi.fn().mockResolvedValue(ok([]))
     };
-    await useCase.selectModifiedFiles(gitUtils, '/root');
+    await useCase.selectModifiedFiles(gitClient as any, '/root');
     expect(selection.has('mod.ts')).toBe(true);
     expect(selection.count).toBe(1);
   });
@@ -111,14 +113,16 @@ describe('SelectionUseCase', () => {
   });
 
   it('Git変更に関連するテストファイルも含めて選択できること', async () => {
-    const gitUtils = {
-      getModifiedFiles: vi.fn().mockResolvedValue(['src/logic.ts']),
-      findRelatedTests: vi.fn().mockResolvedValue(['tests/logic.test.ts'])
+    const gitClient = {
+      getModifiedFiles: vi.fn().mockResolvedValue(ok(['src/logic.ts'])),
+      getDiff: vi.fn(),
+      findRelatedTests: vi.fn().mockResolvedValue(ok(['tests/logic.test.ts']))
     };
-    await useCase.selectModifiedFiles(gitUtils, '/root', true); // tests = true
+    await useCase.selectModifiedFiles(gitClient as any, '/root', true); // tests = true
     
     expect(selection.has('src/logic.ts')).toBe(true);
     expect(selection.has('tests/logic.test.ts')).toBe(true);
   });
 
 });
+

@@ -3,20 +3,20 @@ import { SelectionUseCase } from '../features/selection/application/SelectionUse
 import { UIController } from '../features/ui/application/UIController';
 import { VSCodeWorkspaceRepository } from '../features/selection/infrastructure/VSCodeWorkspaceRepository';
 import { ISearchRepository } from '../features/selection/domain/ISearchRepository';
-import { GitUtils } from '../utils/git';
+import { IGitClient } from '../features/git/domain/IGitClient';
+
+export interface SelectionCommandsDeps {
+  useCase: SelectionUseCase;
+  ui: UIController;
+  repo: VSCodeWorkspaceRepository;
+  searchRepo: ISearchRepository;
+  gitClient: IGitClient;
+  root: string | undefined;
+}
 
 export class SelectionCommands {
-  constructor(
-    private useCase: SelectionUseCase,
-    private ui: UIController,
-    private repo: VSCodeWorkspaceRepository,
-    private searchRepo: ISearchRepository,
-    private root: string | undefined
-  ) {}
+  constructor(private readonly deps: SelectionCommandsDeps) {}
 
-  /**
-   * 選択系アクションメニューを表示
-   */
   async showSelectionMenu() {
     const items = [
       { label: "$(check-all) Select All", id: 'all' },
@@ -39,40 +39,45 @@ export class SelectionCommands {
 
   public async selectAll() {
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "CodePrep: 全選択中..." }, async () => {
-      await this.useCase.selectAll(this.repo);
-      await this.ui.refresh();
+      await this.deps.useCase.selectAll(this.deps.repo);
+      await this.deps.ui.refresh();
     });
   }
 
   public async clearAll() {
-    this.useCase.currentSelection.clear();
-    await this.ui.refresh();
+    this.deps.useCase.currentSelection.clear();
+    await this.deps.ui.refresh();
   }
 
   public async invert() {
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "CodePrep: 選択を反転中..." }, async () => {
-      await this.useCase.invertSelection(this.repo);
-      await this.ui.refresh();
+      await this.deps.useCase.invertSelection(this.deps.repo);
+      await this.deps.ui.refresh();
     });
   }
 
   public async selectModified() {
-    if (!this.root) return;
+    if (!this.deps.root) return;
     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "CodePrep: Git変更を抽出中..." }, async () => {
-      await this.useCase.selectModifiedFiles(GitUtils, this.root!, false);
-      await this.ui.refresh();
+      await this.deps.useCase.selectModifiedFiles(this.deps.gitClient, this.deps.root!, false);
+      await this.deps.ui.refresh();
     });
   }
 
   public async selectByGrep() {
     const q = await vscode.window.showInputBox({ placeHolder: 'キーワードを入力', prompt: '内容にキーワードを含むファイルを抽出します' });
     if (!q) return;
-    await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `CodePrep: "${q}" を検索中...` }, async () => {
-      const count = await this.useCase.selectByGrep(this.searchRepo, q);
-      await this.ui.refresh();
-      vscode.window.showInformationMessage(`CodePrep: ${count} 個のファイルを追加しました。`);
-    });
+    try {
+      await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `CodePrep: "${q}" を検索中...` }, async () => {
+        const count = await this.deps.useCase.selectByGrep(this.deps.searchRepo, q);
+        await this.deps.ui.refresh();
+        vscode.window.showInformationMessage(`CodePrep: ${count} 個のファイルを追加しました。`);
+      });
+    } catch (e) {
+      vscode.window.showErrorMessage(`検索に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
+
 
   public async showPresetMenu() {
     const items = [{ label: "$(save) Save Preset", id: 'save' }, { label: "$(folder-opened) Load Preset", id: 'load' }];
@@ -83,14 +88,15 @@ export class SelectionCommands {
 
   public async savePreset() {
     const name = await vscode.window.showInputBox({ placeHolder: 'プリセット名を入力' });
-    if (name) await this.useCase.savePreset(name);
+    if (name) await this.deps.useCase.savePreset(name);
   }
 
   public async loadPreset() {
-    const selected = await vscode.window.showQuickPick(this.useCase.getPresetList());
+    const selected = await vscode.window.showQuickPick(this.deps.useCase.getPresetList());
     if (selected) {
-      await this.useCase.loadPreset(selected);
-      await this.ui.refresh();
+      await this.deps.useCase.loadPreset(selected);
+      await this.deps.ui.refresh();
     }
   }
 }
+

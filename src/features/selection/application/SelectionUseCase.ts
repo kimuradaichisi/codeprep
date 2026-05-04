@@ -3,8 +3,9 @@ import { ISelectionRepository } from '../domain/ISelectionRepository';
 import { IFileValidator } from '../domain/IFileValidator';
 import { ISearchRepository } from '../domain/ISearchRepository';
 import { GitWatcher } from '../infrastructure/GitWatcher';
-import * as path from 'path';
+import { PathService } from '../domain/PathService';
 import { normalizePath } from '../../../utils/path';
+import { IGitClient } from '../../git/domain/IGitClient';
 
 export class SelectionUseCase {
   constructor(
@@ -35,7 +36,7 @@ export class SelectionUseCase {
     const matchedFiles = await searchRepo.search(query);
     if (matchedFiles.length === 0) return 0;
 
-    const allPaths = this.deriveAllPaths(matchedFiles);
+    const allPaths = PathService.deriveAllPaths(matchedFiles);
     this.selection.addAll(allPaths);
     return matchedFiles.length;
   }
@@ -43,50 +44,40 @@ export class SelectionUseCase {
   public async selectAll(wsRepo: { getAllFiles(): Promise<string[]> }): Promise<void> {
     const allFiles = await wsRepo.getAllFiles();
     this.selection.clear();
-    this.selection.addAll(this.deriveAllPaths(allFiles));
+    this.selection.addAll(PathService.deriveAllPaths(allFiles));
   }
 
   public async invertSelection(wsRepo: { getAllFiles(): Promise<string[]> }): Promise<void> {
     const allFiles = await wsRepo.getAllFiles();
-    this.selection.invert(this.deriveAllPaths(allFiles));
+    this.selection.invert(PathService.deriveAllPaths(allFiles));
   }
 
-  private deriveAllPaths(files: string[]): string[] {
-    const result = new Set<string>();
-    for (const file of files) {
-      const normFile = normalizePath(file);
-      if (!normFile || normFile === '.' || normFile === '/') continue;
-      
-      result.add(normFile);
-      let parent = path.dirname(normFile);
-      while (parent !== '.' && parent !== '/' && parent !== '') {
-        if (result.has(parent)) break;
-        result.add(parent);
-        parent = path.dirname(parent);
-      }
-    }
-    return Array.from(result);
-  }
-
-  public async selectModifiedFiles(git: any, root: string, tests: boolean = false): Promise<void> {
-    let modified: string[] = [];
-    if (this.gitWatcher) {
-      await this.gitWatcher.updateCache();
-      modified = this.gitWatcher.getModifiedFiles();
-    } else {
-      modified = await git.getModifiedFiles(root);
-    }
-    
+  public async selectModifiedFiles(git: IGitClient, root: string, tests: boolean = false): Promise<void> {
+    const modified = await this.getModifiedFilesInternal(git, root);
     if (modified.length === 0) return;
 
     let targets = [...modified];
-    if (tests && git.findRelatedTests) {
-      const related = await git.findRelatedTests(root, modified);
-      targets = Array.from(new Set([...targets, ...related]));
+    if (tests) {
+      targets = await this.includeRelatedTests(git, root, targets);
     }
     this.selection.clear();
-    this.selection.addAll(this.deriveAllPaths(targets));
+    this.selection.addAll(PathService.deriveAllPaths(targets));
   }
+
+  private async getModifiedFilesInternal(git: IGitClient, root: string): Promise<string[]> {
+    if (this.gitWatcher) {
+      await this.gitWatcher.updateCache();
+      return this.gitWatcher.getModifiedFiles();
+    }
+    const result = await git.getModifiedFiles(root);
+    return result.isSuccess ? result.value : [];
+  }
+
+  private async includeRelatedTests(git: IGitClient, root: string, current: string[]): Promise<string[]> {
+    const testResult = await git.findRelatedTests(root, current);
+    return testResult.isSuccess ? Array.from(new Set([...current, ...testResult.value])) : current;
+  }
+
 
   private async addValidPaths(paths: string[]): Promise<void> {
     const results = await Promise.all(paths.map(async p => ({
@@ -100,8 +91,10 @@ export class SelectionUseCase {
     const normPath = normalizePath(relPath);
     this.selection.set(normPath, checked);
     const files = await repo.getFilesUnder(normPath);
-    const allPaths = this.deriveAllPaths(files).map(p => normalizePath(p));
+    const allPaths = PathService.deriveAllPaths(files).map(p => normalizePath(p));
     const targetPaths = allPaths.filter(p => p === normPath || p.startsWith(normPath + '/'));
     this.selection.setMany(targetPaths, checked);
   }
-}
+}
+
+

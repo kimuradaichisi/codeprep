@@ -18,20 +18,17 @@ import { runTests } from '@vscode/test-electron';
 
 async function main() {
     try {
-        const extensionDevelopmentPath = path.resolve(__dirname, '../../');
-        const extensionTestsPath = path.resolve(__dirname, './suite/index');
-
-        const testWorkspace = path.resolve(__dirname, '../../.vscode-test/test-workspace');
-
+        const root = path.resolve(__dirname, '../../');
         await runTests({
-            extensionDevelopmentPath,
-            extensionTestsPath,
-            launchArgs: [testWorkspace]
+            extensionDevelopmentPath: root,
+            extensionTestsPath: path.resolve(__dirname, './suite/index'),
+            launchArgs: [path.resolve(root, '.vscode-test/test-workspace')]
         });
     } catch {
         console.error('Failed to run tests');
         process.exit(1);
     }
 }
+
 
 main();

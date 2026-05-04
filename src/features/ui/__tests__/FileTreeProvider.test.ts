@@ -1,22 +1,8 @@
-/*
- * Copyright 2026 CodePrep Contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import { FileTreeProvider } from '../FileTreeProvider';
 import { Selection } from '../../selection/domain/Selection';
+import { ok } from '../../../shared/domain/Result';
 
 vi.mock('vscode', () => {
     class MockTreeItem {
@@ -42,7 +28,6 @@ vi.mock('vscode', () => {
         Uri: { file: vi.fn((p) => ({ fsPath: p })) },
         FileType: { File: 1, Directory: 2 },
         workspace: {
-            fs: { readDirectory: vi.fn() },
             createFileSystemWatcher: vi.fn(() => ({
                 onDidCreate: vi.fn(),
                 onDidChange: vi.fn(),
@@ -62,11 +47,16 @@ vi.mock('../../../utils/path', () => ({
 describe('FileTreeProvider Optimization & Functionality', () => {
     let provider: FileTreeProvider;
     let selection: Selection;
+    let mockFileSystem: any;
+    let mockGitWatcher: any;
     const mockRoot = '/root';
 
     beforeEach(() => {
         vi.clearAllMocks();
         selection = new Selection();
+        mockFileSystem = { readDirectory: vi.fn() };
+        mockGitWatcher = { isModified: vi.fn(), updateCache: vi.fn() };
+
         (vscode.workspace.getConfiguration as any).mockReturnValue({
             get: vi.fn((key, def) => {
                 if (key === 'exclude') return ['node_modules'];
@@ -74,16 +64,16 @@ describe('FileTreeProvider Optimization & Functionality', () => {
                 return def;
             })
         });
-        provider = new FileTreeProvider(mockRoot, selection);
+        provider = new FileTreeProvider(mockRoot, selection, mockFileSystem, mockGitWatcher);
     });
 
     it('getChildren: 除外パターンに一致するファイルがフィルタリングされること', async () => {
-        (vscode.workspace.fs.readDirectory as any).mockResolvedValue([
+        mockFileSystem.readDirectory.mockResolvedValue(ok([
             ['src', 2],
             ['node_modules', 2],
             ['test.tmp', 1],
             ['app.ts', 1]
-        ]);
+        ]));
 
         const children = await provider.getChildren();
         const labels = children.map(c => c.label);
@@ -95,23 +85,43 @@ describe('FileTreeProvider Optimization & Functionality', () => {
     });
 
     it('refresh: 設定変更後に refresh を呼ぶと除外パターンが更新されること', async () => {
-        // 設定を変更（src を除外対象にする）
+        vi.useFakeTimers();
         (vscode.workspace.getConfiguration as any).mockReturnValue({
             get: vi.fn((key, def) => (key === 'exclude' ? ['src'] : def))
         });
 
         provider.refresh();
+        vi.advanceTimersByTime(1000);
+        await vi.runAllTimersAsync();
 
-        (vscode.workspace.fs.readDirectory as any).mockResolvedValue([
+        mockFileSystem.readDirectory.mockResolvedValue(ok([
             ['src', 2],
             ['node_modules', 2]
-        ]);
+        ]));
 
         const children = await provider.getChildren();
         const labels = children.map(c => c.label);
 
         expect(labels).toContain('node_modules');
         expect(labels).not.toContain('src');
+        vi.useRealTimers();
+    });
+
+    it('refresh: 複数の呼び出しが1秒後に1回だけ fire されること', async () => {
+        vi.useFakeTimers();
+        const fireSpy = vi.spyOn((provider as any)._onDidChangeTreeData, 'fire');
+
+        provider.refresh();
+        provider.refresh();
+        provider.refresh();
+
+        expect(fireSpy).not.toHaveBeenCalled();
+
+        vi.advanceTimersByTime(1000);
+        await vi.runAllTimersAsync();
+
+        expect(fireSpy).toHaveBeenCalledTimes(1);
+        vi.useRealTimers();
     });
 });
 
