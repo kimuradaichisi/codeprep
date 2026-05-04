@@ -1,68 +1,64 @@
 # 📦 CodePrep for VSCode
 
-**CodePrep** is a powerful VSCode extension designed to efficiently extract your workspace's codebase and generate the optimal context (prompts) for LLMs like ChatGPT, Claude, and GitHub Copilot.
+**CodePrep** is a powerful VSCode extension designed to efficiently extract code from your workspace and generate the optimal context (prompts) for LLMs like ChatGPT, Claude, and GitHub Copilot.
 
-Beyond intuitive file tree selection, it seamlessly integrates into your workflow with features like **automatic selection based on Git history** and extraction of related test files.
+Beyond intuitive file selection, it features **Autonomous Patch & Heal** for safely integrating AI-generated code and automatic selection based on Git history.
 
 ## ✨ Key Features
 
 - 🌳 **Intuitive Tree Selection**: Select files/folders via checkboxes in a dedicated sidebar.
-- 🔍 **Git Diff Selection**: Extract changed files and their related tests with one click.
-- 📊 **Real-time Token Counting**: Displays estimated token counts in the status bar with overflow warnings.
+- 🩹 **Autonomous Patch & Heal**: Automatically parse AI-generated code (even with omissions like `// ... existing code ...`) from the clipboard and merge it intelligently. Preview changes in the VSCode Diff editor before applying.
+- 🔍 **Git Diff Selection**: Extract modified files and related tests with a single click.
+- 📊 **Real-time Token Counting**: View estimated token counts in the status bar with over-limit warnings.
 - 📝 **Flexible Output Formats**: Supports `Markdown` (default), `XML`, and `JSON`.
-- ✂️ **Context Optimization**: Option to remove comments and empty lines to save LLM tokens.
-- 💾 **Clean Workspace**: Results are opened in an **Untitled editor**, not saved as physical files, keeping your project clutter-free.
-- 🤖 **Custom Prompts**: Manage and insert instructions like "Code Review" or "Refactor" at the top of the output.
-- 🖱️ **Explorer Integration**: Add files to CodePrep directly from the VSCode standard explorer context menu.
+- 🤖 **Custom Prompts & Auto-Injection**: Manage instructions like "Code Review" or "Refactor". Automatically append patch-formatting instructions to your prompts.
+- 🌍 **Full Localization (i18n)**: UI fully localized for both English and Japanese.
 
 ## 🚀 Usage
 
-**Basic Flow:**
+**Prompt Generation Flow:**
 1. Click the **CodePrep** icon in the Activity Bar.
-2. Check the files you want to send to the LLM in the tree view, or use the `Git Actions` menu to select modified files.
-3. (Optional) Click `Select Prompt` to choose an instruction (e.g., "Refactor").
-4. Run the `Generate & Copy` command.
-5. The generated text is copied to your clipboard and opened in a **new Untitled editor tab** for instant review.
+2. Check the files you want to send to the LLM in the tree view.
+3. (Optional) Click `Select Prompt` and choose an instruction (e.g., "Patch Mode").
+4. Run `Generate & Copy`. The content is copied to the clipboard and opened in a new editor.
+
+**Patch Application Flow (AI Response Integration):**
+1. Copy the code block from the AI's response (including the file path and `// ... existing code ...`).
+2. Click the **"+" icon (Preview Patch from Clipboard)** in the CodePrep sidebar.
+3. Review the changes in the Diff editor and click **"Apply"** in the top right.
 
 ## ⚙️ Extension Settings
 
-### 🎨 UI & Output
+### 🩹 Patch & Heal Settings
 | Key | Default | Description |
 |-----|---------|-------------|
-| `codeprep.outputFormat` | `"markdown"` | Output format: `"markdown"`, `"xml"`, or `"json"`. |
-| `codeprep.openAfterGenerate` | `true` | Opens the content in a new Untitled editor after generation. |
+| `codeprep.alwaysAddPatchInstructions` | `true` | Automatically append patch formatting instructions to the end of generated prompts. |
 
-### ⚡ Engine & Optimization
+### 🎨 UI & Output Settings
 | Key | Default | Description |
 |-----|---------|-------------|
-| `codeprep.nativeEngine.removeComments` | `false` | Automatically remove comments from the output. |
-| `codeprep.nativeEngine.includeEmptyLines` | `true` | Whether to include blank lines in the output. |
-
-## 🏗️ Architecture & Development Standards
-
-This project is built on strict **DDD (Domain-Driven Design)** and a unique **"God-Class Killer" policy** to ensure long-term maintainability.
-
-### Core Philosophy
-1. **VSCode API Isolation**: `import 'vscode'` is forbidden in Domain/Application layers. Communication happens via Adapters in the Infrastructure layer.
-2. **Quantitative Constraints**:
-   - Max **150 lines** per file.
-   - Max **15 lines** per method.
-   - Cyclomatic complexity **under 5**.
-3. **Zero "Any" Policy**: All external inputs are validated with Type Guards.
-4. **Test-Driven**: 100% unit test pass rate with Vitest is mandatory.
+| `codeprep.outputFormat` | `"markdown"` | Output format: `"markdown"`, `"xml"`, `"json"`. |
+| `codeprep.openAfterGenerate` | `true` | Open the generated content in a new editor tab. |
+| `codeprep.visibleButtons` | `[...]` | Customize visible buttons in the view title bar. |
 
 ## 🆕 What's New
 
-### v0.5.0 (2026-05-02)
-- 🤖 **Intelligent Prompt Variables**: Variables like `{{language}}`, `{{datetime}}`, and `{{tree}}` (file tree) are now automatically replaced within custom prompts.
-- 🛡️ **Big File Guard**: Files exceeding a specified size (default 500KB) are automatically omitted to prevent freezes and out-of-memory issues.
-- 📑 **Smart Tab Reuse**: Instead of opening a new editor every time, existing CodePrep output tabs are now smartly reused.
-- 🌍 **Internationalization (i18n)**: UI buttons and tooltips now automatically adapt to your VSCode display language (Japanese/English).
-- ⚙️ **Configurable Git Prompt**: The prompt used for generating commit messages can now be customized via settings.
+### v0.6.0 (2026-05-04)
+- 🩹 **Autonomous Patch & Heal**:
+    - Intelligently merge AI-generated code with omissions like `# ... existing code ...` into your local files.
+    - **Multiple Omissions**: Accurately restores code even with multiple omissions in a single file using anchor points.
+    - **VSCode Diff Preview**: Visually verify changes in a split editor before applying them.
+    - **Automatic File Creation**: Automatically creates new files and parent directories suggested by the AI.
+- 🤖 **Prompt Auto-Injection**:
+    - Automatically append "formatting instructions for patching" to every prompt, ensuring AI responses are always tool-compatible.
+- 🌍 **Full i18n Refactoring**:
+    - Refactored `package.json` to use NLS variables. UI is now fully localized for English and Japanese environments.
+- 🧹 **Streamlined UI**:
+    - Removed unused preset features to prioritize core actions like patching and prompt selection.
 
-### v0.4.0 (2026-05-02)
-- ⚡ **Dramatic Performance Boost**: Migrated the search engine to VSCode's built-in ripgrep (`vscode.executeTextSearch`), enabling instant searches even in projects with thousands of files.
-- 🔄 **Asynchronous Git Status Caching**: Introduced `GitWatcher` to handle Git status updates in the background, improving UI responsiveness.
-- 🌳 **Faster Tree Rendering**: Optimized the exclusion logic with pre-compiled patterns for smooth browsing in large-scale repositories.
-- 🎨 **UI Enhancements**: Added dedicated icons (`git-commit`) and decoration colors for Git-modified files. Toolbar buttons can now be fully toggled via settings.
-- 🛠️ **Internal Quality**: Reduced redundant activation events and resolved all ESLint warnings.
+---
+
+## 🏗️ Architecture & Development Standards
+
+This project follows strict **DDD (Domain-Driven Design)** and **"God-Class Killer"** policies (150 lines/file, 15 lines/method).
+See `AI_AGENTS.md` for more details.

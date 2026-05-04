@@ -40,9 +40,26 @@ export class PromptUseCase {
     context?: { language?: string; files: string[] }
   ): Promise<string | undefined> {
     const collection = await this.repository.loadAll();
-    const content = collection.findByName(name)?.content;
-    return content && context ? this.processor.process(content, context) : content;
+    let content = collection.findByName(name)?.content;
+    if (!content) return undefined;
+
+    if (context) {
+      content = this.processor.process(content, context);
+      content = await this.injectPatchInstructionsIfNeeded(content);
+    }
+    return content;
   }
+
+  private async injectPatchInstructionsIfNeeded(content: string): Promise<string> {
+    const enabled = await this.repository.shouldAlwaysAddPatchInstructions();
+    const alreadyHas = content.includes('Patch Mode') || content.includes('patchMode');
+    
+    if (enabled && !alreadyHas) {
+      return content + this.repository.getPatchInjectionPrompt();
+    }
+    return content;
+  }
+
 
   public async deletePrompt(name: string): Promise<void> {
     const collection = await this.repository.loadAll();

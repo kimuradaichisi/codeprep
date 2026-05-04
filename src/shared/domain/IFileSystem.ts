@@ -6,4 +6,5 @@ export interface IFileSystem {
     readDirectory(path: string): Promise<Result<[string, boolean][]>>;
 
     exists(path: string): Promise<boolean>;
+    writeFile(path: string, content: string): Promise<Result<void>>;
 }

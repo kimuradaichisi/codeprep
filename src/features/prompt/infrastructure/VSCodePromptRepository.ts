@@ -8,6 +8,7 @@ import { PromptCollection } from '../domain/PromptCollection';
 export class VSCodePromptRepository implements IPromptRepository {
   private static readonly CONFIG_SECTION = 'codeprep';
   private static readonly CONFIG_KEY = 'customPrompts';
+  private static readonly ALWAYS_PATCH_KEY = 'alwaysAddPatchInstructions';
 
   public async loadAll(): Promise<PromptCollection> {
     const config = vscode.workspace.getConfiguration(VSCodePromptRepository.CONFIG_SECTION);
@@ -22,5 +23,14 @@ export class VSCodePromptRepository implements IPromptRepository {
       collection.toRecord(), 
       vscode.ConfigurationTarget.Global
     );
+  }
+
+  public getPatchInjectionPrompt(): string {
+    return vscode.l10n.t('prompt.patchInjection');
+  }
+
+  public async shouldAlwaysAddPatchInstructions(): Promise<boolean> {
+    const config = vscode.workspace.getConfiguration(VSCodePromptRepository.CONFIG_SECTION);
+    return config.get<boolean>(VSCodePromptRepository.ALWAYS_PATCH_KEY, true);
   }
 }

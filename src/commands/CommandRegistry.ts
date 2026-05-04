@@ -11,6 +11,9 @@ import { OutputCommands } from './OutputCommands';
 import { SelectionCommands } from './SelectionCommands';
 import { IFileSystem } from '../shared/domain/IFileSystem';
 import { IGitClient } from '../features/git/domain/IGitClient';
+import { PatchUseCase } from '../features/patch/application/PatchUseCase';
+import { PatchCommands } from './PatchCommands';
+
 
 export interface RegistryDeps {
   context: vscode.ExtensionContext;
@@ -21,22 +24,27 @@ export interface RegistryDeps {
   workspaceRepo: VSCodeWorkspaceRepository;
   fileSystem: IFileSystem;
   gitClient: IGitClient;
+  patchUseCase: PatchUseCase;
   root: string | undefined;
 }
+
 
 export function registerAllCommands(d: RegistryDeps): vscode.Disposable[] {
   const searchRepo = new VSCodeSearchRepository(d.root || '');
   const gitCmd = new GitCommands(d.selectionUseCase, d.uiController, d.gitClient, d.root);
   const outCmd = new OutputCommands({ selectionUseCase: d.selectionUseCase, promptUseCase: d.promptUseCase, engine: d.engine, fileSystem: d.fileSystem, root: d.root });
   const selCmd = new SelectionCommands({ useCase: d.selectionUseCase, ui: d.uiController, repo: d.workspaceRepo, searchRepo, gitClient: d.gitClient, root: d.root });
+  const patchCmd = new PatchCommands(d.patchUseCase, d.root);
 
   return [
     ...registerMenuCommands(selCmd, gitCmd),
     ...registerActionCommands(d.uiController, outCmd),
     ...registerPromptCommands(d.promptUseCase, d.selectionUseCase, d.uiController, d.root),
-    ...registerSelectionUtilityCommands(selCmd)
+    ...registerSelectionUtilityCommands(selCmd),
+    ...registerPatchCommands(patchCmd)
   ];
 }
+
 
 
 function registerMenuCommands(selCmd: SelectionCommands, gitCmd: GitCommands): vscode.Disposable[] {
@@ -83,4 +91,13 @@ function registerSelectionUtilityCommands(sel: SelectionCommands): vscode.Dispos
     vscode.commands.registerCommand('codeprep.selectByGrep', () => sel.selectByGrep())
   ];
 }
+
+function registerPatchCommands(patch: PatchCommands): vscode.Disposable[] {
+  return [
+    vscode.commands.registerCommand('codeprep.previewPatch', () => patch.previewPatch()),
+    vscode.commands.registerCommand('codeprep.applyPatch', () => patch.applyPatch()),
+    vscode.commands.registerCommand('codeprep.applyAllPatches', () => patch.applyAllPatches())
+  ];
+}
+
 

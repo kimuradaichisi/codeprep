@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as nodePath from 'path';
 import { IFileSystem } from '../domain/IFileSystem';
 import { Result, ok, fail } from '../domain/Result';
 
@@ -24,7 +25,6 @@ export class VSCodeFileSystem implements IFileSystem {
     }
 
     public async readDirectory(path: string): Promise<Result<[string, boolean][]>> {
-
         try {
             const uri = vscode.Uri.file(path);
             const entries = await vscode.workspace.fs.readDirectory(uri);
@@ -45,6 +45,18 @@ export class VSCodeFileSystem implements IFileSystem {
             return true;
         } catch {
             return false;
+        }
+    }
+
+    public async writeFile(path: string, content: string): Promise<Result<void>> {
+        try {
+            const uri = vscode.Uri.file(path);
+            const parent = vscode.Uri.file(nodePath.dirname(path));
+            await vscode.workspace.fs.createDirectory(parent);
+            await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
+            return ok(undefined);
+        } catch (error) {
+            return fail(error instanceof Error ? error : new Error(String(error)));
         }
     }
 }

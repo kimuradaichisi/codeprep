@@ -41,7 +41,6 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         this.excludePatterns = newPatterns;
     }
 
-
     public setRoot(root: string | undefined): void {
         this.workspaceRoot = root ? normalizePath(root) : undefined;
         this.updateWatcher();
@@ -60,20 +59,22 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
 
     public updateWatcher(): void {
         const config = vscode.workspace.getConfiguration('codeprep');
-        if (this.watcher) {
-            this.watcher.dispose();
-            this.watcher = undefined;
-        }
+        this.watcher?.dispose();
+        this.watcher = undefined;
 
         if (config.get<boolean>('autoRefreshTree', true) && this.workspaceRoot) {
             this.watcher = vscode.workspace.createFileSystemWatcher(
                 new vscode.RelativePattern(this.workspaceRoot, '**/*')
             );
-            const trigger = () => this.refresh();
-            this.watcher.onDidCreate(trigger);
-            this.watcher.onDidChange(trigger);
-            this.watcher.onDidDelete(trigger);
+            this.registerWatcherEvents(this.watcher);
         }
+    }
+
+    private registerWatcherEvents(watcher: vscode.FileSystemWatcher): void {
+        const trigger = () => this.refresh();
+        watcher.onDidCreate(trigger);
+        watcher.onDidChange(trigger);
+        watcher.onDidDelete(trigger);
     }
 
 
@@ -102,7 +103,6 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     private applyIcon(item: vscode.TreeItem, element: FileNode): void {
         const isModified = !!this.gitWatcher?.isModified(element.relativePath);
         const iconType = this.iconService.getIconType(element.isDirectory, isModified);
-        
         if (iconType === FileIconType.ModifiedFile) {
             item.iconPath = new vscode.ThemeIcon(iconType, new vscode.ThemeColor('gitDecoration.modifiedResourceForeground'));
         } else {
@@ -140,10 +140,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         return a.label.localeCompare(b.label);
     }
 
-
     public dispose(): void {
         this.watcher?.dispose();
     }
-}
-
-
+}

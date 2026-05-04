@@ -75,8 +75,10 @@ describe('CommandRegistry Integration Tests', () => {
       workspaceRepo: {} as any,
       fileSystem,
       gitClient,
+      patchUseCase: {} as any,
       root: '/root'
     });
+
   });
 
   const getHandler = (id: string) => {

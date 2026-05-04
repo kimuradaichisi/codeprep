@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -38,21 +38,11 @@
     "viewsWelcome": [
       {
         "view": "codeprep.fileTree",
-        "contents": "CodePrep へようこそ。\n生成対象のファイルをツリーから選択してください。ワークスペース全体のファイルを一括で含めることも可能です。\n[すべて選択](command:codeprep.selectAll)\n[設定を開く](command:codeprep.openSettings)",
+        "contents": "CodePrep へようこそ。\n生成対象のファイルをツリーから選択してください。\n[すべて選択](command:codeprep.selectAll)\n[設定を開く](command:codeprep.openSettings)",
         "when": "codeprep.selectionEmpty"
       }
     ],
     "commands": [
-      {
-        "command": "codeprep.selectionMenu",
-        "title": "Selection Actions...",
-        "icon": "$(list-selection)"
-      },
-      {
-        "command": "codeprep.presetMenu",
-        "title": "%command.presetMenu%",
-        "icon": "$(library)"
-      },
       {
         "command": "codeprep.openSettings",
         "title": "%command.openSettings%",
@@ -70,7 +60,7 @@
       },
       {
         "command": "codeprep.invertSelection",
-        "title": "Invert Selection"
+        "title": "%command.invertSelection%"
       },
       {
         "command": "codeprep.generate",
@@ -79,7 +69,7 @@
       },
       {
         "command": "codeprep.selectGitDiff",
-        "title": "Select Modified Files",
+        "title": "%command.selectGitDiff%",
         "icon": "$(git-compare)"
       },
       {
@@ -89,31 +79,11 @@
       },
       {
         "command": "codeprep.addToSelection",
-        "title": "Add to CodePrep"
-      },
-      {
-        "command": "codeprep.savePreset",
-        "title": "Save Preset",
-        "icon": "$(save)"
-      },
-      {
-        "command": "codeprep.loadPreset",
-        "title": "Load Preset",
-        "icon": "$(folder-opened)"
-      },
-      {
-        "command": "codeprep.exportPresets",
-        "title": "Export Presets",
-        "icon": "$(export)"
-      },
-      {
-        "command": "codeprep.importPresets",
-        "title": "Import Presets",
-        "icon": "$(import)"
+        "title": "%command.addToSelection%"
       },
       {
         "command": "codeprep.deletePrompt",
-        "title": "Delete Prompt",
+        "title": "%command.deletePrompt%",
         "icon": "$(trash)"
       },
       {
@@ -125,9 +95,37 @@
         "command": "codeprep.gitMenu",
         "title": "%command.gitMenu%",
         "icon": "$(source-control)"
+      },
+      {
+        "command": "codeprep.selectionMenu",
+        "title": "%command.selectionMenu%",
+        "icon": "$(selection)"
+      },
+      {
+        "command": "codeprep.previewPatch",
+
+        "title": "%command.previewPatch%",
+        "icon": "$(diff-added)"
+      },
+      {
+        "command": "codeprep.applyPatch",
+        "title": "%command.applyPatch%",
+        "icon": "$(check)"
+      },
+      {
+        "command": "codeprep.applyAllPatches",
+        "title": "%command.applyAllPatches%",
+        "icon": "$(check-all)"
       }
     ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "codeprep.applyPatch",
+          "when": "resourceScheme == codeprep-patch",
+          "group": "navigation"
+        }
+      ],
       "view/title": [
         {
           "command": "codeprep.refreshTree",
@@ -145,6 +143,16 @@
           "group": "navigation@1"
         },
         {
+          "command": "codeprep.previewPatch",
+          "when": "view == codeprep.fileTree",
+          "group": "navigation@2"
+        },
+        {
+          "command": "codeprep.applyAllPatches",
+          "when": "view == codeprep.fileTree",
+          "group": "navigation@2"
+        },
+        {
           "command": "codeprep.gitMenu",
           "when": "view == codeprep.fileTree && codeprep.showGitMenu",
           "group": "navigation@2"
@@ -158,11 +166,6 @@
           "command": "codeprep.generate",
           "when": "view == codeprep.fileTree && codeprep.showGenerate",
           "group": "navigation@4"
-        },
-        {
-          "command": "codeprep.presetMenu",
-          "when": "view == codeprep.fileTree",
-          "group": "navigation@5"
         }
       ],
       "view/item/context": [
@@ -193,18 +196,19 @@
             "**/out/**",
             "**/dist/**"
           ],
-          "description": "Patterns to exclude from the tree view and selection."
+          "description": "%config.exclude.description%"
         },
         "codeprep.customPrompts": {
           "type": "object",
           "default": {
-            "✨ 1. 新機能実装 (Implement Feature)": "## 依頼\n以下のプロジェクト構造とコードを読み取り、新しい機能 [機能名をここに記述] を実装してください。\n\n## 構造\n{{tree}}\n\n## 制約事項\n- 既存の設計パターン（DDD/クリーンアーキテクチャ等）を遵守してください。\n- 型安全性を確保し、anyの使用を避けてください。\n- 実装に関連するユニットテストも併せて提案してください。\n\n## 言語設定\n回答は日本語で行ってください。",
-            "🛠️ 2. リファクタリング (Refactor)": "## 依頼\n提供するコードのリファクタリング案を提示してください。\n\n## 構造\n{{tree}}\n\n## 観点\n- 可読性の向上（命名、関数の分割）\n- 計算量の最適化\n- 疎結合・高凝集な設計への改善\n- 重複コードの排除\n\n## 形式\n修正後のコードだけでなく、なぜそのように変更すべきかの理由を添えてください。",
-            "🐛 3. デバッグ・問題解析 (Bug Fix)": "## 状況\n以下のコードで [問題の内容を記述] という不具合が発生しています。\n\n## 構造\n{{tree}}\n\n## 調査依頼\n- 原因の特定と、その解説\n- 修正プログラムの提示\n- 再発防止のためのテストケースの提案\n\n## 補足\n実行日時: {{datetime}}\n環境: {{language}}",
-            "🧪 4. テストコード生成 (Unit Test)": "## 依頼\n以下のソースコードに対するユニットテストを記述してください。\n\n## 構造\n{{tree}}\n\n## 要件\n- テストフレームワーク: [Vitest/Jest等を記述]\n- 正常系だけでなく、境界値や異常系のテストを含めてください。\n- モックが必要な場合は、その作り方も含めて提示してください。\n- カバレッジを意識した構成にしてください。",
-            "📝 5. コードレビュー (Review)": "## 依頼\nあなたはシニアフルスタックエンジニアです。提出されたコードを厳しく、かつ建設的にレビューしてください。\n\n## 構造\n{{tree}}\n\n## チェックリスト\n- バグの可能性はないか\n- セキュリティ上の脆弱性（インジェクション、機密情報の露出など）はないか\n- パフォーマンス上の懸念はないか\n- 言語ごとのベストプラクティスに従っているか"
+            "✨ 1. 新機能実装 (Implement Feature)": "%prompt.implementFeature%",
+            "🛠️ 2. リファクタリング (Refactor)": "%prompt.refactor%",
+            "🐛 3. デバッグ・問題解析 (Bug Fix)": "%prompt.bugFix%",
+            "🧪 4. テストコード生成 (Unit Test)": "%prompt.unitTest%",
+            "📝 5. コードレビュー (Review)": "%prompt.codeReview%",
+            "🩹 6. パッチモード指示 (Patch Mode)": "%prompt.patchMode%"
           },
-          "description": "Define your custom prompts here as key-value pairs (Label: Prompt Content)."
+          "description": "%config.customPrompts.description%"
         },
         "codeprep.visibleButtons": {
           "type": "array",
@@ -217,24 +221,21 @@
               "codeprep.generate",
               "codeprep.selectGitDiff",
               "codeprep.selectPrompt",
-              "codeprep.savePreset",
-              "codeprep.loadPreset",
               "codeprep.invertSelection",
-              "codeprep.exportPresets",
-              "codeprep.importPresets",
-              "codeprep.gitMenu"
+              "codeprep.gitMenu",
+              "codeprep.previewPatch"
             ]
           },
           "default": [
             "codeprep.refreshTree",
-            "codeprep.selectAll",
-            "codeprep.selectGitDiff",
+            "codeprep.selectionMenu",
             "codeprep.gitMenu",
+            "codeprep.previewPatch",
             "codeprep.selectPrompt",
-            "codeprep.generate",
-            "codeprep.clearAll"
+            "codeprep.generate"
           ],
-          "description": "Select which buttons are visible in the view title bar (Max 6 recommended by VSCode UI)."
+
+          "description": "%config.visibleButtons.description%"
         },
         "codeprep.outputFormat": {
           "type": "string",
@@ -244,7 +245,7 @@
             "json"
           ],
           "default": "markdown",
-          "description": "Select the output format for the generated content."
+          "description": "%config.outputFormat.description%"
         },
         "codeprep.useNativeEngine": {
           "type": "boolean",
@@ -254,27 +255,32 @@
         "codeprep.maxFileSizeKB": {
           "type": "integer",
           "default": 500,
-          "description": "巨大ファイル・ガードの閾値 (KB)。このサイズを超えるファイルは、内容が省略されます。"
+          "description": "%config.maxFileSizeKB.description%"
         },
         "codeprep.autoRefreshTree": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically refresh the file tree when files are created, changed, or deleted."
+          "description": "%config.autoRefreshTree.description%"
         },
         "codeprep.openAfterGenerate": {
           "type": "boolean",
           "default": true,
-          "description": "生成完了後に、内容を新しいエディタタブで開きます。"
+          "description": "%config.openAfterGenerate.description%"
+        },
+        "codeprep.alwaysAddPatchInstructions": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.alwaysAddPatchInstructions.description%"
         },
         "codeprep.openAfterGitAction": {
           "type": "boolean",
           "default": true,
-          "description": "Gitアクション（コミットプロンプト生成など）の後に、内容を新しいエディタタブで開きます。"
+          "description": "%config.openAfterGitAction.description%"
         },
         "codeprep.gitCommitPrompt": {
           "type": "string",
-          "default": "あなたはプロのソフトウェアエンジニアです。以下の git diff の内容を分析し、ベストプラクティスに基づいたコミットメッセージのプロンプトを生成してください。\n\n## 制約事項\n- 1行目は要約、3行目以降に具体的な変更内容を箇条書きで記載してください。\n- 言語は日本語で出力してください。\n\n## type の定義\n- feat: 新機能\n- fix: バグ修正\n- refactor: 機能変更を伴わないコード整理\n- perf: パフォーマンス向上\n- test: テストの追加・修正\n- chore: ビルド構成や依存関係の変更、ドキュメント生成など\n\n## git diff\n{{diff}}",
-          "description": "Git コミットメッセージ生成時のプロンプトテンプレート。{{diff}} 変数が実際の差分に置換されます。"
+          "default": "%prompt.gitCommit%",
+          "description": "%config.gitCommitPrompt.description%"
         }
       }
     }
@@ -286,10 +292,9 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts --cache",
     "test": "node ./out/test/runTest.js",
-    "test:e2e": "node ./out/test/runTest.js",
     "test:unit": "vitest run",
     "lint:standards": "ts-node scripts/check-standards.ts",
-    "check": "npm run lint && npm run lint:standards && npm run test:unit"
+    "check": "npm run compile && npm run lint && npm run lint:standards && npm run test:unit"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",

@@ -16,6 +16,10 @@ import { UIController } from './features/ui/application/UIController';
 import { registerAllCommands, RegistryDeps } from './commands/CommandRegistry';
 import { VSCodeFileSystem } from './shared/infrastructure/VSCodeFileSystem';
 import { GitCliClient } from './features/git/infrastructure/GitCliClient';
+import { PatchUseCase } from './features/patch/application/PatchUseCase';
+import { VSCodeClipboard } from './features/patch/infrastructure/VSCodeClipboard';
+import { PatchPreviewProvider } from './features/patch/infrastructure/PatchPreviewProvider';
+
 
 export async function activate(context: vscode.ExtensionContext) {
   try {
@@ -43,9 +47,11 @@ function buildRegistryDeps(context: vscode.ExtensionContext, s: any, root: strin
     engine: s.engine,
     workspaceRepo: s.workspaceRepo,
     fileSystem: s.fileSystem,
-    gitClient: s.gitClient
+    gitClient: s.gitClient,
+    patchUseCase: s.patchUseCase
   };
 }
+
 
 
 function initServices(context: vscode.ExtensionContext, root: string | undefined) {
@@ -53,17 +59,34 @@ function initServices(context: vscode.ExtensionContext, root: string | undefined
   const gitClient = new GitCliClient();
   const gitWatcher = root ? new GitWatcher(root, gitClient) : undefined;
   const selection = new Selection();
-  const workspaceRepo = new VSCodeWorkspaceRepository(root || '');
-  const selectionUseCase = new SelectionUseCase(selection, new VSCodeSelectionRepository(context.workspaceState), new VSCodeFileValidator(root || ''), gitWatcher);
-  const promptUseCase = new PromptUseCase(new VSCodePromptRepository());
+  
+  const repos = createRepositories(context, root);
+  const useCases = createUseCases(context, root, selection, repos, gitWatcher, fileSystem);
+
+  const treeProvider = new FileTreeProvider(root, selection, fileSystem, gitWatcher);
+  const uiController = new UIController({ selection, tokenUseCase: useCases.tokenUseCase, treeProvider, fileSystem, root, gitWatcher });
+
+  return { selection, ...useCases, ...repos, fileSystem, gitClient, gitWatcher, treeProvider, uiController };
+}
+
+function createRepositories(context: vscode.ExtensionContext, root: string | undefined) {
+  return {
+    selectionRepo: new VSCodeSelectionRepository(context.workspaceState),
+    workspaceRepo: new VSCodeWorkspaceRepository(root || ''),
+    promptRepo: new VSCodePromptRepository()
+  };
+}
+
+function createUseCases(context: vscode.ExtensionContext, root: string | undefined, selection: Selection, repos: any, gitWatcher: any, fileSystem: any) {
+  const selectionUseCase = new SelectionUseCase(selection, repos.selectionRepo, new VSCodeFileValidator(root || ''), gitWatcher);
+  const promptUseCase = new PromptUseCase(repos.promptRepo);
   const tokenPresenter = new VSCodeStatusBarPresenter();
   const tokenUseCase = new TokenUseCase(tokenPresenter);
-  const engine = new OutputEngine();
-  const treeProvider = new FileTreeProvider(root, selection, fileSystem, gitWatcher);
-  const uiController = new UIController({ selection, tokenUseCase, treeProvider, fileSystem, root, gitWatcher });
-
-  return { selection, selectionUseCase, promptUseCase, tokenPresenter, engine, workspaceRepo, fileSystem, gitClient, gitWatcher, treeProvider, uiController };
+  const patchUseCase = new PatchUseCase(new VSCodeClipboard(), fileSystem);
+  return { selectionUseCase, promptUseCase, tokenPresenter, tokenUseCase, patchUseCase, engine: new OutputEngine() };
 }
+
+
 
 function setupTreeView(treeProvider: FileTreeProvider) {
   return vscode.window.createTreeView('codeprep.fileTree', {
@@ -78,8 +101,10 @@ function registerEvents(context: vscode.ExtensionContext, services: any, treeVie
   context.subscriptions.push(
     treeView, services.tokenPresenter, ...commands,
     vscode.workspace.registerTextDocumentContentProvider(PreviewProvider.scheme, new PreviewProvider()),
+    vscode.workspace.registerTextDocumentContentProvider(PatchPreviewProvider.scheme, new PatchPreviewProvider()),
     vscode.workspace.onDidChangeConfiguration(e => handleConfigChange(e, services)),
     treeView.onDidChangeCheckboxState(e => handleCheckboxChange(e, services))
+
   );
 }
 
