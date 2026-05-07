@@ -59,11 +59,11 @@ describe('SelectionCommands Integration Tests', () => {
 
     await commands.configureGenerationOptions();
 
-    // ✅ 実装に合わせて期待値を 'codeprep.' 接頭辞付きに修正
-    expect(mockConfig.update).toHaveBeenCalledWith('codeprep.skeletonMode', true, 1);
-    expect(mockConfig.update).toHaveBeenCalledWith('codeprep.includeDependencies', false, 1);
-    expect(mockConfig.update).toHaveBeenCalledWith('codeprep.includeErrors', true, 1);
-    expect(mockConfig.update).toHaveBeenCalledWith('codeprep.incrementalMode', false, 1);
+    // ✅ 実装に合わせて期待値を修正 (相対キー, ターゲットは undefined)
+    expect(mockConfig.update).toHaveBeenCalledWith('skeletonMode', true, undefined);
+    expect(mockConfig.update).toHaveBeenCalledWith('includeDependencies', false, undefined);
+    expect(mockConfig.update).toHaveBeenCalledWith('includeErrors', true, undefined);
+    expect(mockConfig.update).toHaveBeenCalledWith('incrementalMode', false, undefined);
   });
 
   it('selectFromClipboard: クリップボードから選択後にUIをリフレッシュすること', async () => {

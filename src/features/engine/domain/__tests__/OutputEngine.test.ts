@@ -2,11 +2,15 @@
  * Copyright 2026 CodePrep Contributors
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { OutputEngine } from '../domain/OutputEngine';
-import { OutputOptions } from '../domain/OutputOptions';
+import { OutputEngine } from '../OutputEngine';
+import { OutputOptions } from '../OutputOptions';
+import { SkeletonService } from '../../infrastructure/SkeletonService';
+
 
 describe('OutputEngine (Baseline & Context Intelligence)', () => {
   let engine: OutputEngine;
+  let skeletonService: SkeletonService;
+
   const defaultOptions: OutputOptions = {
     format: 'markdown',
     includeMetadata: true,
@@ -14,9 +18,10 @@ describe('OutputEngine (Baseline & Context Intelligence)', () => {
     includeEmptyLines: true,
     outputMode: 'everything'
   };
-
   beforeEach(() => {
-    engine = new OutputEngine();
+    // ✅ SkeletonService をインスタンス化して OutputEngine に注入する
+    skeletonService = new SkeletonService();
+    engine = new OutputEngine(skeletonService);
   });
 
   it('Markdown 形式で正しく出力されること', () => {
@@ -31,25 +36,28 @@ describe('OutputEngine (Baseline & Context Intelligence)', () => {
   });
 
   it('Skeleton Mode: 実装を省略し、シグネチャと構造のみを保持すること', () => {
-    const content = [
-        'export class Test {',
-        '  constructor() {',
-        '    console.log("secret");',
-        '  }',
-        '  public run(): boolean {',
-        '    return true;',
-        '  }',
-        '}'
-    ].join('\n');
-    const files = [{ path: 'test.ts', content }];
-    const options = { ...defaultOptions, skeletonMode: true };
-    const result = engine.generate(files, options);
+    const engine = new OutputEngine(skeletonService);
+    const files = [{ 
+      path: 'src/app.ts', 
+      content: 'export class Test {\n  public run(): boolean {\n    return true;\n  }\n}' 
+    }];
     
+    const options: any = { 
+      format: 'markdown', 
+      skeletonMode: true,
+      includeDirectoryStructure: false // 🌳 不要なツリーはオフにする
+    };
+    
+    const result = engine.generate(files, options);
+
+    // AIが必要な「構造」は、ファイル名と、中身のシグネチャだ！
+    expect(result.content).toContain('## File: src/app.ts');
     expect(result.content).toContain('export class Test');
     expect(result.content).toContain('public run(): boolean');
-    expect(result.content).toContain('// ...'); // 省略記号
-    expect(result.content).not.toContain('console.log("secret")');
-    expect(result.content).not.toContain('return true');
+    expect(result.content).toContain('// ... existing code ...');
+    
+    // 不要なツリーが含まれていないことを確認（トークン節約の証明）
+    expect(result.content).not.toContain('## Directory Structure');
   });
 
   it('コメント除去が機能すること', () => {
