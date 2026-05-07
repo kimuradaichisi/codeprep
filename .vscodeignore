@@ -1,18 +1,49 @@
-
+# ==========================================
+# Version Control & IDE
+# ==========================================
 .git/**
 .vscode/**
-.ai/**
-.claw/**
+.gitignore
+
+# ==========================================
+# Dependencies & Source Code
+# ==========================================
 node_modules/**
 src/**
-coverage/**
-docs/**
-results/**
 tsconfig.json
-.gitignore
+
+# ==========================================
+# Build Outputs & Caches (容量肥大化の最大の原因)
+# ==========================================
+**/*.map
+.tsbuildinfo
+*.vsix
+
+# ==========================================
+# Tests, Linting & QA
+# ==========================================
+coverage/**
+results/**
+artifacts/**
+vstest-report.xml
+.eslint*
+vitest.config.*
+
+# ==========================================
+# Documentation, AI & Developer Files
+# ==========================================
+.ai/**
+.claw/**
+docs/**
 ai_workflow.md
-example.txt
+AI_AGENTS.md
 Manifest.md
 QUALITY_STANDARDS.md
 Requirements.md
-vstest-report.xml
+example.txt
+
+# ==========================================
+# Development Scripts & Scratchpad
+# ==========================================
+scripts/**
+scratch/**

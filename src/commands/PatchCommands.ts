@@ -1,3 +1,6 @@
+/*
+ * Copyright 2026 CodePrep Contributors
+ */
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { PatchUseCase } from '../features/patch/application/PatchUseCase';
@@ -22,6 +25,11 @@ export class PatchCommands {
     }
   }
 
+  /** ✅ 新機能：AI検証用プロンプトをコピー */
+  public async copyVerifyPrompt(uri: vscode.Uri): Promise<void> {
+    await this.patchUseCase.copyVerifyPrompt(uri);
+  }
+
   public async applyPatch(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.uri.scheme !== 'codeprep-patch') return;
@@ -43,7 +51,6 @@ export class PatchCommands {
     vscode.window.showInformationMessage(`Applied patch to ${relPath}`);
   }
 
-
   private async ensureDirectory(fileUri: vscode.Uri): Promise<void> {
     const dirUri = vscode.Uri.file(path.dirname(fileUri.fsPath));
     await vscode.workspace.fs.createDirectory(dirUri);
@@ -52,11 +59,11 @@ export class PatchCommands {
   private async prepareEdit(edit: vscode.WorkspaceEdit, uri: vscode.Uri, content: string): Promise<void> {
     try {
       await vscode.workspace.fs.stat(uri);
-      edit.replace(uri, new vscode.Range(0, 0, 100000, 0), content);
+      const range = new vscode.Range(0, 0, 100000, 0);
+      edit.replace(uri, range, content);
     } catch {
       edit.createFile(uri, { overwrite: true });
       edit.insert(uri, new vscode.Position(0, 0), content);
     }
   }
-
 }

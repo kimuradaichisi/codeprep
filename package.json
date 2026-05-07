@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.7.1",
+  "version": "0.7.3",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -120,6 +120,11 @@
         "command": "codeprep.configureGenerationOptions",
         "title": "CodePrep: Configure Generation Options",
         "icon": "$(settings)"
+      },
+      {
+        "command": "codeprep.copyVerifyPrompt",
+        "title": "CodePrep: Copy AI Verify Prompt",
+        "icon": "$(comment-discussion)"
       }
     ],
     "menus": {
@@ -128,6 +133,11 @@
           "command": "codeprep.applyPatch",
           "when": "resourceScheme == codeprep-patch",
           "group": "navigation"
+        },
+        {
+          "command": "codeprep.copyVerifyPrompt",
+          "when": "resourceScheme == codeprep-patch",
+          "group": "navigation@2"
         }
       ],
       "view/title": [
@@ -314,35 +324,34 @@
     }
   },
   "scripts": {
-      "compile": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",      
-      "watch": "npm run compile -- --watch",
-      "vscode:prepublish": "npm run check-types && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
-      "check-types": "tsc -p ./ --noEmit",
-      "pretest": "tsc -p ./ && npm run lint",
-      "test": "node ./out/test/runTest.js",
-      "test:unit": "vitest run",
-      "lint": "eslint src --ext ts --cache",
-      "lint:standards": "ts-node scripts/check-standards.ts",
-      "check": "npm run compile && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
+    "compile": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap --metafile=meta.json",
+    "watch": "npm run compile -- --watch",
+    "vscode:prepublish": "npm run build-production",
+    "build-production": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "check-types": "tsc -p ./ --noEmit",
+    "pretest": "tsc -p ./ && npm run lint",
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "vitest run",
+    "lint": "eslint src --ext ts --cache",
+    "lint:standards": "ts-node scripts/check-standards.ts",
+    "check": "npm run compile && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.19.39",
     "@types/vscode": "^1.84.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
+    "@typescript-eslint/parser": "^8.59.1",
     "@vitest/coverage-v8": "latest",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.28.0",
     "eslint": "^8.56.0",
     "glob": "^13.0.6",
-    "mocha": "^11.7.5",
+    "mocha": "^11.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^4.9.5",
     "vitest": "^4.1.5"
-  },
-  "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.59.1",
-    "@typescript-eslint/parser": "^8.59.1"
   }
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OutputEngine } from '../../features/engine/domain/OutputEngine';
+import { SkeletonService } from '../../features/engine/infrastructure/SkeletonService';
 import { Selection } from '../../features/selection/domain/Selection';
 
 vi.mock('vscode', () => ({
@@ -24,9 +25,11 @@ describe('Robustness Edge Cases', () => {
     
     describe('OutputEngine Resilience', () => {
         let engine: OutputEngine;
+        let skeletonService: SkeletonService;
 
         beforeEach(() => {
-            engine = new OutputEngine();
+            skeletonService = new SkeletonService();
+            engine = new OutputEngine(skeletonService);
         });
 
         it('空のファイルリストが渡された場合、適切な空文字またはヘッダーのみを返却する', async () => {
@@ -46,10 +49,12 @@ describe('Robustness Edge Cases', () => {
 
     describe('OutputEngine Advanced Edge Cases', () => {
         let engine: OutputEngine;
+        let skeletonService: SkeletonService;
         const options = { format: 'markdown', includeMetadata: true, outputMode: 'everything' } as any;
 
         beforeEach(() => {
-            engine = new OutputEngine();
+            skeletonService = new SkeletonService();
+            engine = new OutputEngine(skeletonService);
         });
 
         it('コンテンツ内に多重バッククォートがある場合、デリミタが自動的に拡張されること', () => {

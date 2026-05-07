@@ -1,3 +1,4 @@
+// src/features/patch/__tests__/OmitHealer.test.ts
 import { describe, it, expect } from 'vitest';
 import { OmitHealer } from '../domain/OmitHealer';
 
@@ -11,8 +12,8 @@ describe('OmitHealer - Edge Cases & Multi-Lang', () => {
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toContain('<h1>Title</h1>');
-      expect(result.value).toContain('<body>');
+      expect(result.value.code).toContain('<h1>Title</h1>');
+      expect(result.value.code).toContain('<body>');
     }
   });
 
@@ -23,8 +24,8 @@ describe('OmitHealer - Edge Cases & Multi-Lang', () => {
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toContain('SELECT id, name');
-      expect(result.value).toContain('ORDER BY id;');
+      expect(result.value.code).toContain('SELECT id, name');
+      expect(result.value.code).toContain('ORDER BY id;');
     }
   });
 
@@ -35,7 +36,7 @@ describe('OmitHealer - Edge Cases & Multi-Lang', () => {
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toBe(original);
+      expect(result.value.code).toBe(original);
     }
   });
 
@@ -46,7 +47,7 @@ describe('OmitHealer - Edge Cases & Multi-Lang', () => {
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toBe(original);
+      expect(result.value.code).toBe(original);
     }
   });
 
@@ -57,7 +58,7 @@ describe('OmitHealer - Edge Cases & Multi-Lang', () => {
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toContain('void method()');
+      expect(result.value.code).toContain('void method()');
     }
   });
 
@@ -68,7 +69,7 @@ describe('OmitHealer - Edge Cases & Multi-Lang', () => {
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toBe(original);
+      expect(result.value.code).toBe(original);
     }
   });
 
@@ -79,8 +80,7 @@ describe('OmitHealer - Edge Cases & Multi-Lang', () => {
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toBe(original);
+      expect(result.value.code).toBe(original);
     }
   });
 });
-

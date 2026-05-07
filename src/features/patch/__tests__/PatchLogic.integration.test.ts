@@ -1,3 +1,4 @@
+// src/features/patch/__tests__/PatchLogic.integration.test.ts
 import { describe, it, expect } from 'vitest';
 import { ClipParser } from '../domain/ClipParser';
 import { OmitHealer } from '../domain/OmitHealer';
@@ -47,19 +48,19 @@ export function log(msg: string) {
     // core/constants.py (新規ファイル想定: オリジナル空)
     const res1 = healer.heal('', patchList.find(p => p.filePath === 'core/constants.py')!.code);
     expect(res1.isSuccess).toBe(true);
-    expect(res1.isSuccess && res1.value).toContain('MAX_RETRY = 5');
+    expect(res1.isSuccess && res1.value.code).toContain('MAX_RETRY = 5');
 
     // src/utils.ts (既存ファイル)
     const originalTs = 'export function log(msg: string) {\n  const date = new Date();\n}';
     const res2 = healer.heal(originalTs, patchList.find(p => p.filePath === 'src/utils.ts')!.code);
     expect(res2.isSuccess, res2.isFailure ? res2.error.message : '').toBe(true);
-    expect(res2.isSuccess && res2.value).toContain('const date = new Date();');
-    expect(res2.isSuccess && res2.value).toContain('console.log(msg);');
+    expect(res2.isSuccess && res2.value.code).toContain('const date = new Date();');
+    expect(res2.isSuccess && res2.value.code).toContain('console.log(msg);');
 
     // README.md (マークダウンコメント)
     const originalMd = '# Project Title\nThis is a test project.\n## License';
     const res3 = healer.heal(originalMd, patchList.find(p => p.filePath === 'README.md')!.code);
     expect(res3.isSuccess, res3.isFailure ? res3.error.message : '').toBe(true);
-    expect(res3.isSuccess && res3.value).toContain('This is a test project.');
+    expect(res3.isSuccess && res3.value.code).toContain('This is a test project.');
   });
 });

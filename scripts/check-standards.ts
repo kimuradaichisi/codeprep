@@ -1,7 +1,6 @@
 import * as ts from 'typescript';
-import * as fs from 'fs';
-import * as glob from 'glob';
-import * as path from 'path';
+import * as fs from 'node:fs'; // 'node:' を付けると環境が認識されやすくなります
+import { globSync } from 'glob'; // glob v10以降はこの書き方が標準です
 
 const CONFIG = {
     maxFileLines: 150,
@@ -13,7 +12,8 @@ const CONFIG = {
 function analyzeFile(filePath: string) {
     const content = fs.readFileSync(filePath, 'utf8');
     const sourceFile = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
-    const lineCount = content.split('\n').length;
+    const lines = content.split(/\r?\n/);
+    const lineCount = lines.length;
 
     if (lineCount > CONFIG.maxFileLines) {
         console.error(`❌ [File Length] ${filePath}: ${lineCount} lines (Max: ${CONFIG.maxFileLines})`);
@@ -25,8 +25,10 @@ function analyzeFile(filePath: string) {
             const start = sourceFile.getLineAndCharacterOfPosition(node.getStart());
             const end = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
             const methodLines = end.line - start.line;
+            
             if (methodLines > CONFIG.maxMethodLines) {
-                console.error(`❌ [Method Length] ${filePath}:${start.line + 1} - ${node.name?.getText() || 'constructor'}: ${methodLines} lines`);
+                const name = ts.isConstructorDeclaration(node) ? 'constructor' : node.name?.getText();
+                console.error(`❌ [Method Length] ${filePath}:${start.line + 1} - ${name}: ${methodLines} lines`);
             }
 
             // コンストラクタ引数のチェック
@@ -41,5 +43,7 @@ function analyzeFile(filePath: string) {
 }
 
 // 実行部
-const files = glob.sync('src/**/*.ts', { ignore: 'src/**/*.test.ts' });
-files.forEach(analyzeFile);
+console.log('Checking code standards...');
+// globSync を使用
+const files = globSync('src/**/*.ts', { ignore: 'src/**/*.test.ts' });
+files.forEach((file) => analyzeFile(file.toString()));

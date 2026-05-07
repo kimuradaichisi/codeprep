@@ -8,7 +8,7 @@ export class PathService {
 
     // 2. 登録されたファイルから親を1回だけ辿る（重複計算を極限まで減らす）
     for (const file of files) {
-      let parts = file.split('/');
+      const parts = file.split('/');
       while (parts.length > 1) {
         parts.pop();
         const parent = parts.join('/');

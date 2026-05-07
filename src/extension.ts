@@ -6,6 +6,7 @@ import { VSCodeFileValidator } from './features/selection/infrastructure/VSCodeF
 import { VSCodeWorkspaceRepository } from './features/selection/infrastructure/VSCodeWorkspaceRepository';
 import { GitWatcher } from './features/selection/infrastructure/GitWatcher';
 import { OutputEngine } from './features/engine/domain/OutputEngine';
+import { SkeletonService } from './features/engine/infrastructure/SkeletonService';
 import { TokenUseCase } from './features/token/application/TokenUseCase';
 import { VSCodeStatusBarPresenter } from './features/token/infrastructure/VSCodeStatusBarPresenter';
 import { PromptUseCase } from './features/prompt/application/PromptUseCase';
@@ -83,7 +84,8 @@ function createUseCases(context: vscode.ExtensionContext, root: string | undefin
   const tokenPresenter = new VSCodeStatusBarPresenter();
   const tokenUseCase = new TokenUseCase(tokenPresenter);
   const patchUseCase = new PatchUseCase(new VSCodeClipboard(), fileSystem);
-  return { selectionUseCase, promptUseCase, tokenPresenter, tokenUseCase, patchUseCase, engine: new OutputEngine() };
+  const skeletonService = new SkeletonService();
+  return { selectionUseCase, promptUseCase, tokenPresenter, tokenUseCase, patchUseCase, engine: new OutputEngine(skeletonService) };
 }
 
 

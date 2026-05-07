@@ -10,8 +10,8 @@ describe('OmitHealer - Multi-Language & Symbol Support', () => {
     const result = healer.heal(original, patch);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toContain('<h1>Title</h1>');
-      expect(result.value).toContain('<p>New Text</p>');
+      expect(result.value.code).toContain('<h1>Title</h1>');
+      expect(result.value.code).toContain('<p>New Text</p>');
     }
   });
 
@@ -21,8 +21,8 @@ describe('OmitHealer - Multi-Language & Symbol Support', () => {
     const result = healer.heal(original, patch);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toContain('FROM users');
-      expect(result.value).toContain('WHERE active = 0;');
+      expect(result.value.code).toContain('FROM users');
+      expect(result.value.code).toContain('WHERE active = 0;');
     }
   });
 
@@ -32,8 +32,8 @@ describe('OmitHealer - Multi-Language & Symbol Support', () => {
     const result = healer.heal(original, patch);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toContain('printf("hello");');
-      expect(result.value).toContain('exit(0);');
+      expect(result.value.code).toContain('printf("hello");');
+      expect(result.value.code).toContain('exit(0);');
     }
   });
 
@@ -43,8 +43,8 @@ describe('OmitHealer - Multi-Language & Symbol Support', () => {
     const result = healer.heal(original, patch);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toContain('val <<= 2;');
-      expect(result.value).toContain('if (x <> y)');
+      expect(result.value.code).toContain('val <<= 2;');
+      expect(result.value.code).toContain('if (x <> y)');
     }
   });
 
@@ -54,8 +54,8 @@ describe('OmitHealer - Multi-Language & Symbol Support', () => {
     const result = healer.heal(original, patch);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toContain('console.log("A");');
-      expect(result.value).toContain('console.log("C");');
+      expect(result.value.code).toContain('console.log("A");');
+      expect(result.value.code).toContain('console.log("C");');
     }
   });
 });

@@ -7,7 +7,7 @@
       "ES2020"
     ],
     "sourceMap": true,
-    "rootDir": "src",
+    "rootDir": ".",           // 1. "src" から "." に変更（プロジェクト全体をルートにする）
     "strict": true,
     "noImplicitAny": true,
     "noEmit": true, 
@@ -21,13 +21,14 @@
     ]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "scripts/**/*"            // 2. scripts を含める
   ],
   "exclude": [
     "node_modules",
     ".vscode-test",
     "vitest.config.ts",
-    "fix_native_engine.py",
-    "scripts"
+    "fix_native_engine.py"
+    // "scripts"              // 3. ここから削除する
   ]
 }

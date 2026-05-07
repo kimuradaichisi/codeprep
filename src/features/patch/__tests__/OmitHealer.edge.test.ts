@@ -1,3 +1,4 @@
+// src/features/patch/__tests__/OmitHealer.edge.test.ts
 import { describe, it, expect } from 'vitest';
 import { OmitHealer } from '../domain/OmitHealer';
 
@@ -10,7 +11,7 @@ describe('OmitHealer - Robustness Edge Cases', () => {
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toBe(patched);
+      expect(result.value.code).toBe(patched);
     }
   });
 
@@ -24,7 +25,7 @@ class NewFile:
     const result = healer.heal(original, patch);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value.trim()).toBe(patch.trim());
+      expect(result.value.code.trim()).toBe(patch.trim());
     }
   });
 
@@ -34,8 +35,8 @@ class NewFile:
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      // Greedy match により、2つ目の item が復元されるはず
-      expect(result.value).toBe('item\nitem\nitem');
+      // Gap付きマッチ により、真ん中の item が復元されるはず
+      expect(result.value.code).toBe('item\nitem\nitem');
     }
   });
 
@@ -45,13 +46,14 @@ class NewFile:
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toBe('const a = 1;\nconst b = 2;\nconst new_b = 2.5;\nconst c = 3;');
+      expect(result.value.code).toBe('const a = 1;\nconst b = 2;\nconst new_b = 2.5;\nconst c = 3;');
     }
   });
 
   it('省略の後のアンカーが全く見つからない場合に詳細なエラーを返すこと', () => {
     const original = 'existing line';
-    const patched = 'existing line\n// ...\nnon-existent anchor';
+    // isLastOmit を避けるため末尾にもう1つomitを追加してアンカー不在エラーを強制
+    const patched = 'existing line\n// ...\nnon-existent anchor\n// ...';
     const result = healer.heal(original, patched);
     expect(result.isFailure).toBe(true);
     if (result.isFailure) {
@@ -66,7 +68,7 @@ class NewFile:
     const result = healer.heal(original, patched);
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
-      expect(result.value).toBe('start\n1\n2\nnew\n3\n4\nend');
+      expect(result.value.code).toBe('start\n1\n2\nnew\n3\n4\nend');
     }
   });
 });

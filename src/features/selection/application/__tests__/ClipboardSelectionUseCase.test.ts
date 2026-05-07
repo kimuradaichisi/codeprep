@@ -45,7 +45,6 @@ describe('ClipboardSelectionUseCase', () => {
     expect(paths).toContain('src/features/engine');
 
     // 件数は親ディレクトリ展開後の総数
-    const message = `Selected ${paths.filter(p => !p.includes('/__tests__') || p.endsWith('.ts')).length} files`;
     expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
       expect.stringContaining('Selected')
     );
