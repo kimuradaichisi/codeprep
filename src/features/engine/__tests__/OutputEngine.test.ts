@@ -1,8 +1,11 @@
+/*
+ * Copyright 2026 CodePrep Contributors
+ */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { OutputEngine } from '../domain/OutputEngine';
 import { OutputOptions } from '../domain/OutputOptions';
 
-describe('OutputEngine', () => {
+describe('OutputEngine (Baseline & Context Intelligence)', () => {
   let engine: OutputEngine;
   const defaultOptions: OutputOptions = {
     format: 'markdown',
@@ -25,6 +28,28 @@ describe('OutputEngine', () => {
     expect(result.content).toContain('└── test.ts');
     expect(result.content).toContain('## File: test.ts');
     expect(result.content).toContain('console.log("hi");');
+  });
+
+  it('Skeleton Mode: 実装を省略し、シグネチャと構造のみを保持すること', () => {
+    const content = [
+        'export class Test {',
+        '  constructor() {',
+        '    console.log("secret");',
+        '  }',
+        '  public run(): boolean {',
+        '    return true;',
+        '  }',
+        '}'
+    ].join('\n');
+    const files = [{ path: 'test.ts', content }];
+    const options = { ...defaultOptions, skeletonMode: true };
+    const result = engine.generate(files, options);
+    
+    expect(result.content).toContain('export class Test');
+    expect(result.content).toContain('public run(): boolean');
+    expect(result.content).toContain('// ...'); // 省略記号
+    expect(result.content).not.toContain('console.log("secret")');
+    expect(result.content).not.toContain('return true');
   });
 
   it('コメント除去が機能すること', () => {
@@ -70,18 +95,14 @@ describe('OutputEngine', () => {
     const files = [{ path: 'test.md', content: '```\ncode\n```' }];
     const result = engine.generate(files, defaultOptions);
     
-    // デリミタが ```` になっているはず
     expect(result.content).toContain('````\n```\ncode\n```\n````');
-    // デリミタとして ``` が使われていないこと（行の開始が ``` で終わる箇所がデリミタ以外にないこと）
-    // ディレクトリ構造のデリミタも ```` になっているはず
     expect(result.content).toContain('## Directory Structure\n````');
   });
 
   it('巨大ファイル・ガード: 指定サイズを超える場合、内容を省略して警告を表示すること', () => {
-    // 約2KB のダミーデータを作成
     const largeContent = 'a'.repeat(2048);
     const files = [{ path: 'large.ts', content: largeContent }];
-    const options = { ...defaultOptions, maxFileSizeKB: 1 }; // 1KB 制限
+    const options = { ...defaultOptions, maxFileSizeKB: 1 };
     
     const result = engine.generate(files, options);
     
@@ -89,18 +110,14 @@ describe('OutputEngine', () => {
     expect(result.content).not.toContain(largeContent);
   });
 
-  it('XML 形式でも巨大ファイルが省略されること', () => {
+  it('XML/JSON 形式でも巨大ファイルが省略されること', () => {
     const files = [{ path: 'large.ts', content: 'a'.repeat(2048) }];
-    const options = { ...defaultOptions, format: 'xml' as const, maxFileSizeKB: 1 };
-    const result = engine.generate(files, options);
-    expect(result.content).toContain('[WARNING] File size exceeds 1KB');
-  });
+    const options = { ...defaultOptions, maxFileSizeKB: 1 };
+    
+    const xml = engine.generate(files, { ...options, format: 'xml' });
+    expect(xml.content).toContain('[WARNING] File size exceeds 1KB');
 
-  it('JSON 形式でも巨大ファイルが省略されること', () => {
-    const files = [{ path: 'large.ts', content: 'a'.repeat(2048) }];
-    const options = { ...defaultOptions, format: 'json' as const, maxFileSizeKB: 1 };
-    const result = engine.generate(files, options);
-    const json = JSON.parse(result.content);
+    const json = JSON.parse(engine.generate(files, { ...options, format: 'json' }).content);
     expect(json.repository[0].content).toContain('[WARNING] File size exceeds 1KB');
   });
 });

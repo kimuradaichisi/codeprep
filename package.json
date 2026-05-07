@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -103,7 +103,6 @@
       },
       {
         "command": "codeprep.previewPatch",
-
         "title": "%command.previewPatch%",
         "icon": "$(diff-added)"
       },
@@ -116,6 +115,11 @@
         "command": "codeprep.applyAllPatches",
         "title": "%command.applyAllPatches%",
         "icon": "$(check-all)"
+      },
+      {
+        "command": "codeprep.configureGenerationOptions",
+        "title": "CodePrep: Configure Generation Options",
+        "icon": "$(settings)"
       }
     ],
     "menus": {
@@ -139,6 +143,11 @@
         },
         {
           "command": "codeprep.selectionMenu",
+          "when": "view == codeprep.fileTree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "codeprep.configureGenerationOptions",
           "when": "view == codeprep.fileTree",
           "group": "navigation@1"
         },
@@ -234,8 +243,27 @@
             "codeprep.selectPrompt",
             "codeprep.generate"
           ],
-
           "description": "%config.visibleButtons.description%"
+        },
+        "codeprep.skeletonMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "実装を省略し、構造のみ抽出します。(Feature 1)"
+        },
+        "codeprep.includeDependencies": {
+          "type": "boolean",
+          "default": false,
+          "description": "インポート先の型・クラス定義を自動付与します。(Feature 5)"
+        },
+        "codeprep.includeErrors": {
+          "type": "boolean",
+          "default": false,
+          "description": "ファイルに関連するエラー・警告を含めます。(Feature 2)"
+        },
+        "codeprep.incrementalMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "前回コピー時からの差分のみを抽出します。(Feature 7)"
         },
         "codeprep.outputFormat": {
           "type": "string",
@@ -286,15 +314,16 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts --cache",
-    "test": "node ./out/test/runTest.js",
-    "test:unit": "vitest run",
-    "lint:standards": "ts-node scripts/check-standards.ts",
-    "check": "npm run compile && npm run lint && npm run lint:standards && npm run test:unit"
+      "compile": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",      
+      "watch": "npm run compile -- --watch",
+      "vscode:prepublish": "npm run check-types && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
+      "check-types": "tsc -p ./ --noEmit",
+      "pretest": "tsc -p ./ && npm run lint",
+      "test": "node ./out/test/runTest.js",
+      "test:unit": "vitest run",
+      "lint": "eslint src --ext ts --cache",
+      "lint:standards": "ts-node scripts/check-standards.ts",
+      "check": "npm run compile && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
@@ -304,6 +333,7 @@
     "@vitest/coverage-v8": "latest",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
+    "esbuild": "^0.28.0",
     "eslint": "^8.56.0",
     "glob": "^13.0.6",
     "mocha": "^11.7.5",

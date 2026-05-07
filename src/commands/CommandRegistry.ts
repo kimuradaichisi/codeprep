@@ -88,7 +88,8 @@ function registerSelectionUtilityCommands(sel: SelectionCommands): vscode.Dispos
     vscode.commands.registerCommand('codeprep.invertSelection', () => sel.invert()),
     vscode.commands.registerCommand('codeprep.savePreset', () => sel.savePreset()),
     vscode.commands.registerCommand('codeprep.loadPreset', () => sel.loadPreset()),
-    vscode.commands.registerCommand('codeprep.selectByGrep', () => sel.selectByGrep())
+    vscode.commands.registerCommand('codeprep.selectByGrep', () => sel.selectByGrep()),
+    vscode.commands.registerCommand('codeprep.configureGenerationOptions', () => sel.configureGenerationOptions())
   ];
 }
 
@@ -100,4 +101,4 @@ function registerPatchCommands(patch: PatchCommands): vscode.Disposable[] {
   ];
 }
 
-
+

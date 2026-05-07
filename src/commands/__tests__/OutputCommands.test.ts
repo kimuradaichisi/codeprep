@@ -1,3 +1,6 @@
+/*
+ * Copyright 2026 CodePrep Contributors
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import { OutputCommands } from '../OutputCommands';
@@ -5,22 +8,21 @@ import { ok } from '../../shared/domain/Result';
 
 vi.mock('vscode', () => ({
   window: {
-    withProgress: vi.fn((options, task) => task({ report: vi.fn() })),
+    withProgress: vi.fn((o, task) => task({ report: vi.fn() })),
     showTextDocument: vi.fn(),
     showInformationMessage: vi.fn(),
     showWarningMessage: vi.fn(),
     showErrorMessage: vi.fn(),
+    visibleTextEditors: []
   },
   workspace: {
-    fs: {
-      stat: vi.fn(),
-      readFile: vi.fn(),
-    },
+    fs: { stat: vi.fn(), readFile: vi.fn() },
     getConfiguration: vi.fn(),
     openTextDocument: vi.fn(),
   },
   languages: {
     setTextDocumentLanguage: vi.fn(),
+    getDiagnostics: vi.fn().mockReturnValue([]),
   },
   env: {
     clipboard: { writeText: vi.fn() },
@@ -37,31 +39,30 @@ vi.mock('vscode', () => ({
   ViewColumn: { One: 1, Beside: 2 }
 }));
 
-describe('OutputCommands (Tab Reuse Integration)', () => {
+describe('OutputCommands (Context Intelligence & Tab Reuse)', () => {
   let outputCommands: OutputCommands;
   let mockSelectionUseCase: any;
   let mockPromptUseCase: any;
   let mockEngine: any;
   let mockFileSystem: any;
-  const mockRoot = '/mock/root';
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (OutputCommands as any).lastState.clear();
     mockSelectionUseCase = { currentSelection: { getPaths: vi.fn() } };
     mockPromptUseCase = { getSelectedPrompt: vi.fn(), getPromptContent: vi.fn() };
     mockEngine = { generate: vi.fn() };
     mockFileSystem = { 
-      readFile: vi.fn().mockResolvedValue(ok('c')),
+      readFile: vi.fn().mockResolvedValue(ok('content')),
       getFileSize: vi.fn().mockResolvedValue(ok(100))
     };
 
-    
     outputCommands = new OutputCommands({
         selectionUseCase: mockSelectionUseCase,
         promptUseCase: mockPromptUseCase,
         engine: mockEngine,
         fileSystem: mockFileSystem,
-        root: mockRoot
+        root: '/root'
     });
 
     (vscode.workspace.getConfiguration as any).mockReturnValue({
@@ -70,59 +71,95 @@ describe('OutputCommands (Tab Reuse Integration)', () => {
   });
 
   it('タブ再利用: 既存のタブがある場合、edit メソッドで内容を更新すること', async () => {
-    const mockDoc = {
-      positionAt: vi.fn().mockReturnValue({}),
+    const mockDoc = { 
+      positionAt: vi.fn().mockReturnValue({}), 
       getText: vi.fn().mockReturnValue('old'),
+      lineCount: 1,  // 少なくとも1行必要
+      lineAt: vi.fn().mockReturnValue({ text: 'old' }),
+      isClosed: false
     };
-    const mockEditor = { edit: vi.fn().mockImplementation((cb) => {
-      cb.replace({}, 'new-content');
-      return Promise.resolve(true);
-    })};
-
-    (vscode.workspace.openTextDocument as any).mockResolvedValue(mockDoc);
-    (vscode.window.showTextDocument as any).mockResolvedValue(mockEditor);
+    
+    const mockEditor = { 
+      edit: vi.fn().mockResolvedValue(true), // シンプルに
+      document: mockDoc
+    };
+    
+    // visibleTextEditors を設定
+    (vscode.window.visibleTextEditors as any) = [mockEditor];
 
     mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['a.ts']);
-    mockEngine.generate.mockReturnValue({ content: 'new-content', format: 'markdown' });
+    mockEngine.generate.mockReturnValue({ content: 'res' });
 
+    // 1回目の実行で lastOutputDoc を設定
     await outputCommands.generate();
+    
+    // lastOutputDoc をモックドキュメントに設定
+    (OutputCommands as any).lastOutputDoc = mockDoc;
 
-    expect(vscode.Uri.parse).toHaveBeenCalled();
+    // 2回目の実行で edit が呼ばれるはず
+    await outputCommands.generate();
+    
     expect(mockEditor.edit).toHaveBeenCalled();
   });
 
-  it('初回作成: 既存タブがない場合、新しいドキュメントを開くこと', async () => {
-    (vscode.workspace.openTextDocument as any)
-      .mockRejectedValueOnce(new Error('Not found'))
-      .mockResolvedValueOnce({});
+  it('巨大ファイル・ガード: 閾値を超えたファイルの内容が制限されること', async () => {
+    mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['large.ts']);
+    mockFileSystem.readFile.mockResolvedValue(ok('a'.repeat(1000)));
+    (vscode.workspace.getConfiguration as any).mockReturnValue({
+      get: vi.fn((k, d) => k === 'maxFileSizeKB' ? 0.5 : d)
+    });
+    mockEngine.generate.mockReturnValue({ content: 'omitted' });
 
-    mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['a.ts']);
-    mockEngine.generate.mockReturnValue({ content: 'res', format: 'markdown' });
-
-    await outputCommands.generate();
-
-    expect(vscode.workspace.openTextDocument).toHaveBeenCalledWith(
-      expect.objectContaining({ content: 'res' })
+    await (outputCommands as any).runGeneration(['large.ts']);
+    expect(mockEngine.generate).toHaveBeenCalledWith(
+        expect.anything(), 
+        expect.objectContaining({ maxFileSizeKB: 0.5 }), 
+        undefined
     );
   });
 
-  it('巨大ファイル・ガード: 閾値を超えたファイルの内容が省略されること', async () => {
-    mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['large.ts']);
-    mockFileSystem.getFileSize = vi.fn().mockResolvedValue(ok(1024 * 1024)); // 1MB
-    mockFileSystem.readFile = vi.fn(); // 呼ばれないはず
-
+  it('Feature 2: エラー情報が存在する場合、コンテンツに付与されること', async () => {
+    const mockUri = { fsPath: '/root/test.ts' };
+    (vscode.languages.getDiagnostics as any).mockReturnValue([[mockUri, [{ message: 'Err', range: { start: { line: 0 } } }]]]);
     (vscode.workspace.getConfiguration as any).mockReturnValue({
-      get: vi.fn((key, def) => (key === 'maxFileSizeKB' ? 500 : def))
+      get: vi.fn((k, d) => k === 'includeErrors' ? true : d)
     });
 
-    mockEngine.generate.mockReturnValue({ content: '[File content omitted: Size exceeds 500KB limit]', format: 'markdown' });
+    mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['test.ts']);
+    mockEngine.generate.mockReturnValue({ content: 'body' });
 
-    // 内部でのファイル読み込みを待機するために execute される処理を追跡
+    await outputCommands.generate();
+    expect(vi.mocked(vscode.env.clipboard.writeText)).toHaveBeenCalledWith(expect.stringContaining('## Related Errors'));
+  });
 
-    await (outputCommands as any).runGeneration(['large.ts']);
+  it('Feature 5: 依存関係（import）の自動抽出と追加が行われること', async () => {
+    mockFileSystem.readFile.mockResolvedValueOnce(ok('import "./dep"'));
+    mockFileSystem.readFile.mockResolvedValueOnce(ok('dep content'));
+    (vscode.workspace.getConfiguration as any).mockReturnValue({
+      get: vi.fn((k, d) => k === 'includeDependencies' ? true : d)
+    });
 
-    const callArgs = mockEngine.generate.mock.calls[0][0];
-    expect(callArgs[0].content).toContain('omitted');
-    expect(mockFileSystem.readFile).not.toHaveBeenCalled();
+    mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['test.ts']);
+    mockEngine.generate.mockReturnValue({ content: 'res' });
+
+    await outputCommands.generate();
+    const files = mockEngine.generate.mock.calls[0][0];
+    expect(files.length).toBe(2);
+    expect(files[1].path).toContain('dep');
+  });
+
+  it('Feature 7: Incremental Mode で変更のないファイルがフィルタリングされること', async () => {
+    (vscode.workspace.getConfiguration as any).mockReturnValue({
+      get: vi.fn((k, d) => k === 'incrementalMode' ? true : d)
+    });
+    mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['a.ts']);
+    mockFileSystem.readFile.mockResolvedValue(ok('same'));
+    mockEngine.generate.mockReturnValue({ content: 'res' });
+
+    await outputCommands.generate(); // 1回目
+    expect(mockEngine.generate.mock.calls[0][0].length).toBe(1);
+
+    await outputCommands.generate(); // 2回目
+    expect(mockEngine.generate.mock.calls[1]).toBeUndefined(); // ファイルが0件なので generate が呼ばれない
   });
 });

@@ -1,59 +1,54 @@
+/*
+ * Copyright 2026 CodePrep Contributors
+ */
 import { Result, ok, fail } from '../../../shared/domain/Result';
 import { ParsedPatch } from './ParsedPatch';
+import { BlockScanner, CodeBlock } from './BlockScanner';
+import { PathExtractor } from './PathExtractor';
 
 export class ClipParser {
-  public parse(markdown: string): Result<ParsedPatch[]> {
-    const patchMap = this.collectPatches(markdown);
-    const patches = Array.from(patchMap.entries()).map(([path, codes]) => {
-      return new ParsedPatch(path, codes.join('\n// ... existing code ...\n'));
-    });
+  private readonly scanner = new BlockScanner();
+  private readonly extractor = new PathExtractor();
 
-    return patches.length > 0 
-      ? ok(patches) 
+  public parse(markdown: string): Result<ParsedPatch[]> {
+    const blocks = this.scanner.collectCodeBlocks(markdown);
+    if (blocks.length === 0) {
+      return fail(new Error('No valid code blocks found in markdown.'));
+    }
+
+    const patchMap = this.groupBlocksByPath(markdown, blocks);
+    return patchMap.size > 0 
+      ? ok(this.createPatches(patchMap)) 
       : fail(new Error('No valid patches found in markdown.'));
   }
 
-  private collectPatches(markdown: string): Map<string, string[]> {
-    // 開きバッククォートの後の任意の言語指定と改行を許容し、最短一致で中身を取得
-    const blockRegex = /```[^\n]*\r?\n?([\s\S]*?)\r?\n?```/g;
+  private groupBlocksByPath(markdown: string, blocks: CodeBlock[]): Map<string, string[]> {
     const patchMap = new Map<string, string[]>();
-    let match, lastBlockEnd = 0;
+    let lastPos = 0;
 
-    while ((match = blockRegex.exec(markdown)) !== null) {
-      const code = match[1].trim();
-      const gap = markdown.substring(lastBlockEnd, match.index);
-      const filePath = this.findPathInContext(gap);
+    for (const block of blocks) {
+      const context = markdown.substring(lastPos, block.startPos);
+      const filePath = this.extractor.extractPathFromContext(context);
+
       if (filePath) {
-        const existing = patchMap.get(filePath) || [];
-        patchMap.set(filePath, [...existing, code]);
+        this.addBlockToMap(patchMap, filePath, markdown, block);
       }
-      lastBlockEnd = blockRegex.lastIndex;
+      lastPos = block.endPos;
     }
     return patchMap;
   }
 
-  private findPathInContext(context: string): string | null {
-    // スペースや記号で区切られた「パスらしき文字列」をすべて抽出
-    const regex = /[a-z0-9_./\\@+-]{2,}/gi;
-    let lastPath: string | null = null, match;
-    while ((match = regex.exec(context)) !== null) {
-      const candidate = match[0];
-      if (this.isValidPath(candidate)) {
-        lastPath = candidate;
-      }
-    }
-    return lastPath;
+  private addBlockToMap(map: Map<string, string[]>, path: string, md: string, block: CodeBlock): void {
+    const code = md.substring(block.contentStart, block.contentEnd).trim();
+    const existing = map.get(path) || [];
+    existing.push(code);
+    map.set(path, existing);
   }
 
-  private isValidPath(candidate: string): boolean {
-    if (/^\d+\.?$/.test(candidate) || candidate.length < 2) return false;
-    if (candidate.includes('(') || candidate.includes(')')) return false;
-
-    // 拡張子またはディレクトリ区切りがある場合はパスとみなす
-    if (candidate.includes('.') || candidate.includes('/')) return false === /^[A-Z0-9_]+$/.test(candidate);
-    
-    // 拡張子がない場合: Dockerfile, LICENSE, README, Makefile 等、
-    // 大文字で始まり小文字が続く「ファイル名らしい」パターンを許可
-    return /^[A-Z][a-z]+/.test(candidate) || ['LICENSE', 'README'].includes(candidate.toUpperCase());
+  private createPatches(patchMap: Map<string, string[]>): ParsedPatch[] {
+    return Array.from(patchMap.entries()).map(([path, codes]) => {
+      const joinedCode = codes.join('\n// ... existing code ...\n');
+      return new ParsedPatch(path, joinedCode);
+    });
   }
 }

@@ -1,20 +1,30 @@
+/*
+ * Copyright 2026 CodePrep Contributors
+ */
 import { OutputOptions } from '../OutputOptions';
 import { IFormatter } from './IFormatter';
+import { SkeletonService } from '../SkeletonService';
 
 export abstract class BaseFormatter implements IFormatter {
+    private readonly skeletonService = new SkeletonService();
+
     abstract format(files: { path: string; content: string }[], options: OutputOptions, prompt?: string): string;
 
-    protected getProcessedContent(file: { content: string }, options: OutputOptions): string {
+    protected getProcessedContent(file: { content: string; skeleton?: boolean }, options: OutputOptions): string {
         const sizeKB = file.content.length / 1024;
         if (options.maxFileSizeKB && sizeKB > options.maxFileSizeKB) {
-            return `[WARNING] File size exceeds ${options.maxFileSizeKB}KB. Content omitted for performance.`;
+            return `[WARNING] File size exceeds ${options.maxFileSizeKB}KB. Content omitted.`;
         }
+        return this.applyContentFilters(file, options);
+    }
 
+    private applyContentFilters(file: { content: string; skeleton?: boolean }, options: OutputOptions): string {
         let content = file.content;
+        if (options.skeletonMode || file.skeleton) content = this.skeletonService.extract(content);
         if (options.removeComments) content = this.stripComments(content);
         if (!options.includeEmptyLines) content = this.stripEmptyLines(content);
         return content;
-    }
+}
 
     private stripComments(content: string): string {
         return content
@@ -30,7 +40,9 @@ export abstract class BaseFormatter implements IFormatter {
         const dirs = new Set<string>();
         files.forEach(f => {
             const parts = f.path.split(/[\\/]/);
-            if (parts.length > 1) dirs.add(parts.slice(0, -1).join('/'));
+            if (parts.length > 1) {
+                dirs.add(parts.slice(0, -1).join('/'));
+}
         });
         return Array.from(dirs);
     }

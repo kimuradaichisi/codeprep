@@ -1,3 +1,6 @@
+/*
+ * Copyright 2026 CodePrep Contributors
+ */
 export type OutputFormat = 'markdown' | 'xml' | 'json';
 
 export interface OutputOptions {
@@ -7,4 +10,8 @@ export interface OutputOptions {
   includeEmptyLines: boolean;
   outputMode: 'everything' | 'structureOnly';
   maxFileSizeKB?: number;
+  skeletonMode?: boolean;
+  includeDependencies?: boolean;
+  includeErrors?: boolean;
+  incrementalMode?: boolean;
 }
