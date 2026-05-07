@@ -1,6 +1,10 @@
+/*
+ * Copyright 2026 CodePrep Contributors
+ */
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { IFileValidator } from '../domain/IFileValidator';
+import { PathValidator } from '../../../shared/domain/PathValidator';
 
 /**
  * VSCode API を使用したファイル検証実装
@@ -19,16 +23,41 @@ export class VSCodeFileValidator implements IFileValidator {
   }
 
   public isExcluded(filePath: string): boolean {
+    // まず共通ルール（PathValidator）でチェック
+    if (!PathValidator.isValidPath(filePath)) {
+      return true;
+    }
+
+    // ユーザー設定の追加除外パターン
     const config = vscode.workspace.getConfiguration('codeprep');
     const excludePatterns = config.get<string[]>('exclude') || [];
     
-    const normalizedPath = filePath.replace(/\\/g, '/');
-    const pathParts = normalizedPath.split('/');
+    if (excludePatterns.length === 0) {
+      return false;
+    }
 
-    return excludePatterns.some((pattern) => {
-      const p = pattern.replace(/\\/g, '/');
-      const segments = p.split('/').filter((s) => s !== '**' && s !== '');
-      return segments.some((seg) => pathParts.includes(seg));
-    });
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    
+    return excludePatterns.some((pattern) => 
+      this.matchesPattern(normalizedPath, pattern)
+    );
+  }
+
+  private matchesPattern(path: string, pattern: string): boolean {
+    const p = pattern.replace(/\\/g, '/');
+    
+    // ** ワイルドカード対応
+    if (p.includes('**')) {
+      // 簡易実装: **/dir → dir に部分一致
+      const cleanPattern = p
+        .replace(/\*\*\//g, '')
+        .replace(/\*\*/g, '.*')
+        .replace(/\*/g, '[^/]*');
+      const regex = new RegExp(`(^|/)${cleanPattern}(/|$)`);
+      return regex.test(path);
+    }
+    
+    // 単純な部分一致（ディレクトリ名またはパス部分）
+    return path.includes(p) || path.split('/').includes(p);
   }
 }
