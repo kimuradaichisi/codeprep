@@ -27,7 +27,16 @@ export class Selection {
   }
 
   public addAll(paths: string[]): void {
-    paths.forEach((p) => this.selectedPaths.add(p));
+    // Set.add は O(1) だが、ループ回数を減らすために
+    // 配列のサイズが大きい場合はチャンク処理を検討する
+    for (let i = 0; i < paths.length; i++) {
+      this.selectedPaths.add(paths[i]);
+    }
+  }
+
+  // 内部の状態を直接書き換える高速版
+  public replaceAll(newPaths: Set<string>): void {
+    this.selectedPaths = newPaths;
   }
 
   public clear(): void {

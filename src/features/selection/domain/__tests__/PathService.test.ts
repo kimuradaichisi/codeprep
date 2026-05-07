@@ -34,4 +34,15 @@ describe('PathService', () => {
         expect(result).toContain('a/b/c');
         expect(result).toContain('a/b/c/d.txt');
     });
+
+    it('should return an empty array for empty input', () => {
+        expect(PathService.deriveAllPaths([])).toEqual([]);
+});
+
+    it('should not duplicate folders for multiple files in the same directory', () => {
+        const input = ['src/a.ts', 'src/b.ts'];
+        const result = PathService.deriveAllPaths(input);
+        const srcCount = result.filter(p => p === 'src').length;
+        expect(srcCount).toBe(1);
+    });
 });

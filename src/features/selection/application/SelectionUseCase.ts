@@ -34,11 +34,23 @@ export class SelectionUseCase {
 
   public async selectByGrep(searchRepo: ISearchRepository, query: string): Promise<number> {
     const matchedFiles = await searchRepo.search(query);
-    if (matchedFiles.length === 0) return 0;
+    
+    // 1. 物理的なリミット
+    const MAX_LIMIT = 5000;
+    const truncatedFiles = matchedFiles.slice(0, MAX_LIMIT);
 
-    const allPaths = PathService.deriveAllPaths(matchedFiles);
-    this.selection.addAll(allPaths);
-    return matchedFiles.length;
+    if (truncatedFiles.length === 0) return 0;
+
+    // 2. 重い計算をマイクロタスクに逃がす
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const allPaths = PathService.deriveAllPaths(truncatedFiles);
+        this.selection.addAll(allPaths);
+        
+        // 🚨 vscode.window.showWarningMessage はUI層の責務なので、ここ（Application層）からは削除する
+        resolve(truncatedFiles.length);
+      }, 0);
+    });
   }
 
   public async selectAll(wsRepo: { getAllFiles(): Promise<string[]> }): Promise<void> {
@@ -97,4 +109,4 @@ export class SelectionUseCase {
   }
 }
 
-
+

@@ -17,10 +17,11 @@ export class SelectionOptionsUseCase {
       placeHolder: 'オプション切替' 
     });
 
-    if (selected) {
-      await this.applyChanges(config, opts, selected);
-      }
+    // undefined（キャンセル）でなければ実行
+    if (selected !== undefined) {
+      await this.applyChanges(opts, selected);
     }
+  }
 
   private getOptionItems(config: vscode.WorkspaceConfiguration): GenerationOptionItem[] {
     return [
@@ -31,11 +32,20 @@ export class SelectionOptionsUseCase {
     ];
   }
 
-  private async applyChanges(config: vscode.WorkspaceConfiguration, all: GenerationOptionItem[], selected: GenerationOptionItem[]): Promise<void> {
-    const selectedIds = selected.map(s => s.id);
+    private async applyChanges(all: GenerationOptionItem[], selected: GenerationOptionItem[]): Promise<void> {
+    const selectedIds = new Set(selected.map(s => s.id));
+    
+    // セクション指定（'codeprep'）で取得する
+    const config = vscode.workspace.getConfiguration('codeprep');
+
     for (const o of all) {
-      await config.update(o.id, selectedIds.includes(o.id), vscode.ConfigurationTarget.Global);
-}
+      const isPicked = selectedIds.has(o.id);
+      // ✅ 修正ポイント: 
+      // 1. スコープ済みconfigを使っているので、o.id (skeletonMode 等) をそのまま使う
+      // 2. ターゲットを undefined にすることで、VS Code が最適な場所（Workspace > Global）へ書き込む
+      await config.update(o.id, isPicked, undefined);
+    }
+    
     vscode.window.showInformationMessage('CodePrep: Options updated.');
   }
 }
