@@ -200,6 +200,11 @@
           "command": "codeprep.generate",
           "when": "view == codeprep.fileTree && codeprep.showGenerate",
           "group": "navigation@4"
+        },
+        {
+          "command": "codeprep.generateStructure",
+          "when": "view == codeprep.fileTree && codeprep.showGenerateStructure",
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
@@ -264,6 +269,7 @@
               "codeprep.selectAll",
               "codeprep.clearAll",
               "codeprep.generate",
+              "codeprep.generateStructure",
               "codeprep.selectGitDiff",
               "codeprep.selectPrompt",
               "codeprep.selectionMenu",

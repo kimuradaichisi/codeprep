@@ -19,7 +19,7 @@ export class UIController {
   private debounceTimer: NodeJS.Timeout | undefined;
   private currentRequestSymbol: symbol | undefined;
 
-  constructor(private readonly deps: UIControllerDeps) {}
+  constructor(private readonly deps: UIControllerDeps) { }
 
   public async refresh(): Promise<void> {
     this.deps.gitWatcher?.updateCache();
@@ -84,6 +84,7 @@ export class UIController {
       'codeprep.selectAll': 'codeprep.showSelectAll',
       'codeprep.clearAll': 'codeprep.showClearAll',
       'codeprep.generate': 'codeprep.showGenerate',
+      'codeprep.generateStructure': 'codeprep.showGenerateStructure',
       'codeprep.selectGitDiff': 'codeprep.showSelectGitDiff',
       'codeprep.gitMenu': 'codeprep.showGitMenu',
       'codeprep.selectPrompt': 'codeprep.showSelectPrompt',
@@ -94,4 +95,4 @@ export class UIController {
   }
 }
 
-
+
