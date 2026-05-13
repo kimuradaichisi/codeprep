@@ -278,7 +278,8 @@
             "codeprep.gitMenu",
             "codeprep.previewPatch",
             "codeprep.selectPrompt",
-            "codeprep.generate"
+            "codeprep.generate",
+            "codeprep.generateStructure"
           ],
           "description": "%config.visibleButtons.description%"
         },

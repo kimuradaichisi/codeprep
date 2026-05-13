@@ -106,9 +106,19 @@ function registerPromptCommands(prompt: PromptUseCase, selection: SelectionUseCa
   return [
     vscode.commands.registerCommand('codeprep.selectPrompt', async () => {
       const p = await prompt.getAvailablePrompts();
-      const items = p.names.map(n => ({ label: n, description: p.findByName(n)?.summary }));
-      const s = await vscode.window.showQuickPick(items, { placeHolder: '挿入するプロンプトを選択' });
-      if (s) prompt.selectPrompt(s.label);
+      const clearLabel = t('command.clearPrompt');
+      const items = [
+        { label: `$(trash) ${clearLabel}`, description: t('command.clearPromptDescription') },
+        ...p.names.map(n => ({ label: n, description: p.findByName(n)?.summary }))
+      ];
+      const s = await vscode.window.showQuickPick(items, { placeHolder: t('prompt.selectPlaceholder',) || '挿入するプロンプトを選択' });
+      if (!s) return;
+      if (s.label === `$(trash) ${clearLabel}`) {
+        prompt.selectPrompt(undefined);
+        vscode.window.showInformationMessage(t('promptCleared') || 'プロンプトをクリアしました。');
+      } else {
+        prompt.selectPrompt(s.label);
+      }
     }),
     vscode.commands.registerCommand('codeprep.addToSelection', async (uri: vscode.Uri) => {
       if (uri && root) {
