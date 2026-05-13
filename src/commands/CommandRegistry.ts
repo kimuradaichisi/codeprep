@@ -41,7 +41,28 @@ export function registerAllCommands(d: RegistryDeps): vscode.Disposable[] {
     ...registerActionCommands(d.uiController, outCmd),
     ...registerPromptCommands(d.promptUseCase, d.selectionUseCase, d.uiController, d.root),
     ...registerSelectionUtilityCommands(selCmd),
+    ...registerContextMenuCommands(d.root),
     ...registerPatchCommands(patchCmd)
+  ];
+}
+
+function registerContextMenuCommands(root: string | undefined): vscode.Disposable[] {
+  return [
+    vscode.commands.registerCommand('codeprep.copyPathRelative', async (uri: vscode.Uri) => {
+      if (!uri) return;
+      if (!root) {
+        vscode.window.showWarningMessage('Workspace root is not defined.');
+        return;
+      }
+      const rel = path.relative(root, uri.fsPath).replace(/\\/g, '/');
+      await vscode.env.clipboard.writeText(rel);
+      vscode.window.showInformationMessage('Copied relative path to clipboard.');
+    }),
+    vscode.commands.registerCommand('codeprep.copyPathAbsolute', async (uri: vscode.Uri) => {
+      if (!uri) return;
+      await vscode.env.clipboard.writeText(uri.fsPath);
+      vscode.window.showInformationMessage('Copied absolute path to clipboard.');
+    })
   ];
 }
 
@@ -59,7 +80,7 @@ function registerActionCommands(ui: UIController, out: OutputCommands): vscode.D
   return [
     vscode.commands.registerCommand('codeprep.refreshTree', () => ui.refresh()),
     vscode.commands.registerCommand('codeprep.generate', () => out.generate()),
-    vscode.commands.registerCommand('codeprep.openSettings', () => 
+    vscode.commands.registerCommand('codeprep.openSettings', () =>
       vscode.commands.executeCommand('workbench.action.openSettings', '@ext:codeprep'))
   ];
 }

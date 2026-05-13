@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.7.5",
+  "version": "0.8.0",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
       "codeprep-helper": [
         {
           "id": "codeprep.fileTree",
-          "name": "File Explorer",
+          "name": "%view.fileTreeName%",
           "icon": "$(library)"
         }
       ]
@@ -78,6 +78,14 @@
         "icon": "$(comment-discussion)"
       },
       {
+        "command": "codeprep.copyPathRelative",
+        "title": "%command.copyPathRelative%"
+      },
+      {
+        "command": "codeprep.copyPathAbsolute",
+        "title": "%command.copyPathAbsolute%"
+      },
+      {
         "command": "codeprep.addToSelection",
         "title": "%command.addToSelection%"
       },
@@ -118,12 +126,12 @@
       },
       {
         "command": "codeprep.configureGenerationOptions",
-        "title": "CodePrep: Configure Generation Options",
+        "title": "%command.configureGenerationOptions%",
         "icon": "$(settings)"
       },
       {
         "command": "codeprep.copyVerifyPrompt",
-        "title": "CodePrep: Copy AI Verify Prompt",
+        "title": "%command.copyVerifyPrompt%",
         "icon": "$(comment-discussion)"
       }
     ],
@@ -189,7 +197,13 @@
       ],
       "view/item/context": [
         {
-          "command": "codeprep.generate",
+          "command": "codeprep.copyPathRelative",
+          "when": "view == codeprep.fileTree && resourceScheme == file",
+          "group": "inline"
+        },
+        {
+          "command": "codeprep.copyPathAbsolute",
+          "when": "view == codeprep.fileTree && resourceScheme == file",
           "group": "inline"
         }
       ],

@@ -16,3 +16,8 @@ All notable changes to this project will be documented in this file.
 
 ## [0.7.3] - (previous)
 - Initial release notes placeholder
+
+## [0.8.0] - 2026-05-13
+- chore: Bump version to 0.8.0
+- docs: Update CHANGELOG for 0.8.0 release
+- build: Package VSIX for 0.8.0
