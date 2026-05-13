@@ -135,6 +135,13 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         const item = new vscode.TreeItem(element.label, collapsible);
         item.resourceUri = element.uri;
         item.contextValue = element.isDirectory ? 'directory' : 'file';
+        if (!element.isDirectory) {
+            item.command = {
+                command: 'vscode.open',
+                title: 'Open File',
+                arguments: [element.uri]
+            } as any;
+        }
 
         const isSelected = this.selection.has(normalizePath(element.relativePath));
         item.checkboxState = isSelected ? vscode.TreeItemCheckboxState.Checked : vscode.TreeItemCheckboxState.Unchecked;
