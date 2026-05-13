@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { t } from '../utils/i18n';
 import { SelectionUseCase } from '../features/selection/application/SelectionUseCase';
 import { PromptUseCase } from '../features/prompt/application/PromptUseCase';
 import { OutputEngine } from '../features/engine/domain/OutputEngine';
@@ -48,22 +49,37 @@ export function registerAllCommands(d: RegistryDeps): vscode.Disposable[] {
 
 function registerContextMenuCommands(root: string | undefined): vscode.Disposable[] {
   return [
-    vscode.commands.registerCommand('codeprep.copyPathRelative', async (uri: vscode.Uri) => {
-      if (!uri) return;
+    vscode.commands.registerCommand('codeprep.copyPathRelative', async (arg: any) => {
+      const fsPath = extractFsPath(arg);
+      if (!fsPath) return;
       if (!root) {
-        vscode.window.showWarningMessage('Workspace root is not defined.');
+        vscode.window.showWarningMessage(t('workspaceRootUndefined'));
         return;
       }
-      const rel = path.relative(root, uri.fsPath).replace(/\\/g, '/');
+      const rel = path.relative(root, fsPath).replace(/\\/g, '/');
       await vscode.env.clipboard.writeText(rel);
-      vscode.window.showInformationMessage('Copied relative path to clipboard.');
+      vscode.window.showInformationMessage(t('copiedRelativePath'));
     }),
-    vscode.commands.registerCommand('codeprep.copyPathAbsolute', async (uri: vscode.Uri) => {
-      if (!uri) return;
-      await vscode.env.clipboard.writeText(uri.fsPath);
-      vscode.window.showInformationMessage('Copied absolute path to clipboard.');
+    vscode.commands.registerCommand('codeprep.copyPathAbsolute', async (arg: any) => {
+      const fsPath = extractFsPath(arg);
+      if (!fsPath) return;
+      await vscode.env.clipboard.writeText(fsPath);
+      vscode.window.showInformationMessage(t('copiedAbsolutePath'));
     })
   ];
+}
+
+function extractFsPath(arg: any): string | undefined {
+  if (!arg) return undefined;
+  // vscode.Uri
+  if (typeof arg === 'object' && 'fsPath' in arg && typeof arg.fsPath === 'string') return arg.fsPath;
+  // Tree item: has resourceUri
+  if (typeof arg === 'object' && 'resourceUri' in arg && arg.resourceUri && typeof arg.resourceUri.fsPath === 'string') return arg.resourceUri.fsPath;
+  // custom node with fullPath
+  if (typeof arg === 'object' && 'fullPath' in arg && typeof arg.fullPath === 'string') return arg.fullPath;
+  // maybe a plain path string
+  if (typeof arg === 'string') return arg;
+  return undefined;
 }
 
 

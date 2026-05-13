@@ -2,6 +2,7 @@
  * Copyright 2026 CodePrep Contributors
  */
 import * as vscode from 'vscode';
+import { t } from '../../../utils/i18n';
 import { Selection } from '../domain/Selection';
 import { PathService } from '../domain/PathService';
 import { PathValidator } from '../../../shared/domain/PathValidator';
@@ -10,7 +11,7 @@ export class ClipboardSelectionUseCase {
   constructor(
     private readonly selection: Selection,
     private readonly root: string | undefined
-  ) {}
+  ) { }
 
   public async selectFromClipboard(): Promise<void> {
     const text = await vscode.env.clipboard.readText();
@@ -20,7 +21,7 @@ export class ClipboardSelectionUseCase {
     console.log('DEBUG: extracted paths:', paths);  // 追加
 
     if (paths.length === 0) {
-      vscode.window.showWarningMessage('No project-related paths found in clipboard.');
+      vscode.window.showWarningMessage(t('noProjectPathsInClipboard'));
       console.log('DEBUG: no paths, returning early');  // 追加
       return;
     }
@@ -31,7 +32,7 @@ export class ClipboardSelectionUseCase {
     this.selection.addAll(allPaths);
     console.log('DEBUG: selection after addAll:', this.selection.getPaths());  // 追加
 
-    vscode.window.showInformationMessage(`CodePrep: Selected ${paths.length} files.`);
+    vscode.window.showInformationMessage(t('codeprepSelectedFiles', String(paths.length)));
   }
 
   private extractPaths(text: string): string[] {

@@ -2,6 +2,7 @@
  * Copyright 2026 CodePrep Contributors
  */
 import * as vscode from 'vscode';
+import { t } from '../../../utils/i18n';
 import * as path from 'path';
 import { Result, ok, fail } from '../../../shared/domain/Result';
 import { IClipboard } from '../domain/IClipboard';
@@ -14,18 +15,18 @@ export class PatchUseCase {
   private parser = new ClipParser();
   private healer = new OmitHealer();
 
-  constructor(private clipboard: IClipboard, private fileSystem: IFileSystem) {}
+  constructor(private clipboard: IClipboard, private fileSystem: IFileSystem) { }
 
   public async previewPatch(root: string | undefined): Promise<Result<void>> {
     const textRes = await this.clipboard.readText();
     if (textRes.isFailure) return this.notifyError('Clipboard is empty.');
-    
+
     const parseRes = this.parser.parse(textRes.value);
     if (parseRes.isFailure) return this.notifyError('No patch found.');
 
     for (const patch of parseRes.value) {
       const res = await this.openDiff(root, patch.filePath, patch.code);
-      if (res.isFailure) vscode.window.showWarningMessage(`Failed: ${patch.filePath}`);
+      if (res.isFailure) vscode.window.showWarningMessage(t('failedPatch', patch.filePath));
     }
     return ok(undefined);
   }
@@ -35,7 +36,7 @@ export class PatchUseCase {
     const full = vscode.Uri.file(path.join(root, rel));
     const res = await this.fileSystem.readFile(full.fsPath);
     const original = res.isSuccess ? res.value : '';
-    
+
     const healed = this.healer.heal(original, code);
     if (healed.isFailure) return fail(healed.error);
 
@@ -48,20 +49,20 @@ export class PatchUseCase {
   private async handleSafetyCheck(before: string, after: string, rel: string, ratio: number): Promise<void> {
     if (ratio < 0.3) return;
     await this.generateVerificationPrompt(before, after, rel);
-    vscode.window.showWarningMessage(`重大な変更 (${Math.round(ratio * 100)}%) を検知 / Critical change detected. Check clipboard.`);
+    vscode.window.showWarningMessage(t('criticalChangeDetected', String(Math.round(ratio * 100))));
   }
 
   public async copyVerifyPrompt(uri: vscode.Uri): Promise<void> {
     const id = new URLSearchParams(uri.query).get('id') || '';
     const healed = PatchCache.get(id) || '';
     const root = vscode.workspace.workspaceFolders?.[0].uri.fsPath || '';
-    
+
     // ✅ 型エラー(2339)の修正: readFileの結果を一度変数に受け、isSuccessで判定する
     const res = await this.fileSystem.readFile(path.join(root, uri.path));
     const original = res.isSuccess ? res.value : '';
 
     await this.generateVerificationPrompt(original, healed, uri.path);
-    vscode.window.showInformationMessage('AI確認用プロンプトをコピーしました。');
+    vscode.window.showInformationMessage(t('aiVerifyPromptCopied'));
   }
 
   private async generateVerificationPrompt(before: string, after: string, relPath: string): Promise<void> {
@@ -98,7 +99,7 @@ export class PatchUseCase {
       }
     });
 
-    vscode.window.showInformationMessage(`Successfully applied ${patches.value.length} patches.`);
+    vscode.window.showInformationMessage(t('successfullyAppliedPatches', String(patches.value.length)));
     return ok(undefined);
   }
 
@@ -108,7 +109,7 @@ export class PatchUseCase {
     const res = await this.fileSystem.readFile(full);
     const original = res.isSuccess ? res.value : '';
     const healed = this.healer.heal(original, code);
-    
+
     if (healed.isSuccess) {
       await this.fileSystem.writeFile(full, healed.value.code);
       const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(full));

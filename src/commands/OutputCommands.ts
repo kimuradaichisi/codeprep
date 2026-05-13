@@ -2,6 +2,7 @@
  * Copyright 2026 CodePrep Contributors
  */
 import * as vscode from 'vscode';
+import { t } from '../utils/i18n';
 import * as path from 'path';
 import { SelectionUseCase } from '../features/selection/application/SelectionUseCase';
 import { OutputEngine } from '../features/engine/domain/OutputEngine';
@@ -23,7 +24,7 @@ export class OutputCommands {
   private readonly scanner = new DependencyScanner();
   private readonly diag = new DiagnosticService();
 
-  constructor(private readonly deps: OutputCommandsDeps) {}
+  constructor(private readonly deps: OutputCommandsDeps) { }
 
   async generate(): Promise<void> {
     const paths = this.deps.selectionUseCase.currentSelection.getPaths();
@@ -42,7 +43,7 @@ export class OutputCommands {
     const prompt = await this.getPrompt(paths);
     const result = this.deps.engine.generate(files, opts, prompt);
     const content = opts.includeErrors
-      ? this.diag.formatErrors(paths) + result.content 
+      ? this.diag.formatErrors(paths) + result.content
       : result.content;
 
     await this.finalize(content, files, opts.format);
@@ -96,8 +97,9 @@ export class OutputCommands {
   private async finalize(content: string, files: FileContent[], format: string): Promise<void> {
     await vscode.env.clipboard.writeText(content);
     files.forEach(f => OutputCommands.lastState.set(f.path, f.content));
-    vscode.window.showInformationMessage('CodePrep: Copied.');
-    
+    // localized message
+    vscode.window.showInformationMessage(t('codeprepCopied'));
+
     if (!vscode.workspace.getConfiguration('codeprep').get('openAfterGenerate', true)) {
       return;
     }
@@ -107,7 +109,7 @@ export class OutputCommands {
     // 既存のタブを探す
     const existingDoc = OutputCommands.lastOutputDoc;
     const editors = vscode.window.visibleTextEditors || []; // null/undefined ガード
-    const existingEditor = existingDoc 
+    const existingEditor = existingDoc
       ? editors.find(e => e.document === existingDoc)
       : undefined;
 

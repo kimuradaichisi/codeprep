@@ -79,11 +79,13 @@
       },
       {
         "command": "codeprep.copyPathRelative",
-        "title": "%command.copyPathRelative%"
+        "title": "%command.copyPathRelative%",
+        "icon": "$(link)"
       },
       {
         "command": "codeprep.copyPathAbsolute",
-        "title": "%command.copyPathAbsolute%"
+        "title": "%command.copyPathAbsolute%",
+        "icon": "$(link-external)"
       },
       {
         "command": "codeprep.addToSelection",

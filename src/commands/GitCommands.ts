@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { SelectionUseCase } from '../features/selection/application/SelectionUseCase';
 import { UIController } from '../features/ui/application/UIController';
 import { IGitClient } from '../features/git/domain/IGitClient';
+import { t } from '../utils/i18n';
 
 export class GitCommands {
   constructor(
@@ -9,7 +10,7 @@ export class GitCommands {
     private ui: UIController,
     private gitClient: IGitClient,
     private root: string | undefined
-  ) {}
+  ) { }
 
   async showMenu() {
     if (!this.root) return;
@@ -35,17 +36,17 @@ export class GitCommands {
 
   private async copyCommitPrompt() {
     const result = await this.gitClient.getDiff(this.root || '', ['package.json', 'package-lock.json']);
-    if (result.isFailure || !result.value) return vscode.window.showInformationMessage('差分がありません。');
-    
+    if (result.isFailure || !result.value) return vscode.window.showInformationMessage(t('noDiffs'));
+
     const diff = result.value;
     const config = vscode.workspace.getConfiguration('codeprep');
     const template = config.get<string>('gitCommitPrompt', '');
     const prompt = template.replace(/{{diff}}/g, diff);
-    
+
     await vscode.env.clipboard.writeText(prompt);
     await this.openCommitPromptEditor(prompt, config);
-    
-    vscode.window.showInformationMessage('プロンプトをコピーしました。');
+
+    vscode.window.showInformationMessage(t('promptCopied'));
   }
 
   private async openCommitPromptEditor(prompt: string, config: vscode.WorkspaceConfiguration) {
@@ -64,4 +65,4 @@ export class GitCommands {
       await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Beside });
     }
   }
-}
+}

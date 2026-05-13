@@ -1,6 +1,6 @@
 {
     "codeprep.skeletonMode": false,
-    "codeprep.includeDependencies": true,
+    "codeprep.includeDependencies": false,
     "codeprep.includeErrors": false,
     "codeprep.incrementalMode": false
 }

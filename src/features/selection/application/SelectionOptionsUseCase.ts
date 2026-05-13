@@ -2,6 +2,7 @@
  * Copyright 2026 CodePrep Contributors
  */
 import * as vscode from 'vscode';
+import { t } from '../../../utils/i18n';
 
 export interface GenerationOptionItem extends vscode.QuickPickItem {
   id: string;
@@ -11,10 +12,10 @@ export class SelectionOptionsUseCase {
   public async configureOptions(): Promise<void> {
     const config = vscode.workspace.getConfiguration('codeprep');
     const opts = this.getOptionItems(config);
-    
-    const selected = await vscode.window.showQuickPick(opts, { 
-      canPickMany: true, 
-      placeHolder: 'オプション切替' 
+
+    const selected = await vscode.window.showQuickPick(opts, {
+      canPickMany: true,
+      placeHolder: 'オプション切替'
     });
 
     // undefined（キャンセル）でなければ実行
@@ -32,9 +33,9 @@ export class SelectionOptionsUseCase {
     ];
   }
 
-    private async applyChanges(all: GenerationOptionItem[], selected: GenerationOptionItem[]): Promise<void> {
+  private async applyChanges(all: GenerationOptionItem[], selected: GenerationOptionItem[]): Promise<void> {
     const selectedIds = new Set(selected.map(s => s.id));
-    
+
     // セクション指定（'codeprep'）で取得する
     const config = vscode.workspace.getConfiguration('codeprep');
 
@@ -45,7 +46,7 @@ export class SelectionOptionsUseCase {
       // 2. ターゲットを undefined にすることで、VS Code が最適な場所（Workspace > Global）へ書き込む
       await config.update(o.id, isPicked, undefined);
     }
-    
-    vscode.window.showInformationMessage('CodePrep: Options updated.');
+
+    vscode.window.showInformationMessage(t('optionsUpdated'));
   }
 }

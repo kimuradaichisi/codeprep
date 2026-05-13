@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { t } from '../../../utils/i18n';
 import { IPromptRepository } from '../domain/IPromptRepository';
 import { PromptCollection } from '../domain/PromptCollection';
 
@@ -19,14 +20,14 @@ export class VSCodePromptRepository implements IPromptRepository {
   public async saveAll(collection: PromptCollection): Promise<void> {
     const config = vscode.workspace.getConfiguration(VSCodePromptRepository.CONFIG_SECTION);
     await config.update(
-      VSCodePromptRepository.CONFIG_KEY, 
-      collection.toRecord(), 
+      VSCodePromptRepository.CONFIG_KEY,
+      collection.toRecord(),
       vscode.ConfigurationTarget.Global
     );
   }
 
   public getPatchInjectionPrompt(): string {
-    return vscode.l10n.t('prompt.patchInjection');
+    return t('prompt.patchInjection');
   }
 
   public async shouldAlwaysAddPatchInstructions(): Promise<boolean> {

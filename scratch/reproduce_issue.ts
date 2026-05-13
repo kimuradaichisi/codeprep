@@ -1,4 +1,4 @@
-import { ClipParser } from './src/features/patch/domain/ClipParser';
+import { ClipParser } from '../src/features/patch/domain/ClipParser';
 
 const markdown = `
 Hi, I'm a Silicon Valley engineer. このプロジェクトの構造を完全に理解しました。
@@ -29,7 +29,7 @@ if (result.isFailure) {
     console.error('Parse Failed:', result.error.message);
 } else {
     console.log('Parse Success!');
-    result.value.forEach(patch => {
+    result.value.forEach((patch: any) => {
         console.log('File Path:', patch.filePath);
         console.log('Code Length:', patch.code.length);
     });

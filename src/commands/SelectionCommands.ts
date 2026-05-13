@@ -2,6 +2,7 @@
  * Copyright 2026 CodePrep Contributors
  */
 import * as vscode from 'vscode';
+import { t } from '../utils/i18n';
 import { SelectionUseCase } from '../features/selection/application/SelectionUseCase';
 import { UIController } from '../features/ui/application/UIController';
 import { VSCodeWorkspaceRepository } from '../features/selection/infrastructure/VSCodeWorkspaceRepository';
@@ -119,9 +120,9 @@ export class SelectionCommands {
       try {
         const count = await this.deps.useCase.selectByGrep(this.deps.searchRepo, query);
         await this.deps.ui.refresh();
-        vscode.window.showInformationMessage(`CodePrep: ${count} 個のファイルを追加しました。`);
+        vscode.window.showInformationMessage(t('filesAdded', String(count)));
       } catch (e) {
-        vscode.window.showErrorMessage(`検索に失敗しました: ${e instanceof Error ? e.message : String(e)}`);
+        vscode.window.showErrorMessage(t('searchFailed', e instanceof Error ? e.message : String(e)));
       }
     });
   }
