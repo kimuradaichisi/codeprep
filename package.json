@@ -217,6 +217,11 @@
           ],
           "description": "%config.exclude.description%"
         },
+        "codeprep.hideExcludedDirectories": {
+          "type": "boolean",
+          "default": false,
+          "description": "Exclude directories defined by `codeprep.exclude` and workspace .gitignore from the file tree when true."
+        },
         "codeprep.customPrompts": {
           "type": "object",
           "default": {

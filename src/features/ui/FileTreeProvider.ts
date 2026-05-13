@@ -16,6 +16,8 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     private workspaceRoot: string | undefined;
     private expandAll: boolean = false;
     private excludePatterns: ExcludePattern[] = [];
+    private hideExcludedDirectories: boolean = false;
+    private excludedDirNames: Set<string> = new Set();
     private readonly iconService = new FileIconService();
 
     constructor(
@@ -33,12 +35,54 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         const config = vscode.workspace.getConfiguration('codeprep');
         const excludes: string[] = config.get('exclude', []);
         const regexPatterns: string[] = config.get('excludePatterns', []);
+        this.hideExcludedDirectories = config.get<boolean>('hideExcludedDirectories', false) || false;
         const newPatterns = [
             ...excludes.map(p => ExcludePattern.create(p)),
             ...regexPatterns.map(p => ExcludePattern.createFromRegex(p))
         ];
-        // 簡易的な比較（文字列表現等）で更新要否を判定しても良いが、ここでは代入のみ
         this.excludePatterns = newPatterns;
+
+        // compute simple dir-name based excludes for quick hiding in tree
+        this.excludedDirNames = new Set(
+            excludes
+                .map(p => p.replace(/^\*\*\//, '').replace(/\/\*\*\/$/, '').replace(/[{}]/g, ''))
+                .map(p => p.split('/').filter(Boolean)[0])
+                .filter(Boolean)
+        );
+
+        // 非同期に .gitignore を読み込み、設定で有効なら除外パターンを拡張してツリーを再読込する
+        if (this.hideExcludedDirectories && this.workspaceRoot && (this.fileSystem && typeof this.fileSystem.readFile === 'function')) {
+            void this.augmentWithGitignore();
+        }
+    }
+
+    private async augmentWithGitignore(): Promise<void> {
+        try {
+            const gitignorePath = path.join(this.workspaceRoot!, '.gitignore');
+            const res = await this.fileSystem.readFile(gitignorePath);
+            if (!res || (res as any).isFailure) return;
+            const txt = (res as any).value as string;
+            const gitignorePatterns = txt
+                .split(/\r?\n/)
+                .map(l => l.trim())
+                .filter(l => l.length > 0 && !l.startsWith('#') && !l.startsWith('!'))
+                .map(p => {
+                    if (p.endsWith('/')) return `**/${p}**`;
+                    if (p.includes('*') || p.includes('?')) return `**/${p}`;
+                    return `**/${p}/**`;
+                });
+
+            const extra = gitignorePatterns.map(p => ExcludePattern.create(p));
+            this.excludePatterns = [...this.excludePatterns, ...extra];
+            // augment dir names too
+            gitignorePatterns.forEach(p => {
+                const name = p.replace(/^\*\*\//, '').replace(/\/\*\*$/, '').replace(/[{}]/g, '').split('/')[0];
+                if (name) this.excludedDirNames.add(name);
+            });
+            this._onDidChangeTreeData.fire();
+        } catch {
+            // 失敗しても無視
+        }
     }
 
     public setRoot(root: string | undefined): void {
@@ -91,10 +135,10 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         const item = new vscode.TreeItem(element.label, collapsible);
         item.resourceUri = element.uri;
         item.contextValue = element.isDirectory ? 'directory' : 'file';
-        
+
         const isSelected = this.selection.has(normalizePath(element.relativePath));
         item.checkboxState = isSelected ? vscode.TreeItemCheckboxState.Checked : vscode.TreeItemCheckboxState.Unchecked;
-        
+
         this.applyIcon(item, element);
 
         return item;
@@ -132,6 +176,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         const fullPath = path.join(folderPath, name);
         const relPath = normalizePath(getRelativePath(this.workspaceRoot!, fullPath));
         if (this.excludePatterns.some(p => p.match(relPath))) return null;
+        if (this.hideExcludedDirectories && isDir && this.excludedDirNames.has(name)) return null;
         return new FileNode(name, fullPath, relPath, isDir);
     }
 
@@ -143,4 +188,4 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     public dispose(): void {
         this.watcher?.dispose();
     }
-}
+}

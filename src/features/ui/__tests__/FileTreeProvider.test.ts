@@ -6,14 +6,14 @@ import { ok } from '../../../shared/domain/Result';
 
 vi.mock('vscode', () => {
     class MockTreeItem {
-        constructor(public label: string, public collapsibleState: any) {}
+        constructor(public label: string, public collapsibleState: any) { }
         public checkboxState: any;
         public resourceUri: any;
         public contextValue: string = '';
         public iconPath: any;
     }
     class MockRelativePattern {
-        constructor(public base: any, public pattern: string) {}
+        constructor(public base: any, public pattern: string) { }
     }
     return {
         TreeItem: MockTreeItem,
@@ -65,6 +65,38 @@ describe('FileTreeProvider Optimization & Functionality', () => {
             })
         });
         provider = new FileTreeProvider(mockRoot, selection, mockFileSystem, mockGitWatcher);
+    });
+
+    it('hideExcludedDirectories が有効な場合 .gitignore に基づきディレクトリが隠れること', async () => {
+        // 設定で有効化
+        (vscode.workspace.getConfiguration as any).mockReturnValue({
+            get: vi.fn((key, def) => {
+                if (key === 'exclude') return ['node_modules'];
+                if (key === 'excludePatterns') return [];
+                if (key === 'hideExcludedDirectories') return true;
+                return def;
+            })
+        });
+
+        // .gitignore を返すようモック
+        mockFileSystem.readFile = vi.fn().mockResolvedValue({ isFailure: false, value: '.vscode-test/\n' });
+
+        mockFileSystem.readDirectory.mockResolvedValue(ok([
+            ['.vscode-test', 2],
+            ['src', 2]
+        ]));
+
+        // 新しいプロバイダを生成（コンストラクタで設定を読み込む）
+        provider = new FileTreeProvider(mockRoot, selection, mockFileSystem, mockGitWatcher);
+
+        // augmentWithGitignore は非同期で _onDidChangeTreeData.fire() を呼ぶため少し待つ
+        await new Promise(r => setTimeout(r, 0));
+
+        const children = await provider.getChildren();
+        const labels = children.map(c => c.label);
+
+        expect(labels).not.toContain('.vscode-test');
+        expect(labels).toContain('src');
     });
 
     it('getChildren: 除外パターンに一致するファイルがフィルタリングされること', async () => {
