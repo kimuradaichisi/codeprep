@@ -14,10 +14,10 @@ export class GitCommands {
 
   async showMenu() {
     if (!this.root) return;
-    const items = [
-      { label: "$(file-diff) Select Modified Files", id: 'mod' },
-      { label: "$(beaker) Select Modified + Related Tests", id: 'tests' },
-      { label: "$(git-commit) Copy Commit Message Prompt", id: 'commit' }
+    const items: QuickPickItem[] = [
+      { label: `$(file-diff) ${t('command.selectModifiedFiles')}`, id: 'mod' },
+      { label: `$(beaker) ${t('command.selectModifiedTests')}`, id: 'tests' },
+      { label: `$(git-commit) ${t('command.copyCommitPrompt')}`, id: 'commit' }
     ];
     const selected = await vscode.window.showQuickPick(items, { placeHolder: 'Gitアクションを選択' });
     if (selected) await this.executeAction(selected.id, selected.label);

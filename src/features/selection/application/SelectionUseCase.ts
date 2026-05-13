@@ -13,7 +13,7 @@ export class SelectionUseCase {
     private repository: ISelectionRepository,
     private validator: IFileValidator,
     private gitWatcher?: GitWatcher
-  ) {}
+  ) { }
 
   public get currentSelection(): Selection { return this.selection; }
 
@@ -34,7 +34,7 @@ export class SelectionUseCase {
 
   public async selectByGrep(searchRepo: ISearchRepository, query: string): Promise<number> {
     const matchedFiles = await searchRepo.search(query);
-    
+
     // 1. 物理的なリミット
     const MAX_LIMIT = 5000;
     const truncatedFiles = matchedFiles.slice(0, MAX_LIMIT);
@@ -46,11 +46,23 @@ export class SelectionUseCase {
       setTimeout(() => {
         const allPaths = PathService.deriveAllPaths(truncatedFiles);
         this.selection.addAll(allPaths);
-        
+
         // 🚨 vscode.window.showWarningMessage はUI層の責務なので、ここ（Application層）からは削除する
         resolve(truncatedFiles.length);
       }, 0);
     });
+  }
+
+  public async selectByExtension(wsRepo: { getAllFiles(): Promise<string[]> }, patterns: RegExp[]): Promise<number> {
+    const allFiles = await wsRepo.getAllFiles();
+    const matched = allFiles.filter(f => {
+      const ext = (f.split('.').pop() || '').toLowerCase();
+      return patterns.some(r => r.test(ext));
+    });
+    if (matched.length === 0) return 0;
+    this.selection.clear();
+    this.selection.addAll(PathService.deriveAllPaths(matched));
+    return matched.length;
   }
 
   public async selectAll(wsRepo: { getAllFiles(): Promise<string[]> }): Promise<void> {

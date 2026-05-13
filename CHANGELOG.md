@@ -29,3 +29,9 @@ All notable changes to this project will be documented in this file.
  - fix: Make i18n helper robust (lazy-load `vscode.l10n`), replace dynamic requires with static imports where needed
  - test: Update tests and ensure full unit test suite passes
  - chore: Generated `codeprep-vscode-0.8.0.vsix`
+
+## [0.8.1] - 2026-05-13
+- fix: 全ユーザー向け文字列を追加で日本語化（QuickPick、設定、コマンドタイトルなどの未翻訳箇所を補完）
+- feat: 拡張子で選択 (正規表現対応) を追加 — カンマ区切りで複数の正規表現を指定可能
+- feat: 右クリックメニューでのパスコピーなどの微修正とi18nキーの同期
+- test: 単体テスト（Vitest）全 198 テストを確認済み

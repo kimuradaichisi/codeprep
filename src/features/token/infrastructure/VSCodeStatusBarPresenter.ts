@@ -17,16 +17,16 @@ export class VSCodeStatusBarPresenter implements ITokenPresenter {
     const tokens = stats.estimatedTokens;
     const tokenStr = tokens.toString();
 
-    this.statusBarItem.text = `$(file-code) ${stats.fileCount} files / ~${tokenStr} tokens`;
-    
+    this.statusBarItem.text = `$(file-code) ${t('statusbar.text', String(stats.fileCount), tokenStr)}`;
+
     if (tokens.isExceeding(limit)) {
       this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-      this.statusBarItem.tooltip = `WARNING: Token count (~${tokenStr}) exceeds limit (${limit / 1000}k)!\nTotal Characters: ${stats.totalCharacters}`;
+      this.statusBarItem.tooltip = t('statusbar.warning', tokenStr, String(limit / 1000), String(stats.totalCharacters));
     } else {
       this.statusBarItem.backgroundColor = undefined;
-      this.statusBarItem.tooltip = `Total Characters: ${stats.totalCharacters}\nEstimated Tokens (Base: 4 chars/token)`;
+      this.statusBarItem.tooltip = t('statusbar.totalChars', String(stats.totalCharacters));
     }
-    
+
     this.statusBarItem.show();
   }
 

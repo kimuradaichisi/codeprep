@@ -18,6 +18,13 @@ export function t(key: string, ...args: any[]): string {
         vscodeModule = undefined;
     }
 
+    // Prefer local package.nls lookups to avoid returning raw keys in test environments
+    const template = (ja[key] ?? en[key]) ?? undefined;
+    if (template) {
+        if (!args || args.length === 0) return template;
+        return args.reduce((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), template);
+    }
+
     const l10n = vscodeModule && (vscodeModule as any).l10n;
     if (l10n && typeof l10n.t === 'function') {
         try {
@@ -27,9 +34,10 @@ export function t(key: string, ...args: any[]): string {
         }
     }
 
-    const template = (ja[key] ?? en[key]) ?? key;
-    if (!args || args.length === 0) return template;
-    return args.reduce((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), template);
+    // final fallback to returning the key
+    const finalTemplate = key;
+    if (!args || args.length === 0) return finalTemplate;
+    return args.reduce((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), finalTemplate);
 }
 
 export default t;

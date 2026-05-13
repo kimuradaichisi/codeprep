@@ -15,7 +15,7 @@ export class SelectionOptionsUseCase {
 
     const selected = await vscode.window.showQuickPick(opts, {
       canPickMany: true,
-      placeHolder: 'オプション切替'
+      placeHolder: t('options.togglePlaceholder')
     });
 
     // undefined（キャンセル）でなければ実行
@@ -26,10 +26,10 @@ export class SelectionOptionsUseCase {
 
   private getOptionItems(config: vscode.WorkspaceConfiguration): GenerationOptionItem[] {
     return [
-      { id: 'skeletonMode', label: '$(symbol-structure) Skeleton Mode', picked: !!config.get<boolean>('skeletonMode') },
-      { id: 'includeDependencies', label: '$(references) Include Dependencies', picked: !!config.get<boolean>('includeDependencies') },
-      { id: 'includeErrors', label: '$(error) Include Errors', picked: !!config.get<boolean>('includeErrors') },
-      { id: 'incrementalMode', label: '$(history) Incremental Mode', picked: !!config.get<boolean>('incrementalMode') }
+      { id: 'skeletonMode', label: `$(symbol-structure) ${t('options.skeletonMode')}`, picked: !!config.get<boolean>('skeletonMode') },
+      { id: 'includeDependencies', label: `$(references) ${t('options.includeDependencies')}`, picked: !!config.get<boolean>('includeDependencies') },
+      { id: 'includeErrors', label: `$(error) ${t('options.includeErrors')}`, picked: !!config.get<boolean>('includeErrors') },
+      { id: 'incrementalMode', label: `$(history) ${t('options.incrementalMode')}`, picked: !!config.get<boolean>('incrementalMode') }
     ];
   }
 

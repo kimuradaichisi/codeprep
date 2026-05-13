@@ -89,12 +89,12 @@ export class PatchUseCase {
     // ✅ 進捗バーを表示
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
-      title: "CodePrep: Applying all patches...",
+      title: t('progress.applyingPatches'),
       cancellable: false
     }, async (progress) => {
       for (let i = 0; i < patches.value.length; i++) {
         const patch = patches.value[i];
-        progress.report({ message: `Applying ${patch.filePath}...`, increment: (i / patches.value.length) * 100 });
+        progress.report({ message: t('progress.applyingFile', patch.filePath), increment: (i / patches.value.length) * 100 });
         await this.performApplyAndOpen(root, patch.filePath, patch.code);
       }
     });

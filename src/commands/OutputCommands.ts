@@ -31,7 +31,7 @@ export class OutputCommands {
     if (paths.length === 0) return;
 
     await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification, title: "CodePrep: Generating...",
+      location: vscode.ProgressLocation.Notification, title: t('progress.generating'),
     }, () => this.runGeneration(paths));
   }
 

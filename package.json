@@ -1,8 +1,8 @@
 {
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
-  "description": "Select files via GUI and prepare context for LLMs.",
-  "version": "0.8.0",
+  "description": "%extension.description%",
+  "version": "0.8.1",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -236,17 +236,17 @@
         "codeprep.hideExcludedDirectories": {
           "type": "boolean",
           "default": false,
-          "description": "Exclude directories defined by `codeprep.exclude` and workspace .gitignore from the file tree when true."
+          "description": "%config.useNativeEngine.description%"
         },
         "codeprep.customPrompts": {
           "type": "object",
           "default": {
-            "✨ 1. 新機能実装 (Implement Feature)": "%prompt.implementFeature%",
-            "🛠️ 2. リファクタリング (Refactor)": "%prompt.refactor%",
-            "🐛 3. デバッグ・問題解析 (Bug Fix)": "%prompt.bugFix%",
-            "🧪 4. テストコード生成 (Unit Test)": "%prompt.unitTest%",
-            "📝 5. コードレビュー (Review)": "%prompt.codeReview%",
-            "🩹 6. パッチモード指示 (Patch Mode)": "%prompt.patchMode%"
+            "✨ 1. 新機能実装": "%prompt.implementFeature%",
+            "🛠️ 2. リファクタリング": "%prompt.refactor%",
+            "🐛 3. デバッグ・問題解析": "%prompt.bugFix%",
+            "🧪 4. テストコード生成": "%prompt.unitTest%",
+            "📝 5. コードレビュー": "%prompt.codeReview%",
+            "🩹 6. パッチモード指示": "%prompt.patchMode%"
           },
           "description": "%config.customPrompts.description%"
         },
@@ -261,6 +261,7 @@
               "codeprep.generate",
               "codeprep.selectGitDiff",
               "codeprep.selectPrompt",
+              "codeprep.selectionMenu",
               "codeprep.invertSelection",
               "codeprep.gitMenu",
               "codeprep.previewPatch"

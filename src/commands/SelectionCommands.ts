@@ -33,13 +33,14 @@ export class SelectionCommands {
 
   async showSelectionMenu(): Promise<void> {
     const items: SelectionQuickPickItem[] = [
-      { label: "$(check-all) Select All", id: 'all' },
-      { label: "$(clippy) Select from Clipboard", id: 'clip', description: 'クリップボードのパスから選択' },
-      { label: "$(search) Select by Grep", id: 'grep' },
-      { label: "$(file-directory) Select Directories Only", id: 'dirs' },
-      { label: "$(git-compare) Select Modified Files (Git)", id: 'git' },
-      { label: "$(reply) Invert Selection", id: 'invert' },
-      { label: "$(trash) Clear All", id: 'clear' }
+      { label: `$(check-all) ${t('command.selectAll')}`, id: 'all' },
+      { label: `$(clippy) ${t('command.selectFromClipboard')}`, id: 'clip', description: t('selection.clipboardDescription') },
+      { label: `$(search) ${t('command.selectByGrep')}`, id: 'grep' },
+      { label: `$(file) ${t('command.selectByExtension')}`, id: 'ext', description: t('selection.extensionDescription') },
+      { label: `$(file-directory) ${t('command.selectDirectories')}`, id: 'dirs' },
+      { label: `$(git-compare) ${t('command.selectGitDiff')}`, id: 'git' },
+      { label: `$(reply) ${t('command.invertSelection')}`, id: 'invert' },
+      { label: `$(trash) ${t('command.clearAll')}`, id: 'clear' }
     ];
     const s = await vscode.window.showQuickPick(items, { placeHolder: '選択アクションを選択' });
     if (s) await this.runSelectionAction(s.id);
@@ -50,6 +51,7 @@ export class SelectionCommands {
     else if (id === 'clip') await this.selectFromClipboard();
     else if (id === 'grep') await this.selectByGrep();
     else if (id === 'dirs') await this.selectDirectories();
+    else if (id === 'ext') await this.selectByExtension();
     else if (id === 'git') await this.selectModified();
     else if (id === 'invert') await this.invert();
     else if (id === 'clear') await this.clearAll();
@@ -113,6 +115,35 @@ export class SelectionCommands {
     if (q) await this.runGrepSearch(q);
   }
 
+  public async selectByExtension() {
+    const input = await vscode.window.showInputBox({ placeHolder: 'ts,js,tsx', prompt: t('selection.enterExtensionsRegex') });
+    if (!input) return;
+    const parts = input.split(',').map(s => s.trim()).filter(Boolean);
+    if (parts.length === 0) return;
+
+    const patterns: RegExp[] = [];
+    for (const p of parts) {
+      try {
+        patterns.push(new RegExp(p, 'i'));
+      } catch (e) {
+        vscode.window.showErrorMessage(t('selection.invalidRegex', p));
+        return;
+      }
+    }
+
+    await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `CodePrep: ${t('command.selectByExtension')}...` }, async () => {
+      const allFiles = await this.deps.repo.getAllFiles();
+      const matched = allFiles.filter(f => {
+        const ext = (f.split('.').pop() || '').toLowerCase();
+        return patterns.some(r => r.test(ext));
+      });
+      this.deps.useCase.currentSelection.clear();
+      this.deps.useCase.currentSelection.addAll(PathService.deriveAllPaths(matched));
+      await this.deps.ui.refresh();
+      vscode.window.showInformationMessage(t('filesAdded', String(matched.length)));
+    });
+  }
+
   private async runGrepSearch(query: string): Promise<void> {
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification, title: `CodePrep: "${query}" を検索中...`
@@ -128,7 +159,7 @@ export class SelectionCommands {
   }
 
   public async showPresetMenu() {
-    const items = [{ label: "$(save) Save Preset", id: 'save' }, { label: "$(folder-opened) Load Preset", id: 'load' }];
+    const items = [{ label: `$(save) ${t('command.savePreset')}`, id: 'save' }, { label: `$(folder-opened) ${t('command.loadPreset')}`, id: 'load' }];
     const s = await vscode.window.showQuickPick(items, { placeHolder: 'プリセット管理' });
     if (s?.id === 'save') await this.savePreset();
     if (s?.id === 'load') await this.loadPreset();
