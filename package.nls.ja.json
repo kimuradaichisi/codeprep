@@ -12,6 +12,7 @@
   "command.applyAllPatches": "全パッチを一括反映 (クリップボード)",
   "command.selectionMenu": "選択操作...",
   "command.selectGitDiff": "変更されたファイルを選択",
+  "command.selectDirectories": "ディレクトリのみ選択",
   "command.addToSelection": "CodePrep の選択に追加",
   "command.deletePrompt": "プロンプトを削除",
   "config.exclude.description": "ツリービューおよび選択から除外するグロブパターン。",

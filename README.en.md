@@ -9,6 +9,7 @@ Beyond intuitive file selection, it features **Autonomous Patch & Heal** for saf
 - 🌳 **Intuitive Tree Selection**: Select files/folders via checkboxes in a dedicated sidebar.
 - 🩹 **Autonomous Patch & Heal**: Automatically parse AI-generated code (even with omissions like `// ... existing code ...`) from the clipboard and merge it intelligently. Preview changes in the VSCode Diff editor before applying.
 - 🔍 **Git Diff Selection**: Extract modified files and related tests with a single click.
+ - 📁 **Select Directories Only**: Extract only parent directories derived from a file list (useful for summarizing project structure).
 - 📊 **Real-time Token Counting**: View estimated token counts in the status bar with over-limit warnings.
 - 📝 **Flexible Output Formats**: Supports `Markdown` (default), `XML`, and `JSON`.
 - 🤖 **Custom Prompts & Auto-Injection**: Manage instructions like "Code Review" or "Refactor". Automatically append patch-formatting instructions to your prompts.
@@ -30,16 +31,16 @@ Beyond intuitive file selection, it features **Autonomous Patch & Heal** for saf
 ## ⚙️ Extension Settings
 
 ### 🩹 Patch & Heal Settings
-| Key | Default | Description |
-|-----|---------|-------------|
-| `codeprep.alwaysAddPatchInstructions` | `true` | Automatically append patch formatting instructions to the end of generated prompts. |
+| Key                                   | Default | Description                                                                         |
+| ------------------------------------- | ------- | ----------------------------------------------------------------------------------- |
+| `codeprep.alwaysAddPatchInstructions` | `true`  | Automatically append patch formatting instructions to the end of generated prompts. |
 
 ### 🎨 UI & Output Settings
-| Key | Default | Description |
-|-----|---------|-------------|
-| `codeprep.outputFormat` | `"markdown"` | Output format: `"markdown"`, `"xml"`, `"json"`. |
-| `codeprep.openAfterGenerate` | `true` | Open the generated content in a new editor tab. |
-| `codeprep.visibleButtons` | `[...]` | Customize visible buttons in the view title bar. |
+| Key                          | Default      | Description                                      |
+| ---------------------------- | ------------ | ------------------------------------------------ |
+| `codeprep.outputFormat`      | `"markdown"` | Output format: `"markdown"`, `"xml"`, `"json"`.  |
+| `codeprep.openAfterGenerate` | `true`       | Open the generated content in a new editor tab.  |
+| `codeprep.visibleButtons`    | `[...]`      | Customize visible buttons in the view title bar. |
 
 ## ⌨️ Commands
 

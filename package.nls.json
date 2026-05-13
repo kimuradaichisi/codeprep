@@ -12,6 +12,7 @@
   "command.applyAllPatches": "Apply All Patches from Clipboard",
   "command.selectionMenu": "Selection Actions...",
   "command.selectGitDiff": "Select Modified Files",
+  "command.selectDirectories": "Select Directories Only",
   "command.addToSelection": "Add to CodePrep",
   "command.deletePrompt": "Delete Prompt",
   "config.exclude.description": "Glob patterns to exclude from the tree view and selection.",
