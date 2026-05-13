@@ -167,13 +167,13 @@
           "group": "navigation@2"
         },
         {
-          "command": "codeprep.applyAllPatches",
-          "when": "view == codeprep.fileTree",
+          "command": "codeprep.gitMenu",
+          "when": "view == codeprep.fileTree && codeprep.showGitMenu",
           "group": "navigation@2"
         },
         {
-          "command": "codeprep.gitMenu",
-          "when": "view == codeprep.fileTree && codeprep.showGitMenu",
+          "command": "codeprep.applyAllPatches",
+          "when": "view == codeprep.fileTree",
           "group": "navigation@2"
         },
         {
