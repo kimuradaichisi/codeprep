@@ -63,6 +63,7 @@
   "options.includeErrors": "Include Errors",
   "options.incrementalMode": "Incremental Mode",
   "copiedRelativePath": "Copied relative path to clipboard.",
+  "command.generateStructure": "Generate Directory Structure",
   "command.selectionMenu": "Selection Actions...",
   "promptCopied": "Prompt copied.",
   "command.deletePrompt": "Delete Prompt",

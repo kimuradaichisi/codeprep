@@ -96,6 +96,7 @@ function registerActionCommands(ui: UIController, out: OutputCommands): vscode.D
   return [
     vscode.commands.registerCommand('codeprep.refreshTree', () => ui.refresh()),
     vscode.commands.registerCommand('codeprep.generate', () => out.generate()),
+    vscode.commands.registerCommand('codeprep.generateStructure', () => out.generateStructure()),
     vscode.commands.registerCommand('codeprep.openSettings', () =>
       vscode.commands.executeCommand('workbench.action.openSettings', '@ext:codeprep'))
   ];

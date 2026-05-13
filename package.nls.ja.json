@@ -62,6 +62,7 @@
   "options.includeDependencies": "依存関係を含める",
   "options.includeErrors": "エラーを含める",
   "options.incrementalMode": "インクリメンタルモード",
+  "command.generateStructure": "ディレクトリ構造を生成",
   "progress.generating": "CodePrep: 生成中...",
   "progress.applyingPatches": "CodePrep: 全パッチを適用中...",
   "progress.applyingFile": "{0} を適用中...",

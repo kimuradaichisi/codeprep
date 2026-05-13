@@ -68,6 +68,11 @@
         "icon": "$(run)"
       },
       {
+        "command": "codeprep.generateStructure",
+        "title": "%command.generateStructure%",
+        "icon": "$(list-flat)"
+      },
+      {
         "command": "codeprep.selectGitDiff",
         "title": "%command.selectGitDiff%",
         "icon": "$(git-compare)"

@@ -35,6 +35,24 @@ export class OutputCommands {
     }, () => this.runGeneration(paths));
   }
 
+  async generateStructure(): Promise<void> {
+    const paths = this.deps.selectionUseCase.currentSelection.getPaths();
+    if (paths.length === 0) return;
+
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification, title: t('progress.generatingStructure')
+    }, async () => {
+      // For structure-only output we don't need file contents; provide empty content placeholders
+      const files = paths.map(p => ({ path: p, content: '' }));
+      const prompt = await this.getPrompt(paths);
+      const opts = this.getOptions();
+      opts.outputMode = 'structureOnly';
+
+      const result = this.deps.engine.generate(files as any, opts, prompt);
+      await this.finalize(result.content, files, opts.format);
+    });
+  }
+
   private async runGeneration(paths: string[]): Promise<void> {
     const opts = this.getOptions();
     const files = await this.processFiles(paths, opts);
