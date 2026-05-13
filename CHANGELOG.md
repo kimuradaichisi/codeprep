@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.2] - 2026-05-14
+- chore: Bump version to 0.8.2
+- feat: Add `Generate Directory Structure` command and `codeprep.generateStructure` button
+- ux: Add "Clear Prompt" option to prompt selection (clears currently selected prompt)
+
 ## [0.7.5] - 2026-05-13
 - feat: Add `Select Directories Only` action to selection menu (select parent directories only)
 - feat: `codeprep.hideExcludedDirectories` setting — hide excluded dirs in file tree using `codeprep.exclude` and workspace `.gitignore`
