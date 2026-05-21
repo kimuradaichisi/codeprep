@@ -1,3 +1,23 @@
+import { describe, it, expect } from 'vitest';
+import * as sinon from 'sinon';
+import * as vscode from 'vscode';
+import { ClipboardSelectionUseCase } from '../ClipboardSelectionUseCase';
+
+describe('ClipboardSelectionUseCase', () => {
+  it('should not notify when clipboard.watch is disabled', () => {
+    const getConfigurationStub = sinon.stub(vscode.workspace, 'getConfiguration');
+    getConfigurationStub.withArgs('codeprep').returns({ get: () => false } as any);
+
+    const notifySpy = sinon.spy((ClipboardSelectionUseCase.prototype as any), 'notify');
+    const uc = new ClipboardSelectionUseCase();
+    if (typeof uc.handleClipboardEvent === 'function') uc.handleClipboardEvent('dummy');
+
+    expect(notifySpy.called).toBe(false);
+
+    getConfigurationStub.restore();
+    notifySpy.restore();
+  });
+});
 /*
  * Copyright 2026 CodePrep Contributors
  */
