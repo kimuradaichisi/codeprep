@@ -22,11 +22,21 @@ export class PatchTargetResolver {
             }
         }
 
+        // If path hint matched but the matched file appears in recentFiles, give a small boost
+        if (targetPath && recentFiles.length > 0) {
+            const idx = recentFiles.findIndex(r => r === targetPath);
+            if (idx >= 0) {
+                const bonus = Math.max(20 - idx * 2, 5);
+                confidence += bonus;
+                reasons.push('recentness bonus');
+            }
+        }
+
+        // When no path hint resolved, prefer recentFiles by ordering (recentFiles[0] is best)
         if (!targetPath && recentFiles.length > 0) {
-            // prefer the most frequently changed files (recentFiles is ordered by frequency)
             targetPath = recentFiles[0];
             const idx = 0;
-            const bonus = Math.max(30 - idx, 5);
+            const bonus = Math.max(40 - idx * 3, 5);
             confidence += bonus;
             reasons.push('recent file fallback');
         }
@@ -38,6 +48,9 @@ export class PatchTargetResolver {
         }
 
         if (!targetPath) reasons.push('no target inferred');
+
+        // cap confidence to 100 for presentation
+        if (confidence > 100) confidence = 100;
 
         return { candidate, targetPath, confidence, reasons };
     }
