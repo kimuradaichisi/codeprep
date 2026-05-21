@@ -1,20 +1,3 @@
-import * as sinon from 'sinon';
-
-describe('ClipboardSelectionUseCase', () => {
-  it('should not notify when clipboard.watch is disabled', () => {
-    const getConfigurationStub = sinon.stub(vscode.workspace, 'getConfiguration');
-    getConfigurationStub.withArgs('codeprep').returns({ get: () => false } as any);
-
-    const notifySpy = sinon.spy((ClipboardSelectionUseCase.prototype as any), 'notify');
-    const uc = new ClipboardSelectionUseCase();
-    if (typeof uc.handleClipboardEvent === 'function') uc.handleClipboardEvent('dummy');
-
-    expect(notifySpy.called).toBe(false);
-
-    getConfigurationStub.restore();
-    notifySpy.restore();
-  });
-});
 /*
  * Copyright 2026 CodePrep Contributors
  */
@@ -25,7 +8,8 @@ import { Selection } from '../../domain/Selection';
 
 vi.mock('vscode', () => ({
   env: { clipboard: { readText: vi.fn() } },
-  window: { showInformationMessage: vi.fn(), showWarningMessage: vi.fn() }
+  window: { showInformationMessage: vi.fn(), showWarningMessage: vi.fn() },
+  workspace: { getConfiguration: vi.fn().mockImplementation(() => ({ get: (k: string, d: any) => d })) }
 }));
 
 describe('ClipboardSelectionUseCase', () => {
@@ -37,6 +21,16 @@ describe('ClipboardSelectionUseCase', () => {
     vi.clearAllMocks();
     selection = new Selection();
     useCase = new ClipboardSelectionUseCase(selection, mockRoot);
+  });
+
+  it('should not notify when clipboard.watch is disabled', async () => {
+    vi.mocked(vscode.workspace.getConfiguration).mockReturnValueOnce({ get: () => false } as any);
+    // ensure clipboard has something so selectFromClipboard proceeds
+    vi.mocked(vscode.env.clipboard.readText).mockResolvedValue('src/app.ts');
+
+    await useCase.selectFromClipboard();
+
+    expect(vscode.window.showInformationMessage).not.toHaveBeenCalled();
   });
 
   it('Vitestの失敗レポートからパスを抽出し、親ディレクトリ含め選択状態にできること', async () => {

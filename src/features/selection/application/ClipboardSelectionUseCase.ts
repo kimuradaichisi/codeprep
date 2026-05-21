@@ -14,6 +14,7 @@ export class ClipboardSelectionUseCase {
   ) { }
 
   public async selectFromClipboard(): Promise<void> {
+    if (!this.isEnabled()) return;
     const text = await vscode.env.clipboard.readText();
     console.log('DEBUG: clipboard text:', text);  // 追加
 
@@ -32,7 +33,17 @@ export class ClipboardSelectionUseCase {
     this.selection.addAll(allPaths);
     console.log('DEBUG: selection after addAll:', this.selection.getPaths());  // 追加
 
-    vscode.window.showInformationMessage(t('codeprepSelectedFiles', String(paths.length)));
+    this.notify(t('codeprepSelectedFiles', String(paths.length)));
+  }
+
+  private isEnabled(): boolean {
+    const config = vscode.workspace.getConfiguration('codeprep');
+    return config.get<boolean>('clipboard.watch.enabled', true);
+  }
+
+  private notify(message: string): void {
+    if (!this.isEnabled()) return;
+    vscode.window.showInformationMessage(message);
   }
 
   private extractPaths(text: string): string[] {
