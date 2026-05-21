@@ -110,11 +110,10 @@ export class GitCliClient implements IGitClient {
             // Get file names from recent commits
             const cmd = `git log --pretty=format: --name-only -n ${limit}`;
             const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
-            const files = stdout.split('\n')
-                .map(l => l.trim())
-                .filter(l => l.length > 0)
-                // unique while preserving order
-                .reduce((acc: string[], cur) => { if (!acc.includes(cur)) acc.push(cur); return acc; }, []);
+            const lines = stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const counts: Record<string, number> = {};
+            for (const l of lines) counts[l] = (counts[l] || 0) + 1;
+            const files = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
             return ok(files);
         } catch (error) {
             return fail(error instanceof Error ? error : new Error(String(error)));

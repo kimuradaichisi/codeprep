@@ -23,8 +23,11 @@ export class PatchTargetResolver {
         }
 
         if (!targetPath && recentFiles.length > 0) {
+            // prefer the most frequently changed files (recentFiles is ordered by frequency)
             targetPath = recentFiles[0];
-            confidence += 20;
+            const idx = 0;
+            const bonus = Math.max(30 - idx, 5);
+            confidence += bonus;
             reasons.push('recent file fallback');
         }
 

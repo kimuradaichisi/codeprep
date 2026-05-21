@@ -98,7 +98,7 @@ export class PatchCommands {
           recentFiles = Array.from(new Set(recentFiles)).slice(0, 200);
         }
       }
-    } catch {}
+    } catch { }
 
     const smart = new SmartPatchUseCase(fsLike, workspaceFiles, recentFiles);
     const plans = await smart.planFromText(text);
@@ -173,7 +173,7 @@ export class PatchCommands {
     }
 
     // reuse QuickPick/open helper
-    const items = plans.map((pl, idx) => ({ label: pl.targetPath || `<unknown:${idx}>`, description: '', detail: pl.diff.split('\n').slice(0,3).join('\n') }));
+    const items = plans.map((pl, idx) => ({ label: pl.targetPath || `<unknown:${idx}>`, description: '', detail: pl.diff.split('\n').slice(0, 3).join('\n') }));
     items.unshift({ label: `$(list-selection) ${t('patch.openAll')}`, description: t('patch.openAllDescription', String(plans.length)), detail: t('patch.openAllDescription', String(plans.length)) });
     const pick = await vscode.window.showQuickPick(items, { placeHolder: t('patch.selectPatchCandidate') || 'Select patch candidate to preview' });
     if (!pick) return;
