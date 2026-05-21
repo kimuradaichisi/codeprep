@@ -10,6 +10,7 @@ import { PromptUseCase } from '../features/prompt/application/PromptUseCase';
 import { IFileSystem } from '../shared/domain/IFileSystem';
 import { DependencyScanner } from '../features/engine/application/DependencyScanner';
 import { DiagnosticService } from '../features/engine/infrastructure/DiagnosticService';
+import { countValidFiles } from '../features/selection/application/util/countValidFiles';
 import { OutputOptions } from '../features/engine/domain/OutputOptions';
 
 export interface OutputCommandsDeps {
@@ -115,8 +116,9 @@ export class OutputCommands {
   private async finalize(content: string, files: FileContent[], format: string): Promise<void> {
     await vscode.env.clipboard.writeText(content);
     files.forEach(f => OutputCommands.lastState.set(f.path, f.content));
-    // localized message
-    vscode.window.showInformationMessage(t('codeprepCopied'));
+    // show processed-file count based on actual file contents
+    const count = countValidFiles(files as any);
+    vscode.window.showInformationMessage(`${count} files copied`);
 
     if (!vscode.workspace.getConfiguration('codeprep').get('openAfterGenerate', true)) {
       return;
