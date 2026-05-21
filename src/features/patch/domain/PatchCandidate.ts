@@ -1,4 +1,6 @@
-import { PatchFormat } from './PatchFormat';
+export type PatchFormat = 'unified' | 'plain' | 'unknown';
+
+export type PatchCandidateSource = 'fencedCodeBlock' | 'unifiedDiff' | 'plainCode' | 'chatGptMixed';
 
 export interface PatchCandidate {
     readonly format: PatchFormat;
@@ -6,6 +8,7 @@ export interface PatchCandidate {
     readonly language?: string;
     readonly content: string;
     readonly context: string;
+    readonly source: PatchCandidateSource;
     readonly startLineHint?: number;
 }
 
