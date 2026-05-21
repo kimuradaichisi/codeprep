@@ -104,4 +104,20 @@ export class GitCliClient implements IGitClient {
         }
         return filePath.includes(' -> ') ? filePath.split(' -> ')[1] : filePath;
     }
+
+    public async getRecentFiles(root: string, limit: number = 200): Promise<Result<string[]>> {
+        try {
+            // Get file names from recent commits
+            const cmd = `git log --pretty=format: --name-only -n ${limit}`;
+            const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
+            const files = stdout.split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 0)
+                // unique while preserving order
+                .reduce((acc: string[], cur) => { if (!acc.includes(cur)) acc.push(cur); return acc; }, []);
+            return ok(files);
+        } catch (error) {
+            return fail(error instanceof Error ? error : new Error(String(error)));
+        }
+    }
 }

@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { t } from '../utils/i18n';
 import * as path from 'path';
 import { PatchUseCase } from '../features/patch/application/PatchUseCase';
+import { IGitClient } from '../features/git/domain/IGitClient';
 import { ClipParser } from '../features/patch/domain/ClipParser';
 import { OmitHealer } from '../features/patch/domain/OmitHealer';
 import { PatchDiffBuilder } from '../features/patch/domain/PatchDiffBuilder';
@@ -14,7 +15,8 @@ import { PatchCache } from '../features/patch/domain/PatchCache';
 export class PatchCommands {
   constructor(
     private readonly patchUseCase: PatchUseCase,
-    private readonly root: string | undefined
+    private readonly root: string | undefined,
+    private readonly gitClient?: IGitClient
   ) { }
 
   public async previewPatch(): Promise<void> {
@@ -83,6 +85,21 @@ export class PatchCommands {
       recentFiles = [];
     }
 
+    // supplement with git recent files if available (prefer repo-relative paths)
+    try {
+      if (this.gitClient && this.root) {
+        const gitRes = await this.gitClient.getRecentFiles(this.root, 200);
+        if (gitRes.isSuccess) {
+          const abs = gitRes.value.map(p => path.join(this.root || '', p));
+          for (const a of abs) {
+            if (!recentFiles.includes(a) && workspaceFiles.includes(a)) recentFiles.unshift(a);
+          }
+          // keep uniqueness and limit
+          recentFiles = Array.from(new Set(recentFiles)).slice(0, 200);
+        }
+      }
+    } catch {}
+
     const smart = new SmartPatchUseCase(fsLike, workspaceFiles, recentFiles);
     const plans = await smart.planFromText(text);
     if (!plans || plans.length === 0) {
@@ -96,9 +113,9 @@ export class PatchCommands {
       description: `${p.confidence.level} (${Math.round(p.confidence.score)})`,
       detail: p.diff.split('\n').slice(0, 3).join('\n')
     }));
-    items.unshift({ label: '$(list-selection) Open All', description: `${plans.length} candidates`, detail: 'Open all candidates in editors' });
+    items.unshift({ label: `$(list-selection) ${t('patch.openAll')}`, description: t('patch.openAllDescription', String(plans.length)), detail: t('patch.openAllDescription', String(plans.length)) });
 
-    const pick = await vscode.window.showQuickPick(items, { placeHolder: t('selectPatchCandidate') || 'Select patch candidate to preview' });
+    const pick = await vscode.window.showQuickPick(items, { placeHolder: t('patch.selectPatchCandidate') || 'Select patch candidate to preview' });
     if (!pick) return;
 
     if (pick.label.startsWith('$(list-selection)')) {
@@ -147,7 +164,7 @@ export class PatchCommands {
           const bytes = await vscode.workspace.fs.readFile(vscode.Uri.file(fp));
           original = new TextDecoder().decode(bytes);
         }
-      } catch {}
+      } catch { }
 
       const healed = healer.heal(original, p.code);
       const patched = healed.isSuccess ? healed.value.code : p.code;
@@ -157,8 +174,8 @@ export class PatchCommands {
 
     // reuse QuickPick/open helper
     const items = plans.map((pl, idx) => ({ label: pl.targetPath || `<unknown:${idx}>`, description: '', detail: pl.diff.split('\n').slice(0,3).join('\n') }));
-    items.unshift({ label: '$(list-selection) Open All', description: `${plans.length} candidates`, detail: 'Open all candidates in editors' });
-    const pick = await vscode.window.showQuickPick(items, { placeHolder: t('selectPatchCandidate') || 'Select patch candidate to preview' });
+    items.unshift({ label: `$(list-selection) ${t('patch.openAll')}`, description: t('patch.openAllDescription', String(plans.length)), detail: t('patch.openAllDescription', String(plans.length)) });
+    const pick = await vscode.window.showQuickPick(items, { placeHolder: t('patch.selectPatchCandidate') || 'Select patch candidate to preview' });
     if (!pick) return;
     if (pick.label.startsWith('$(list-selection)')) {
       for (let i = 0; i < plans.length; i++) await this.openPlanPreview(plans[i], i);

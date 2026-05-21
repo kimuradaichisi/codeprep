@@ -85,5 +85,10 @@
   "extension.description": "ファイルをGUIで選択して、LLMに渡すためのコンテキストを準備します。",
   "config.useNativeEngine.description": "処理速度向上のために組み込みエンジンを使用します。",
   "prompt.patchMode": "## 回答形式の指定 (CodePrep Patch Mode)\nあなたはパッチ適用自動化ツールと連携しています。修正案を提示する際は、以下のルールを厳守してください。\n\n### 1. ファイルパスの明示\n各コードブロックの直前に、対象ファイルの相対パスを `path/to/file.ts` のように記述してください。ファイルパスとコードブロックの間には、絶対に情報は出力しないこと。\n\n### 2. 省略記法の活用 (Heal対応)\n変更のない部分は省略して構いません。ただし、自動マージの精度を高めるため、省略コメント（`// ... existing code ...` 等）の**前後には必ず 1〜2 行の既存コード（アンカー）を記述**してください。\n\n### 3. 多重修正の統合\n1つのファイル内で複数箇所を修正する場合、それぞれの箇所を省略コメントで繋いで記述してください。ツールが自動的にマージして 1 つの Diff として提示します。\n\n例:\n`src/index.ts`:\n```typescript\n// ... existing ...\nexport const firstFix = () => { ... };\n// ... existing ...\nexport const secondFix = () => { ... };\n// ... existing ...\n```",
+  "patch.openAll": "すべて開く",
+  "patch.openAllDescription": "{0} 件の候補",
+  "patch.selectPatchCandidate": "プレビューする候補を選択してください",
+  "patch.menuClipboard": "プレビュー: クリップボードのパッチ",
+  "patch.menuSmart": "プレビュー: スマートパッチ",
   "prompt.patchInjection": "\n\n---\n## 重要: 回答形式 (Patch Mode)\n修正案は必ず各コードブロックの直前に `path/to/file.ts`: を記述し、変更のない部分は `// ... existing code ...` 等の省略コメント（前後に1行ずつのアンカーを含む）を活用して記述してください。同一ファイルへの複数箇所の修正も歓迎します。"
 }

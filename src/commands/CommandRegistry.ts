@@ -35,7 +35,7 @@ export function registerAllCommands(d: RegistryDeps): vscode.Disposable[] {
   const gitCmd = new GitCommands(d.selectionUseCase, d.uiController, d.gitClient, d.root);
   const outCmd = new OutputCommands({ selectionUseCase: d.selectionUseCase, promptUseCase: d.promptUseCase, engine: d.engine, fileSystem: d.fileSystem, root: d.root });
   const selCmd = new SelectionCommands({ useCase: d.selectionUseCase, ui: d.uiController, repo: d.workspaceRepo, searchRepo, gitClient: d.gitClient, root: d.root });
-  const patchCmd = new PatchCommands(d.patchUseCase, d.root);
+  const patchCmd = new PatchCommands(d.patchUseCase, d.root, d.gitClient);
 
   return [
     ...registerMenuCommands(selCmd, gitCmd),
