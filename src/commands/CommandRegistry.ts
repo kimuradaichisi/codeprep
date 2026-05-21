@@ -144,6 +144,7 @@ function registerSelectionUtilityCommands(sel: SelectionCommands): vscode.Dispos
 function registerPatchCommands(patch: PatchCommands): vscode.Disposable[] {
   return [
     vscode.commands.registerCommand('codeprep.previewPatch', () => patch.previewPatch()),
+    vscode.commands.registerCommand('codeprep.previewSmartPatch', () => patch.previewSmartPatch()),
     vscode.commands.registerCommand('codeprep.applyPatch', () => patch.applyPatch()),
     vscode.commands.registerCommand('codeprep.applyAllPatches', () => patch.applyAllPatches()),
     vscode.commands.registerCommand('codeprep.copyVerifyPrompt', (uri: vscode.Uri) => {

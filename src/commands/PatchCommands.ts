@@ -5,6 +5,8 @@ import * as vscode from 'vscode';
 import { t } from '../utils/i18n';
 import * as path from 'path';
 import { PatchUseCase } from '../features/patch/application/PatchUseCase';
+import { SmartPatchUseCase } from '../features/patch/application/SmartPatchUseCase';
+import { PatchCache } from '../features/patch/domain/PatchCache';
 
 export class PatchCommands {
   constructor(
@@ -29,6 +31,32 @@ export class PatchCommands {
   /** ✅ 新機能：AI検証用プロンプトをコピー */
   public async copyVerifyPrompt(uri: vscode.Uri): Promise<void> {
     await this.patchUseCase.copyVerifyPrompt(uri);
+  }
+
+  /** 新機能：スマートパッチをクリップボードから解析してプレビューを開く（MVP） */
+  public async previewSmartPatch(): Promise<void> {
+    const text = await vscode.env.clipboard.readText();
+    if (!text || text.trim() === '') {
+      vscode.window.showWarningMessage(t('noClipboardText'));
+      return;
+    }
+
+    // For MVP, supply empty workspaceFiles — resolver will attempt best-effort.
+    const smart = new SmartPatchUseCase({ readFile: async (_p: string) => '' }, [], []);
+    const plans = await smart.planFromText(text);
+    if (!plans || plans.length === 0) {
+      vscode.window.showInformationMessage(t('noPatchCandidates'));
+      return;
+    }
+
+    for (let i = 0; i < plans.length; i++) {
+      const p = plans[i];
+      const id = PatchCache.generateId();
+      PatchCache.set(id, p.diff.replace(/\r\n/g, '\n'));
+      const uri = vscode.Uri.parse(`codeprep-patch:smart-${i}?id=${id}`);
+      const doc = await vscode.workspace.openTextDocument(uri);
+      await vscode.window.showTextDocument(doc, { preview: false });
+    }
   }
 
   public async applyPatch(): Promise<void> {
