@@ -5,6 +5,9 @@ import * as vscode from 'vscode';
 import { t } from '../utils/i18n';
 import * as path from 'path';
 import { PatchUseCase } from '../features/patch/application/PatchUseCase';
+import { ClipParser } from '../features/patch/domain/ClipParser';
+import { OmitHealer } from '../features/patch/domain/OmitHealer';
+import { PatchDiffBuilder } from '../features/patch/domain/PatchDiffBuilder';
 import { SmartPatchUseCase } from '../features/patch/application/SmartPatchUseCase';
 import { PatchCache } from '../features/patch/domain/PatchCache';
 
@@ -100,23 +103,80 @@ export class PatchCommands {
 
     if (pick.label.startsWith('$(list-selection)')) {
       for (let i = 0; i < plans.length; i++) {
-        const p = plans[i];
-        const id = PatchCache.generateId();
-        PatchCache.set(id, p.diff.replace(/\r\n/g, '\n'));
-        const uri = vscode.Uri.parse(`codeprep-patch:smart-${i}?id=${id}`);
-        const doc = await vscode.workspace.openTextDocument(uri);
-        await vscode.window.showTextDocument(doc, { preview: false });
+        await this.openPlanPreview(plans[i], i);
       }
       return;
     }
 
     const selIndex = items.findIndex(it => it === pick) - 1; // -1 because we unshifted Open All
     const plan = plans[selIndex >= 0 ? selIndex : 0];
+    await this.openPlanPreview(plan, selIndex >= 0 ? selIndex : 0);
+  }
+
+  private async openPlanPreview(plan: { targetPath?: string; diff: string }, index: number): Promise<void> {
     const id = PatchCache.generateId();
     PatchCache.set(id, plan.diff.replace(/\r\n/g, '\n'));
-    const uri = vscode.Uri.parse(`codeprep-patch:smart-${selIndex}?id=${id}`);
+    const uri = vscode.Uri.parse(`codeprep-patch:preview-${index}?id=${id}`);
     const doc = await vscode.workspace.openTextDocument(uri);
     await vscode.window.showTextDocument(doc, { preview: false });
+  }
+
+  /** レガシー（従来）: クリップボードのパッチを解析して QuickPick で一覧表示 */
+  public async previewPatchLegacy(): Promise<void> {
+    const text = await vscode.env.clipboard.readText();
+    if (!text || text.trim() === '') {
+      vscode.window.showWarningMessage(t('noClipboardText'));
+      return;
+    }
+
+    const parser = new ClipParser();
+    const healer = new OmitHealer();
+    const diffBuilder = new PatchDiffBuilder();
+    const parsed = parser.parse(text);
+    if (parsed.isFailure || parsed.value.length === 0) {
+      vscode.window.showInformationMessage(t('noPatchCandidates'));
+      return;
+    }
+
+    const plans: { targetPath?: string; diff: string }[] = [];
+    for (const p of parsed.value) {
+      let original = '';
+      try {
+        if (this.root) {
+          const fp = path.join(this.root, p.filePath);
+          const bytes = await vscode.workspace.fs.readFile(vscode.Uri.file(fp));
+          original = new TextDecoder().decode(bytes);
+        }
+      } catch {}
+
+      const healed = healer.heal(original, p.code);
+      const patched = healed.isSuccess ? healed.value.code : p.code;
+      const diff = diffBuilder.buildUnifiedDiff(p.filePath, original, patched);
+      plans.push({ targetPath: p.filePath, diff });
+    }
+
+    // reuse QuickPick/open helper
+    const items = plans.map((pl, idx) => ({ label: pl.targetPath || `<unknown:${idx}>`, description: '', detail: pl.diff.split('\n').slice(0,3).join('\n') }));
+    items.unshift({ label: '$(list-selection) Open All', description: `${plans.length} candidates`, detail: 'Open all candidates in editors' });
+    const pick = await vscode.window.showQuickPick(items, { placeHolder: t('selectPatchCandidate') || 'Select patch candidate to preview' });
+    if (!pick) return;
+    if (pick.label.startsWith('$(list-selection)')) {
+      for (let i = 0; i < plans.length; i++) await this.openPlanPreview(plans[i], i);
+      return;
+    }
+    const selIndex = items.findIndex(it => it === pick) - 1;
+    await this.openPlanPreview(plans[selIndex >= 0 ? selIndex : 0], selIndex >= 0 ? selIndex : 0);
+  }
+
+  /** コマンドメニュー：レガシー or Smart を選んでプレビュー */
+  public async previewPatchMenu(): Promise<void> {
+    const pick = await vscode.window.showQuickPick([
+      { label: 'Preview: Clipboard patches', description: 'Parse traditional patch format from clipboard' },
+      { label: 'Preview: Smart patches', description: 'Parse AI / smart patch candidates' }
+    ], { placeHolder: 'Choose preview mode' });
+    if (!pick) return;
+    if (pick.label.startsWith('Preview: Clipboard')) await this.previewPatchLegacy();
+    else await this.previewSmartPatch();
   }
 
   public async applyPatch(): Promise<void> {
