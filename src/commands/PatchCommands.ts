@@ -64,21 +64,59 @@ export class PatchCommands {
       }
     };
 
-    const smart = new SmartPatchUseCase(fsLike, workspaceFiles, []);
+    // gather recent files by mtime to help resolver prefer recently edited files
+    let recentFiles: string[] = [];
+    try {
+      const stats = await Promise.all(workspaceFiles.map(async p => {
+        try {
+          const s = await vscode.workspace.fs.stat(vscode.Uri.file(p));
+          return { p, mtime: s.mtime };
+        } catch {
+          return { p, mtime: 0 };
+        }
+      }));
+      recentFiles = stats.sort((a, b) => b.mtime - a.mtime).slice(0, 50).map(s => s.p);
+    } catch {
+      recentFiles = [];
+    }
+
+    const smart = new SmartPatchUseCase(fsLike, workspaceFiles, recentFiles);
     const plans = await smart.planFromText(text);
     if (!plans || plans.length === 0) {
       vscode.window.showInformationMessage(t('noPatchCandidates'));
       return;
     }
 
-    for (let i = 0; i < plans.length; i++) {
-      const p = plans[i];
-      const id = PatchCache.generateId();
-      PatchCache.set(id, p.diff.replace(/\r\n/g, '\n'));
-      const uri = vscode.Uri.parse(`codeprep-patch:smart-${i}?id=${id}`);
-      const doc = await vscode.workspace.openTextDocument(uri);
-      await vscode.window.showTextDocument(doc, { preview: false });
+    // Present plans in QuickPick and open the selected one (or open all)
+    const items: vscode.QuickPickItem[] = plans.map((p, idx) => ({
+      label: p.targetPath || `<unknown:${idx}>`,
+      description: `${p.confidence.level} (${Math.round(p.confidence.score)})`,
+      detail: p.diff.split('\n').slice(0, 3).join('\n')
+    }));
+    items.unshift({ label: '$(list-selection) Open All', description: `${plans.length} candidates`, detail: 'Open all candidates in editors' });
+
+    const pick = await vscode.window.showQuickPick(items, { placeHolder: t('selectPatchCandidate') || 'Select patch candidate to preview' });
+    if (!pick) return;
+
+    if (pick.label.startsWith('$(list-selection)')) {
+      for (let i = 0; i < plans.length; i++) {
+        const p = plans[i];
+        const id = PatchCache.generateId();
+        PatchCache.set(id, p.diff.replace(/\r\n/g, '\n'));
+        const uri = vscode.Uri.parse(`codeprep-patch:smart-${i}?id=${id}`);
+        const doc = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(doc, { preview: false });
+      }
+      return;
     }
+
+    const selIndex = items.findIndex(it => it === pick) - 1; // -1 because we unshifted Open All
+    const plan = plans[selIndex >= 0 ? selIndex : 0];
+    const id = PatchCache.generateId();
+    PatchCache.set(id, plan.diff.replace(/\r\n/g, '\n'));
+    const uri = vscode.Uri.parse(`codeprep-patch:smart-${selIndex}?id=${id}`);
+    const doc = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(doc, { preview: false });
   }
 
   public async applyPatch(): Promise<void> {
