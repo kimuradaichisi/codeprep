@@ -1,7 +1,4 @@
-import { describe, it, expect } from 'vitest';
 import * as sinon from 'sinon';
-import * as vscode from 'vscode';
-import { ClipboardSelectionUseCase } from '../ClipboardSelectionUseCase';
 
 describe('ClipboardSelectionUseCase', () => {
   it('should not notify when clipboard.watch is disabled', () => {
