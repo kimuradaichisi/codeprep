@@ -6,8 +6,14 @@ import { IGitClient } from '../domain/IGitClient';
 import { Result, ok, fail } from '../../../shared/domain/Result';
 
 const execAsync = promisify(exec);
+type ExecAsync = (cmd: string, opts: { cwd: string }) => Promise<{ stdout: string }>;
 
+// constructor追加
 export class GitCliClient implements IGitClient {
+
+    constructor(
+        private execAsyncFn: ExecAsync = execAsync
+    ) { }
     private isExecuting = false;
 
     public async getModifiedFiles(root: string): Promise<Result<string[]>> {
@@ -15,7 +21,7 @@ export class GitCliClient implements IGitClient {
         this.isExecuting = true;
         try {
             const cmd = 'git -c core.quotepath=false status --porcelain';
-            const { stdout } = await execAsync(cmd, { cwd: root });
+            const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
             const files = stdout.split('\n')
                 .map(line => this.parseGitStatusLine(line))
                 .filter(f => f.length > 0);
@@ -28,18 +34,38 @@ export class GitCliClient implements IGitClient {
     }
 
 
+
     public async getDiff(root: string, excludePaths: string[] = []): Promise<Result<string>> {
         try {
-            let cmd = 'git diff HEAD';
-            if (excludePaths.length > 0) {
-                const excludes = excludePaths.map(p => `":(exclude)${p}"`).join(' ');
-                cmd += ` -- . ${excludes}`;
-            }
-            const { stdout } = await execAsync(cmd, { cwd: root });
-            return ok(stdout);
+            const unstaged = await this.execDiff(root, excludePaths, false);
+            const staged = await this.execDiff(root, excludePaths, true);
+
+            const combined = [unstaged, staged]
+                .filter(text => text.length > 0)
+                .join('\n');
+
+            return ok(combined);
         } catch (error) {
             return fail(error instanceof Error ? error : new Error(String(error)));
         }
+    }
+
+    private async execDiff(
+        root: string,
+        excludePaths: string[],
+        staged: boolean
+    ): Promise<string> {
+        let cmd = staged ? 'git diff --cached' : 'git diff';
+
+        if (excludePaths.length > 0) {
+            const excludes = excludePaths
+                .map(p => `":(exclude)${p}"`)
+                .join(' ');
+            cmd += ` -- . ${excludes}`;
+        }
+
+        const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
+        return stdout;
     }
 
     public async findRelatedTests(root: string, files: string[]): Promise<Result<string[]>> {

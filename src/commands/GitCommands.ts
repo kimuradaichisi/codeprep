@@ -14,7 +14,11 @@ export class GitCommands {
 
   async showMenu() {
     if (!this.root) return;
-    const items: QuickPickItem[] = [
+
+    interface GitQuickPickItem extends vscode.QuickPickItem {
+      id: 'mod' | 'tests' | 'commit';
+    }
+    const items: GitQuickPickItem[] = [
       { label: `$(file-diff) ${t('command.selectModifiedFiles')}`, id: 'mod' },
       { label: `$(beaker) ${t('command.selectModifiedTests')}`, id: 'tests' },
       { label: `$(git-commit) ${t('command.copyCommitPrompt')}`, id: 'commit' }
@@ -36,7 +40,7 @@ export class GitCommands {
 
   private async copyCommitPrompt() {
     const result = await this.gitClient.getDiff(this.root || '', ['package.json', 'package-lock.json']);
-    if (result.isFailure || !result.value) return vscode.window.showInformationMessage(t('noDiffs'));
+    if (result.isFailure || !result.value || result.value.trim().length === 0) return vscode.window.showInformationMessage(t('noDiffs'));
 
     const diff = result.value;
     const config = vscode.workspace.getConfiguration('codeprep');

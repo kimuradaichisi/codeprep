@@ -65,4 +65,25 @@ describe('GitCliClient', () => {
             expect(result.value).toContain('untracked.txt');
         }
     });
+
+
+
+    it('unstaged + staged の両方を結合する', async () => {
+        const mockExec = vi.fn()
+            .mockResolvedValueOnce({ stdout: 'unstaged diff' })
+            .mockResolvedValueOnce({ stdout: 'staged diff' });
+
+        const client = new GitCliClient(mockExec);
+
+        const result = await client.getDiff('/repo');
+
+        expect(result.isSuccess).toBe(true);
+
+        if (!result.isSuccess) throw new Error();
+
+        expect(result.value).toContain('unstaged diff');
+        expect(result.value).toContain('staged diff');
+    });
+
+
 });
