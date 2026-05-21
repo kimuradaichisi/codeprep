@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "%extension.description%",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "publisher": "codeprep",
   "repository": {
     "type": "git",

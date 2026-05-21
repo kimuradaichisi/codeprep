@@ -6,7 +6,7 @@
   "config.customPrompts.description": "Define your custom prompts here as key-value pairs (Label: Prompt Content).",
   "command.gitMenu": "Git Actions...",
   "prompt.patchMode": "Patch mode output format instructions.",
-  "prompt.gitCommit": "Generate a professional git commit message based on the provided diff.",
+  "prompt.gitCommit": "Generate a professional git commit message based on the provided diff.\n\n{{diff}}",
   "command.selectFromClipboard": "Select from Clipboard",
   "selection.clipboardDescription": "Select file paths found in the clipboard.",
   "command.selectByGrep": "Select by Grep",

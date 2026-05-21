@@ -64,8 +64,16 @@ export class GitCliClient implements IGitClient {
             cmd += ` -- . ${excludes}`;
         }
 
-        const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
-        return stdout;
+        try {
+            console.debug(`[GitCliClient] execDiff: cmd=${cmd} cwd=${root} staged=${staged}`);
+            const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
+            const snippet = stdout && stdout.length > 2000 ? stdout.substring(0, 2000) + '...[truncated]' : stdout;
+            console.debug(`[GitCliClient] execDiff: stdout length=${stdout ? stdout.length : 0}\n${snippet}`);
+            return stdout;
+        } catch (err) {
+            console.error('[GitCliClient] execDiff error:', err instanceof Error ? err.message : String(err));
+            throw err;
+        }
     }
 
     public async findRelatedTests(root: string, files: string[]): Promise<Result<string[]>> {
