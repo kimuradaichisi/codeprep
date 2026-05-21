@@ -40,9 +40,31 @@ export class PatchCommands {
       vscode.window.showWarningMessage(t('noClipboardText'));
       return;
     }
+    // Collect workspace files (prefer files under the configured root) to improve resolution.
+    let workspaceFiles: string[] = [];
+    try {
+      const uris = await vscode.workspace.findFiles('**/*', '**/node_modules/**');
+      const rootPrefix = this.root ? (this.root.endsWith('/') ? this.root : this.root + path.sep) : undefined;
+      workspaceFiles = uris
+        .map(u => u.fsPath)
+        .filter(p => !rootPrefix || p.startsWith(rootPrefix));
+    } catch (e) {
+      // ignore and continue with empty list
+      workspaceFiles = [];
+    }
 
-    // For MVP, supply empty workspaceFiles — resolver will attempt best-effort.
-    const smart = new SmartPatchUseCase({ readFile: async (_p: string) => '' }, [], []);
+    const fsLike = {
+      readFile: async (p: string) => {
+        try {
+          const bytes = await vscode.workspace.fs.readFile(vscode.Uri.file(p));
+          return new TextDecoder().decode(bytes);
+        } catch {
+          return '';
+        }
+      }
+    };
+
+    const smart = new SmartPatchUseCase(fsLike, workspaceFiles, []);
     const plans = await smart.planFromText(text);
     if (!plans || plans.length === 0) {
       vscode.window.showInformationMessage(t('noPatchCandidates'));
