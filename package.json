@@ -2,7 +2,7 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "%extension.description%",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -122,6 +122,26 @@
         "icon": "$(diff-added)"
       },
       {
+        "command": "codeprep.previewPatchMenu",
+        "title": "%command.previewPatchMenu%",
+        "icon": "$(add)"
+      },
+      {
+        "command": "codeprep.previewSmartPatch",
+        "title": "%command.previewSmartPatch%",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "codeprep.prepareGitForPatch",
+        "title": "%command.prepareGitForPatch%",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "codeprep.finalizePatchCommit",
+        "title": "%command.finalizePatchCommit%",
+        "icon": "$(check)"
+      },
+      {
         "command": "codeprep.applyPatch",
         "title": "%command.applyPatch%",
         "icon": "$(check)"
@@ -177,7 +197,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "codeprep.previewPatch",
+          "command": "codeprep.previewPatchMenu",
           "when": "view == codeprep.fileTree",
           "group": "navigation@2"
         },
@@ -282,7 +302,7 @@
             "codeprep.refreshTree",
             "codeprep.selectionMenu",
             "codeprep.gitMenu",
-            "codeprep.previewPatch",
+            "codeprep.previewPatchMenu",
             "codeprep.selectPrompt",
             "codeprep.generate",
             "codeprep.generateStructure"
