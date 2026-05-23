@@ -64,8 +64,16 @@ export class GitCliClient implements IGitClient {
             cmd += ` -- . ${excludes}`;
         }
 
-        const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
-        return stdout;
+        try {
+            console.debug(`[GitCliClient] execDiff: cmd=${cmd} cwd=${root} staged=${staged}`);
+            const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
+            const snippet = stdout && stdout.length > 2000 ? stdout.substring(0, 2000) + '...[truncated]' : stdout;
+            console.debug(`[GitCliClient] execDiff: stdout length=${stdout ? stdout.length : 0}\n${snippet}`);
+            return stdout;
+        } catch (err) {
+            console.error('[GitCliClient] execDiff error:', err instanceof Error ? err.message : String(err));
+            throw err;
+        }
     }
 
     public async findRelatedTests(root: string, files: string[]): Promise<Result<string[]>> {
@@ -95,5 +103,20 @@ export class GitCliClient implements IGitClient {
             filePath = filePath.slice(1, -1);
         }
         return filePath.includes(' -> ') ? filePath.split(' -> ')[1] : filePath;
+    }
+
+    public async getRecentFiles(root: string, limit: number = 200): Promise<Result<string[]>> {
+        try {
+            // Get file names from recent commits
+            const cmd = `git log --pretty=format: --name-only -n ${limit}`;
+            const { stdout } = await this.execAsyncFn(cmd, { cwd: root });
+            const lines = stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const counts: Record<string, number> = {};
+            for (const l of lines) counts[l] = (counts[l] || 0) + 1;
+            const files = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+            return ok(files);
+        } catch (error) {
+            return fail(error instanceof Error ? error : new Error(String(error)));
+        }
     }
 }

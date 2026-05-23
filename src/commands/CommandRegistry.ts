@@ -35,7 +35,7 @@ export function registerAllCommands(d: RegistryDeps): vscode.Disposable[] {
   const gitCmd = new GitCommands(d.selectionUseCase, d.uiController, d.gitClient, d.root);
   const outCmd = new OutputCommands({ selectionUseCase: d.selectionUseCase, promptUseCase: d.promptUseCase, engine: d.engine, fileSystem: d.fileSystem, root: d.root });
   const selCmd = new SelectionCommands({ useCase: d.selectionUseCase, ui: d.uiController, repo: d.workspaceRepo, searchRepo, gitClient: d.gitClient, root: d.root });
-  const patchCmd = new PatchCommands(d.patchUseCase, d.root);
+  const patchCmd = new PatchCommands(d.patchUseCase, d.root, d.gitClient);
 
   return [
     ...registerMenuCommands(selCmd, gitCmd),
@@ -43,7 +43,7 @@ export function registerAllCommands(d: RegistryDeps): vscode.Disposable[] {
     ...registerPromptCommands(d.promptUseCase, d.selectionUseCase, d.uiController, d.root),
     ...registerSelectionUtilityCommands(selCmd),
     ...registerContextMenuCommands(d.root),
-    ...registerPatchCommands(patchCmd)
+    ...registerPatchCommands(patchCmd, d.root)
   ];
 }
 
@@ -141,13 +141,41 @@ function registerSelectionUtilityCommands(sel: SelectionCommands): vscode.Dispos
   ];
 }
 
-function registerPatchCommands(patch: PatchCommands): vscode.Disposable[] {
+function registerPatchCommands(patch: PatchCommands, root: string | undefined): vscode.Disposable[] {
   return [
     vscode.commands.registerCommand('codeprep.previewPatch', () => patch.previewPatch()),
+    vscode.commands.registerCommand('codeprep.previewPatchMenu', () => patch.previewPatchMenu()),
+    vscode.commands.registerCommand('codeprep.previewSmartPatch', () => patch.previewSmartPatch()),
     vscode.commands.registerCommand('codeprep.applyPatch', () => patch.applyPatch()),
     vscode.commands.registerCommand('codeprep.applyAllPatches', () => patch.applyAllPatches()),
     vscode.commands.registerCommand('codeprep.copyVerifyPrompt', (uri: vscode.Uri) => {
       return patch.copyVerifyPrompt(uri);
+    })
+    ,
+    vscode.commands.registerCommand('codeprep.prepareGitForPatch', async () => {
+      const generateBranchName = () => {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const d = new Date();
+        return `patch/auto-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+      };
+      const branch = generateBranchName();
+      const cwd = root || undefined;
+      const term = vscode.window.createTerminal({ name: 'CodePrep: Prepare Patch', cwd });
+      term.show(true);
+      if (process.platform === 'win32') {
+        const ps = `$branch = \"${branch}\"\n$null = Write-Host \"Suggested commands (run when ready):\"\ngit stash push -m \"pre-patch:$branch\"\ngit checkout -b $branch`;
+        term.sendText(ps, false);
+      } else {
+        const sh = `branch=${branch}\necho "Suggested commands (run when ready):"\ngit stash push -m \"pre-patch:$branch\"\ngit checkout -b \"$branch\"`;
+        term.sendText(sh, false);
+      }
+    }),
+    vscode.commands.registerCommand('codeprep.finalizePatchCommit', async () => {
+      const cwd = root || undefined;
+      const term = vscode.window.createTerminal({ name: 'CodePrep: Finalize Patch Commit', cwd });
+      term.show(true);
+      const commitTemplate = `git add -A\ngit commit -m "Apply smart patch: <summary here>"\n# Optionally: git push origin HEAD`;
+      term.sendText(commitTemplate, false);
     })
   ];
 }
