@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.0 - Initial beta release
+
+### Added
+
+- VSCode sidebar file selection
+- Prompt generation for browser-based AI tools
+- Markdown, XML, and JSON output formats
+- Token estimate display
+- Git diff based selection
+- Related test discovery
+- Custom prompt templates
+- Patch & Heal workflow
+- Patch preview through VSCode diff editors
+- Patch confidence scoring
+- Japanese and English UI support
+
+### Notes
+
+This project was developed primarily with AI coding assistance and is released as a beta.
+# Changelog
+
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased] - 2026-05-21

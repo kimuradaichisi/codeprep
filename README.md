@@ -63,3 +63,26 @@
 
 本プロジェクトは、厳格な **DDD（ドメイン駆動設計）** と **「God-Class Killer」ポリシー** に基づいて構築されています。
 詳細はリポジトリ内の `AI_AGENTS.md` をご参照ください。
+
+## 🤖 AI-assisted Development
+
+This project was developed primarily with AI coding assistance.
+
+Most of the implementation was generated with AI tools, then reviewed, adjusted, and tested by the maintainer before publication. The project is provided as-is, without warranty. Please review the code, behavior, and license compatibility carefully before using it in production environments.
+
+日本語: 本プロジェクトは主にAIコーディング支援を用いて開発されました。実装の多くはAIにより生成され、メンテナーが確認・修正・テストを行っています。利用は自己責任でお願いします。
+
+## 🙏 Acknowledgements
+
+CodePrep is inspired by the general idea of preparing repository context for LLMs, as popularized by tools such as Repomix. CodePrep is an independent project and is not affiliated with Repomix.
+
+## ⚠️ Safety
+
+CodePrep does not send your source code to external AI services by itself. Generated context is copied to your clipboard or opened locally in VSCode. If you paste that content into a browser-based AI tool, the handling of that content is governed by the AI service you choose to use.
+
+AI-generated patches are not applied silently. CodePrep previews detected changes in VSCode diff editors before they are applied. Please review all generated content and code changes carefully before applying them.
+
+## 📜 Disclaimer
+
+AI-generated code may be incorrect, incomplete, insecure, or incompatible with your project. CodePrep provides context generation, patch parsing, confidence hints, and diff previews, but it does not guarantee correctness or safety of AI-generated changes. You are responsible for reviewing and validating all changes before applying them.
+

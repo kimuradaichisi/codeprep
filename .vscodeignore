@@ -1,3 +1,24 @@
+.vscode/**
+.vscode-test/**
+src/**
+test/**
+coverage/**
+docs/**
+node_modules/**
+.git/**
+.github/**
+*.map
+*.tsbuildinfo
+*.vsix
+.env
+.env.*
+*.pem
+*.key
+*.p12
+.DS_Store
+
+# Note: do NOT ignore build output required by the extension runtime (e.g. out/)
+# If your build emits to `out/` or `dist/`, ensure they are included in the package.
 # ==========================================
 # Version Control & IDE
 # ==========================================

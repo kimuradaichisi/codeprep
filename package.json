@@ -1,13 +1,25 @@
 {
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
-  "description": "%extension.description%",
+  "description": "VSCode-first context preparation and safe patch preview workflow for browser-based AI coding.",
   "version": "0.8.4",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
-    "url": "https://github.com/codeprep/codeprep.git"
+    "url": "https://github.com/kimuradaichisi/codeprep.git"
   },
+  "license": "MIT",
+  "keywords": [
+    "ai",
+    "llm",
+    "prompt",
+    "vscode",
+    "browser-ai",
+    "code-review",
+    "patch",
+    "diff",
+    "context"
+  ],
   "engines": {
     "vscode": "^1.84.0"
   },
