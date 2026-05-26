@@ -41,7 +41,7 @@ export class OutputEngine {
     return new OutputResult(finalContent, options.format);
   }
 
-  private fallbackFormat(files: any[]): string {
+  private fallbackFormat(files: { path: string; content: string }[]): string {
     return files.map(f => `## File: ${f.path}\n\`\`\`\n${f.content}\n\`\`\``).join('\n\n');
   }
 

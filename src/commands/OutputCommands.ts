@@ -116,39 +116,35 @@ export class OutputCommands {
   private async finalize(content: string, files: FileContent[], format: string): Promise<void> {
     await vscode.env.clipboard.writeText(content);
     files.forEach(f => OutputCommands.lastState.set(f.path, f.content));
-    // show processed-file count based on actual file contents
     const count = countValidFiles(files as any);
     vscode.window.showInformationMessage(`${count} files copied`);
+    if (!vscode.workspace.getConfiguration('codeprep').get('openAfterGenerate', true)) return;
+    await this.openOrUpdateOutputDoc(content, format);
+  }
 
-    if (!vscode.workspace.getConfiguration('codeprep').get('openAfterGenerate', true)) {
-      return;
-    }
-
-    const lang = format === 'json' ? 'json' : (format === 'xml' ? 'xml' : 'markdown');
-
-    // 既存のタブを探す
+  private async openOrUpdateOutputDoc(content: string, format: string): Promise<void> {
     const existingDoc = OutputCommands.lastOutputDoc;
-    const editors = vscode.window.visibleTextEditors || []; // null/undefined ガード
-    const existingEditor = existingDoc
-      ? editors.find(e => e.document === existingDoc)
-      : undefined;
-
+    const editors = vscode.window.visibleTextEditors || [];
+    const existingEditor = existingDoc ? editors.find(e => e.document === existingDoc) : undefined;
     if (existingEditor && existingDoc && !existingDoc.isClosed) {
-      // 既存タブの内容を更新
-      await existingEditor.edit(editBuilder => {
-        const lastLine = existingDoc.lineCount - 1;
-        const lastChar = existingDoc.lineAt(lastLine).text.length;
-        const fullRange = new vscode.Range(
-          new vscode.Position(0, 0),
-          new vscode.Position(lastLine, lastChar)
-        );
-        editBuilder.replace(fullRange, content);
-      });
+      await this.updateExistingDoc(existingEditor, existingDoc, content);
     } else {
-      // 新規作成
-      const doc = await vscode.workspace.openTextDocument({ content, language: lang });
-      OutputCommands.lastOutputDoc = doc;
-      await vscode.window.showTextDocument(doc, { preview: false });
+      await this.openNewDoc(content, format);
     }
+  }
+
+  private async updateExistingDoc(editor: vscode.TextEditor, doc: vscode.TextDocument, content: string): Promise<void> {
+    await editor.edit(editBuilder => {
+      const lastLine = doc.lineCount - 1;
+      const lastChar = doc.lineAt(lastLine).text.length;
+      editBuilder.replace(new vscode.Range(new vscode.Position(0, 0), new vscode.Position(lastLine, lastChar)), content);
+    });
+  }
+
+  private async openNewDoc(content: string, format: string): Promise<void> {
+    const lang = format === 'json' ? 'json' : (format === 'xml' ? 'xml' : 'markdown');
+    const doc = await vscode.workspace.openTextDocument({ content, language: lang });
+    OutputCommands.lastOutputDoc = doc;
+    await vscode.window.showTextDocument(doc, { preview: false });
   }
 }

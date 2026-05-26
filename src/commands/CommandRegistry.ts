@@ -14,6 +14,7 @@ import { IFileSystem } from '../shared/domain/IFileSystem';
 import { IGitClient } from '../features/git/domain/IGitClient';
 import { PatchUseCase } from '../features/patch/application/PatchUseCase';
 import { PatchCommands } from './PatchCommands';
+import { GitTerminalCommands } from './GitTerminalCommands';
 
 
 export interface RegistryDeps {
@@ -49,18 +50,13 @@ export function registerAllCommands(d: RegistryDeps): vscode.Disposable[] {
 
 function registerContextMenuCommands(root: string | undefined): vscode.Disposable[] {
   return [
-    vscode.commands.registerCommand('codeprep.copyPathRelative', async (arg: any) => {
+    vscode.commands.registerCommand('codeprep.copyPathRelative', async (arg: unknown) => {
       const fsPath = extractFsPath(arg);
-      if (!fsPath) return;
-      if (!root) {
-        vscode.window.showWarningMessage(t('workspaceRootUndefined'));
-        return;
-      }
-      const rel = path.relative(root, fsPath).replace(/\\/g, '/');
-      await vscode.env.clipboard.writeText(rel);
+      if (!fsPath || !root) { if (!root) vscode.window.showWarningMessage(t('workspaceRootUndefined')); return; }
+      await vscode.env.clipboard.writeText(path.relative(root, fsPath).replace(/\\/g, '/'));
       vscode.window.showInformationMessage(t('copiedRelativePath'));
     }),
-    vscode.commands.registerCommand('codeprep.copyPathAbsolute', async (arg: any) => {
+    vscode.commands.registerCommand('codeprep.copyPathAbsolute', async (arg: unknown) => {
       const fsPath = extractFsPath(arg);
       if (!fsPath) return;
       await vscode.env.clipboard.writeText(fsPath);
@@ -69,20 +65,14 @@ function registerContextMenuCommands(root: string | undefined): vscode.Disposabl
   ];
 }
 
-function extractFsPath(arg: any): string | undefined {
-  if (!arg) return undefined;
-  // vscode.Uri
-  if (typeof arg === 'object' && 'fsPath' in arg && typeof arg.fsPath === 'string') return arg.fsPath;
-  // Tree item: has resourceUri
-  if (typeof arg === 'object' && 'resourceUri' in arg && arg.resourceUri && typeof arg.resourceUri.fsPath === 'string') return arg.resourceUri.fsPath;
-  // custom node with fullPath
-  if (typeof arg === 'object' && 'fullPath' in arg && typeof arg.fullPath === 'string') return arg.fullPath;
-  // maybe a plain path string
-  if (typeof arg === 'string') return arg;
+function extractFsPath(arg: unknown): string | undefined {
+  if (!arg || typeof arg !== 'object') return typeof arg === 'string' ? arg : undefined;
+  const o = arg as Record<string, unknown>;
+  if (typeof o['fsPath'] === 'string') return o['fsPath'];
+  if (o['resourceUri'] && typeof (o['resourceUri'] as Record<string, unknown>)['fsPath'] === 'string') return (o['resourceUri'] as Record<string, unknown>)['fsPath'] as string;
+  if (typeof o['fullPath'] === 'string') return o['fullPath'];
   return undefined;
 }
-
-
 
 function registerMenuCommands(selCmd: SelectionCommands, gitCmd: GitCommands): vscode.Disposable[] {
   return [
@@ -104,22 +94,7 @@ function registerActionCommands(ui: UIController, out: OutputCommands): vscode.D
 
 function registerPromptCommands(prompt: PromptUseCase, selection: SelectionUseCase, ui: UIController, root: string | undefined): vscode.Disposable[] {
   return [
-    vscode.commands.registerCommand('codeprep.selectPrompt', async () => {
-      const p = await prompt.getAvailablePrompts();
-      const clearLabel = t('command.clearPrompt');
-      const items = [
-        { label: `$(trash) ${clearLabel}`, description: t('command.clearPromptDescription') },
-        ...p.names.map(n => ({ label: n, description: p.findByName(n)?.summary }))
-      ];
-      const s = await vscode.window.showQuickPick(items, { placeHolder: t('prompt.selectPlaceholder',) || '挿入するプロンプトを選択' });
-      if (!s) return;
-      if (s.label === `$(trash) ${clearLabel}`) {
-        prompt.selectPrompt(undefined);
-        vscode.window.showInformationMessage(t('promptCleared') || 'プロンプトをクリアしました。');
-      } else {
-        prompt.selectPrompt(s.label);
-      }
-    }),
+    vscode.commands.registerCommand('codeprep.selectPrompt', () => handleSelectPrompt(prompt)),
     vscode.commands.registerCommand('codeprep.addToSelection', async (uri: vscode.Uri) => {
       if (uri && root) {
         selection.currentSelection.set(path.relative(root, uri.fsPath).replace(/\\/g, '/'), true);
@@ -127,6 +102,23 @@ function registerPromptCommands(prompt: PromptUseCase, selection: SelectionUseCa
       }
     })
   ];
+}
+
+async function handleSelectPrompt(prompt: PromptUseCase): Promise<void> {
+  const p = await prompt.getAvailablePrompts();
+  const clearLabel = t('command.clearPrompt');
+  const items = [
+    { label: `$(trash) ${clearLabel}`, description: t('command.clearPromptDescription') },
+    ...p.names.map(n => ({ label: n, description: p.findByName(n)?.summary }))
+  ];
+  const s = await vscode.window.showQuickPick(items, { placeHolder: t('prompt.selectPlaceholder') || '挿入するプロンプトを選択' });
+  if (!s) return;
+  if (s.label === `$(trash) ${clearLabel}`) {
+    prompt.selectPrompt(undefined);
+    vscode.window.showInformationMessage(t('promptCleared') || 'プロンプトをクリアしました。');
+  } else {
+    prompt.selectPrompt(s.label);
+  }
 }
 
 function registerSelectionUtilityCommands(sel: SelectionCommands): vscode.Disposable[] {
@@ -142,42 +134,15 @@ function registerSelectionUtilityCommands(sel: SelectionCommands): vscode.Dispos
 }
 
 function registerPatchCommands(patch: PatchCommands, root: string | undefined): vscode.Disposable[] {
+  const gitTerminal = new GitTerminalCommands(root);
   return [
     vscode.commands.registerCommand('codeprep.previewPatch', () => patch.previewPatch()),
     vscode.commands.registerCommand('codeprep.previewPatchMenu', () => patch.previewPatchMenu()),
     vscode.commands.registerCommand('codeprep.previewSmartPatch', () => patch.previewSmartPatch()),
     vscode.commands.registerCommand('codeprep.applyPatch', () => patch.applyPatch()),
     vscode.commands.registerCommand('codeprep.applyAllPatches', () => patch.applyAllPatches()),
-    vscode.commands.registerCommand('codeprep.copyVerifyPrompt', (uri: vscode.Uri) => {
-      return patch.copyVerifyPrompt(uri);
-    })
-    ,
-    vscode.commands.registerCommand('codeprep.prepareGitForPatch', async () => {
-      const generateBranchName = () => {
-        const pad = (n: number) => String(n).padStart(2, '0');
-        const d = new Date();
-        return `patch/auto-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
-      };
-      const branch = generateBranchName();
-      const cwd = root || undefined;
-      const term = vscode.window.createTerminal({ name: 'CodePrep: Prepare Patch', cwd });
-      term.show(true);
-      if (process.platform === 'win32') {
-        const ps = `$branch = \"${branch}\"\n$null = Write-Host \"Suggested commands (run when ready):\"\ngit stash push -m \"pre-patch:$branch\"\ngit checkout -b $branch`;
-        term.sendText(ps, false);
-      } else {
-        const sh = `branch=${branch}\necho "Suggested commands (run when ready):"\ngit stash push -m \"pre-patch:$branch\"\ngit checkout -b \"$branch\"`;
-        term.sendText(sh, false);
-      }
-    }),
-    vscode.commands.registerCommand('codeprep.finalizePatchCommit', async () => {
-      const cwd = root || undefined;
-      const term = vscode.window.createTerminal({ name: 'CodePrep: Finalize Patch Commit', cwd });
-      term.show(true);
-      const commitTemplate = `git add -A\ngit commit -m "Apply smart patch: <summary here>"\n# Optionally: git push origin HEAD`;
-      term.sendText(commitTemplate, false);
-    })
+    vscode.commands.registerCommand('codeprep.copyVerifyPrompt', (uri: vscode.Uri) => patch.copyVerifyPrompt(uri)),
+    gitTerminal.prepareGitForPatch(),
+    gitTerminal.finalizePatchCommit()
   ];
 }
-
-
