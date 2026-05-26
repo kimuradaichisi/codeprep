@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ITokenPresenter } from '../domain/ITokenPresenter';
 import { TokenStatistics } from '../domain/TokenStatistics';
+import { t } from '../../../utils/i18n';
 
 /**
  * VSCode のステータスバーを使用して統計情報を表示するアダプター

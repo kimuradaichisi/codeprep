@@ -9,6 +9,8 @@ results/
 # Build artifacts
 *.tsbuildinfo
 .vscode-test/
+.eslintcache
+vitest.config.js.map
 
 # OS files
 .DS_Store
@@ -30,6 +32,7 @@ workplan.md
 
 codeprep-output.txt
 diff.txt
+test_result.txt
 docs/SUMMARY.md
 Structure
 meta.json

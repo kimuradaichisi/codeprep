@@ -1,4 +1,3 @@
-import { PatchFormatDetector } from '../domain/PatchFormatDetector';
 import { PatchCandidateParser } from '../domain/PatchCandidateParser';
 import { PatchTargetResolver } from '../domain/PatchTargetResolver';
 import { PatchDiffBuilder } from '../domain/PatchDiffBuilder';
@@ -19,7 +18,6 @@ export interface SmartPatchPlan {
 }
 
 export class SmartPatchUseCase {
-    private detector = new PatchFormatDetector();
     private parser = new PatchCandidateParser();
     private resolver = new PatchTargetResolver();
     private diffBuilder = new PatchDiffBuilder();
@@ -28,8 +26,7 @@ export class SmartPatchUseCase {
     constructor(private fs: FileSystemLike, private workspaceFiles: string[], private recentFiles: string[] = []) { }
 
     public async planFromText(text: string): Promise<SmartPatchPlan[]> {
-        const format = this.detector.detect(text);
-        const candidates = this.parser.parse(text, format);
+        const candidates = this.parser.parse(text);
         const plans: SmartPatchPlan[] = [];
 
         for (const c of candidates) {
