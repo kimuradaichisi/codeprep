@@ -43,15 +43,14 @@ export class SelectionCommands {
   }
 
   public async runSelectionAction(id: string): Promise<void> {
-    const h = this.actionHandler;
-    if (id === 'all') await h.selectAll();
-    else if (id === 'clip') await h.selectFromClipboard();
-    else if (id === 'grep') await h.selectByGrep();
-    else if (id === 'dirs') await h.selectDirectories();
-    else if (id === 'ext') await h.selectByExtension();
-    else if (id === 'git') await h.selectModified();
-    else if (id === 'invert') await h.invert();
-    else if (id === 'clear') await h.clearAll();
+    if (id === 'all') await this.selectAll();
+    else if (id === 'clip') await this.selectFromClipboard();
+    else if (id === 'grep') await this.selectByGrep();
+    else if (id === 'dirs') await this.selectDirectories();
+    else if (id === 'ext') await this.selectByExtension();
+    else if (id === 'git') await this.selectModified();
+    else if (id === 'invert') await this.invert();
+    else if (id === 'clear') await this.clearAll();
   }
 
   public async selectAll(): Promise<void> { await this.actionHandler.selectAll(); }
