@@ -62,7 +62,7 @@
 ## 🏗️ Architecture & Development Standards (開発者向け)
 
 本プロジェクトは、厳格な **DDD（ドメイン駆動設計）** と **「God-Class Killer」ポリシー** に基づいて構築されています。
-詳細はリポジトリ内の `AI_AGENTS.md` をご参照ください。
+詳細はリポジトリ内の `AGENTS.md` をご参照ください。
 
 ## 🤖 AI-assisted Development
 

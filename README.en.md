@@ -73,4 +73,4 @@ Beyond intuitive file selection, it features **Autonomous Patch & Heal** for saf
 ## 🏗️ Architecture & Development Standards
 
 This project follows strict **DDD (Domain-Driven Design)** and **"God-Class Killer"** policies (150 lines/file, 15 lines/method).
-See `AI_AGENTS.md` for more details.
+See `AGENTS.md` for more details.
