@@ -9,8 +9,7 @@ import { VSCodeWorkspaceRepository } from '../features/selection/infrastructure/
 import { ISearchRepository } from '../features/selection/domain/ISearchRepository';
 import { IGitClient } from '../features/git/domain/IGitClient';
 import { SelectionOptionsUseCase } from '../features/selection/application/SelectionOptionsUseCase';
-import { ClipboardSelectionUseCase } from '../features/selection/application/ClipboardSelectionUseCase';
-import { PathService } from '../features/selection/domain/PathService';
+import { SelectionActionHandler } from './SelectionActionHandler';
 
 interface SelectionQuickPickItem extends vscode.QuickPickItem { id: string; }
 
@@ -22,13 +21,10 @@ export interface SelectionCommandsDeps {
 
 export class SelectionCommands {
   private readonly optionsUseCase = new SelectionOptionsUseCase();
-  private readonly clipboardUseCase: ClipboardSelectionUseCase;
+  private readonly actionHandler: SelectionActionHandler;
 
   constructor(private readonly deps: SelectionCommandsDeps) {
-    this.clipboardUseCase = new ClipboardSelectionUseCase(
-      deps.useCase.currentSelection,
-      deps.root
-    );
+    this.actionHandler = new SelectionActionHandler(deps);
   }
 
   async showSelectionMenu(): Promise<void> {
@@ -57,125 +53,33 @@ export class SelectionCommands {
     else if (id === 'clear') await this.clearAll();
   }
 
-  public async selectDirectories() {
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification, title: "CodePrep: ディレクトリ構造を抽出中..."
-    }, async () => {
-      const allFiles = await this.deps.repo.getAllFiles();
-      const allPaths = PathService.deriveAllPaths(allFiles);
-      const directories = allPaths.filter(p => !allFiles.includes(p));
-      this.deps.useCase.currentSelection.clear();
-      this.deps.useCase.currentSelection.addAll(directories);
-      await this.deps.ui.refresh();
-    });
-  }
+  public async selectAll(): Promise<void> { await this.actionHandler.selectAll(); }
+  public async clearAll(): Promise<void> { await this.actionHandler.clearAll(); }
+  public async invert(): Promise<void> { await this.actionHandler.invert(); }
+  public async selectModified(): Promise<void> { await this.actionHandler.selectModified(); }
+  public async selectByGrep(): Promise<void> { await this.actionHandler.selectByGrep(); }
+  public async selectByExtension(): Promise<void> { await this.actionHandler.selectByExtension(); }
+  public async selectFromClipboard(): Promise<void> { await this.actionHandler.selectFromClipboard(); }
+  public async selectDirectories(): Promise<void> { await this.actionHandler.selectDirectories(); }
 
-  public async selectFromClipboard() {
-    await this.clipboardUseCase.selectFromClipboard();
-    await this.deps.ui.refresh();
-  }
-
-  public async selectAll() {
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification, title: "CodePrep: 全選択中..."
-    }, async () => {
-      await this.deps.useCase.selectAll(this.deps.repo);
-      await this.deps.ui.refresh();
-    });
-  }
-
-  public async clearAll() {
-    this.deps.useCase.currentSelection.clear();
-    await this.deps.ui.refresh();
-  }
-
-  public async invert() {
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification, title: "CodePrep: 選択を反転中..."
-    }, async () => {
-      await this.deps.useCase.invertSelection(this.deps.repo);
-      await this.deps.ui.refresh();
-    });
-  }
-
-  public async selectModified() {
-    if (!this.deps.root) return;
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification, title: "CodePrep: Git変更を抽出中..."
-    }, async () => {
-      await this.deps.useCase.selectModifiedFiles(this.deps.gitClient, this.deps.root!, false);
-      await this.deps.ui.refresh();
-    });
-  }
-
-  public async selectByGrep() {
-    const q = await vscode.window.showInputBox({
-      placeHolder: 'キーワード', prompt: '内容にキーワードを含むファイルを抽出'
-    });
-    if (q) await this.runGrepSearch(q);
-  }
-
-  public async selectByExtension() {
-    const input = await vscode.window.showInputBox({ placeHolder: 'ts,js,tsx', prompt: t('selection.enterExtensionsRegex') });
-    if (!input) return;
-    const parts = input.split(',').map(s => s.trim()).filter(Boolean);
-    if (parts.length === 0) return;
-
-    const patterns: RegExp[] = [];
-    for (const p of parts) {
-      try {
-        patterns.push(new RegExp(p, 'i'));
-      } catch (e) {
-        vscode.window.showErrorMessage(t('selection.invalidRegex', p));
-        return;
-      }
-    }
-
-    await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `CodePrep: ${t('command.selectByExtension')}...` }, async () => {
-      const allFiles = await this.deps.repo.getAllFiles();
-      const matched = allFiles.filter(f => {
-        const ext = (f.split('.').pop() || '').toLowerCase();
-        return patterns.some(r => r.test(ext));
-      });
-      this.deps.useCase.currentSelection.clear();
-      this.deps.useCase.currentSelection.addAll(PathService.deriveAllPaths(matched));
-      await this.deps.ui.refresh();
-      vscode.window.showInformationMessage(t('filesAdded', String(matched.length)));
-    });
-  }
-
-  private async runGrepSearch(query: string): Promise<void> {
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification, title: `CodePrep: "${query}" を検索中...`
-    }, async () => {
-      try {
-        const count = await this.deps.useCase.selectByGrep(this.deps.searchRepo, query);
-        await this.deps.ui.refresh();
-        vscode.window.showInformationMessage(t('filesAdded', String(count)));
-      } catch (e) {
-        vscode.window.showErrorMessage(t('searchFailed', e instanceof Error ? e.message : String(e)));
-      }
-    });
-  }
-
-  public async showPresetMenu() {
-    const items = [{ label: `$(save) ${t('command.savePreset')}`, id: 'save' }, { label: `$(folder-opened) ${t('command.loadPreset')}`, id: 'load' }];
+  public async showPresetMenu(): Promise<void> {
+    const items = [
+      { label: `$(save) ${t('command.savePreset')}`, id: 'save' },
+      { label: `$(folder-opened) ${t('command.loadPreset')}`, id: 'load' }
+    ];
     const s = await vscode.window.showQuickPick(items, { placeHolder: 'プリセット管理' });
     if (s?.id === 'save') await this.savePreset();
     if (s?.id === 'load') await this.loadPreset();
   }
 
-  public async savePreset() {
+  public async savePreset(): Promise<void> {
     const name = await vscode.window.showInputBox({ placeHolder: 'プリセット名を入力' });
     if (name) await this.deps.useCase.savePreset(name);
   }
 
-  public async loadPreset() {
+  public async loadPreset(): Promise<void> {
     const selected = await vscode.window.showQuickPick(this.deps.useCase.getPresetList());
-    if (selected) {
-      await this.deps.useCase.loadPreset(selected);
-      await this.deps.ui.refresh();
-    }
+    if (selected) { await this.deps.useCase.loadPreset(selected); await this.deps.ui.refresh(); }
   }
 
   public async configureGenerationOptions(): Promise<void> {

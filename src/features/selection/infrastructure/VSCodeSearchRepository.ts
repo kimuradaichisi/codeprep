@@ -31,11 +31,16 @@ export class VSCodeSearchRepository implements ISearchRepository {
     }
   }
 
-  private async runSearchEngine(query: any, opts: any, onMatch: (res: TextSearchMatch) => void) {
-    if (typeof (vscode.workspace as any).findTextInFiles === 'function') {
-      await (vscode.workspace as any).findTextInFiles(query, opts, (r: any) => onMatch({ uri: r.uri }));
+  private async runSearchEngine(
+    query: { pattern: string; isCaseSensitive: boolean },
+    opts: { useIgnoreFiles: boolean },
+    onMatch: (res: TextSearchMatch) => void
+  ): Promise<void> {
+    if (typeof (vscode.workspace as unknown as Record<string, unknown>).findTextInFiles === 'function') {
+      const ws = vscode.workspace as unknown as { findTextInFiles: (q: unknown, o: unknown, cb: (r: { uri: vscode.Uri }) => void) => Promise<void> };
+      await ws.findTextInFiles(query, opts, (r) => onMatch({ uri: r.uri }));
     } else {
-      await (vscode.commands.executeCommand as any)('vscode.executeTextSearch', query, opts, { report: onMatch });
+      await vscode.commands.executeCommand('vscode.executeTextSearch', query, opts, { report: onMatch });
     }
   }
 
