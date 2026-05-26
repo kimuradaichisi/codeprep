@@ -9,11 +9,18 @@ try {
     ja = require('../../package.nls.ja.json');
 } catch (_) { }
 
-export function t(key: string, ...args: any[]): string {
-    let vscodeModule: any;
+interface VscodeL10n {
+    t: (key: string, ...args: unknown[]) => string;
+}
+interface VscodeModuleShape {
+    l10n?: VscodeL10n;
+}
+
+export function t(key: string, ...args: unknown[]): string {
+    let vscodeModule: VscodeModuleShape | undefined;
     try {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        vscodeModule = require('vscode');
+        vscodeModule = require('vscode') as VscodeModuleShape;
     } catch (_) {
         vscodeModule = undefined;
     }
@@ -22,10 +29,10 @@ export function t(key: string, ...args: any[]): string {
     const template = (ja[key] ?? en[key]) ?? undefined;
     if (template) {
         if (!args || args.length === 0) return template;
-        return args.reduce((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), template);
+        return args.reduce<string>((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), template);
     }
 
-    const l10n = vscodeModule && (vscodeModule as any).l10n;
+    const l10n = vscodeModule?.l10n;
     if (l10n && typeof l10n.t === 'function') {
         try {
             return l10n.t(key, ...args);
@@ -37,7 +44,7 @@ export function t(key: string, ...args: any[]): string {
     // final fallback to returning the key
     const finalTemplate = key;
     if (!args || args.length === 0) return finalTemplate;
-    return args.reduce((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), finalTemplate);
+    return args.reduce<string>((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), finalTemplate);
 }
 
 export default t;

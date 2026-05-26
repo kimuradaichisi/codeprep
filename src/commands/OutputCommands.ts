@@ -11,7 +11,7 @@ import { IFileSystem } from '../shared/domain/IFileSystem';
 import { DependencyScanner } from '../features/engine/application/DependencyScanner';
 import { DiagnosticService } from '../features/engine/infrastructure/DiagnosticService';
 import { countValidFiles } from '../features/selection/application/util/countValidFiles';
-import { OutputOptions } from '../features/engine/domain/OutputOptions';
+import { OutputFormat, OutputOptions } from '../features/engine/domain/OutputOptions';
 
 export interface OutputCommandsDeps {
   selectionUseCase: SelectionUseCase; promptUseCase: PromptUseCase;
@@ -49,7 +49,7 @@ export class OutputCommands {
       const opts = this.getOptions();
       opts.outputMode = 'structureOnly';
 
-      const result = this.deps.engine.generate(files as any, opts, prompt);
+      const result = this.deps.engine.generate(files, opts, prompt);
       await this.finalize(result.content, files, opts.format);
     });
   }
@@ -95,7 +95,7 @@ export class OutputCommands {
   private getOptions(): OutputOptions {
     const c = vscode.workspace.getConfiguration('codeprep');
     return {
-      format: c.get<string>('outputFormat', 'markdown') as any,
+      format: c.get<string>('outputFormat', 'markdown') as OutputFormat,
       includeMetadata: c.get<boolean>('includeMetadata', true),
       removeComments: c.get<boolean>('removeComments', false),
       includeEmptyLines: c.get<boolean>('includeEmptyLines', true),
@@ -116,7 +116,7 @@ export class OutputCommands {
   private async finalize(content: string, files: FileContent[], format: string): Promise<void> {
     await vscode.env.clipboard.writeText(content);
     files.forEach(f => OutputCommands.lastState.set(f.path, f.content));
-    const count = countValidFiles(files as any);
+    const count = countValidFiles(files);
     vscode.window.showInformationMessage(`${count} files copied`);
     if (!vscode.workspace.getConfiguration('codeprep').get('openAfterGenerate', true)) return;
     await this.openOrUpdateOutputDoc(content, format);
