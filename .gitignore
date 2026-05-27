@@ -6,6 +6,12 @@ dist/
 coverage/
 results/
 
+# Build artifacts (use GitHub Releases instead)
+artifacts/
+
+# Development scratch files
+scratch/
+
 # Build artifacts
 *.tsbuildinfo
 .vscode-test/
