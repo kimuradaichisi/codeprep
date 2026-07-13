@@ -8,7 +8,7 @@ import { HealerUtils } from './HealerUtils';
 export class OmitHealer {
   public heal(original: string, patched: string): Result<{ code: string, diffRatio: number }> {
     const oL = original.split(/\r?\n/), pL = patched.split(/\r?\n/);
-    let result: string[] = []
+    const result: string[] = []
     let curO = 0;
 
     for (let i = 0; i < pL.length; i++) {

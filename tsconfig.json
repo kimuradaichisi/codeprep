@@ -4,8 +4,10 @@
     "target": "ES2020",
     "outDir": "out",
     "lib": [
-      "ES2020"
+      "ES2020",
+      "DOM"
     ],
+    "jsx": "react-jsx",
     "sourceMap": true,
     "rootDir": ".",           // 1. "src" から "." に変更（プロジェクト全体をルートにする）
     "strict": true,
@@ -14,6 +16,7 @@
     "incremental": true,
     "tsBuildInfoFile": "./.tsbuildinfo",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": [
@@ -22,6 +25,7 @@
   },
   "include": [
     "src/**/*",
+    "apps/**/*",
     "scripts/**/*"            // 2. scripts を含める
   ],
   "exclude": [

@@ -1,4 +1,4 @@
-import { PatchCandidate, PatchCandidateSource, PatchFormat } from './PatchCandidate';
+import { PatchCandidate } from './PatchCandidate';
 import { PatchCodeBlockScanner } from './PatchCodeBlockScanner';
 import { PatchPathHintExtractor } from './PatchPathHintExtractor';
 import { PatchLanguageDetector } from './PatchLanguageDetector';

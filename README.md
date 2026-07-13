@@ -17,6 +17,10 @@
 
 ## 🚀 Usage (使い方)
 
+### Desktop MVP
+
+Electron desktop MVP requires [ripgrep (`rg`)](https://github.com/BurntSushi/ripgrep) to be installed and available on `PATH`. Run `npm run desktop:dev` to build and start the desktop application.
+
 **プロンプト生成フロー:**
 1. アクティビティバーから **CodePrep** アイコンをクリックします。
 2. ツリービューでLLMに渡したいファイルにチェックを入れます。
