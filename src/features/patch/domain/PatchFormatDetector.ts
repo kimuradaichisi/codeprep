@@ -14,7 +14,7 @@ export class PatchFormatDetector {
         const lines = text.split(/\r?\n/);
         for (let i = 0; i < Math.min(6, lines.length); i++) {
             const l = lines[i].trim();
-            if (/^([\w\-\/\.]+\.(ts|js|tsx|jsx|json|md))$/.test(l) && /```/.test(text)) return 'pathCodeBlock';
+        if (/^([\w./-]+\.(ts|js|tsx|jsx|json|md))$/.test(l) && /```/.test(text)) return 'pathCodeBlock';
         }
 
         // markdown code block

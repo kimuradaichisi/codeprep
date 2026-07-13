@@ -2,7 +2,6 @@ import { PatchCandidateParser } from '../domain/PatchCandidateParser';
 import { PatchTargetResolver } from '../domain/PatchTargetResolver';
 import { PatchDiffBuilder } from '../domain/PatchDiffBuilder';
 import { PatchConfidenceScorer } from '../domain/PatchConfidenceScorer';
-import { PatchCandidate } from '../domain/PatchCandidate';
 import { PatchConfidence } from '../domain/PatchConfidence';
 
 export interface FileSystemLike {

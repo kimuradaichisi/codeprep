@@ -1,43 +1,19 @@
-let en: Record<string, string> = {};
-try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    en = require('../../package.nls.json');
-} catch (_) { }
-let ja: Record<string, string> = {};
-try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    ja = require('../../package.nls.ja.json');
-} catch (_) { }
+import en from '../../package.nls.json';
+import ja from '../../package.nls.ja.json';
 
-export function t(key: string, ...args: any[]): string {
-    let vscodeModule: any;
-    try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        vscodeModule = require('vscode');
-    } catch (_) {
-        vscodeModule = undefined;
-    }
+type TranslationMap = Readonly<Record<string, string>>;
 
-    // Prefer local package.nls lookups to avoid returning raw keys in test environments
-    const template = (ja[key] ?? en[key]) ?? undefined;
-    if (template) {
-        if (!args || args.length === 0) return template;
-        return args.reduce((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), template);
-    }
+const english: TranslationMap = en;
+const japanese: TranslationMap = ja;
 
-    const l10n = vscodeModule && (vscodeModule as any).l10n;
-    if (l10n && typeof l10n.t === 'function') {
-        try {
-            return l10n.t(key, ...args);
-        } catch (_) {
-            // fall through to fallback
-        }
-    }
+const resolveTemplate = (key: string): string =>
+  japanese[key] ?? english[key] ?? key;
 
-    // final fallback to returning the key
-    const finalTemplate = key;
-    if (!args || args.length === 0) return finalTemplate;
-    return args.reduce((s, a, i) => s.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)), finalTemplate);
-}
+const applyArguments = (template: string, args: readonly unknown[]): string =>
+  args.reduce<string>((result, value, index) =>
+    result.replace(new RegExp(`\\{${index}\\}`, 'g'), String(value)), template);
+
+export const t = (key: string, ...args: readonly unknown[]): string =>
+  applyArguments(resolveTemplate(key), args);
 
 export default t;

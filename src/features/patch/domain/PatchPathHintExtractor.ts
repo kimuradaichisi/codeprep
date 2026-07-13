@@ -1,6 +1,6 @@
 import { PatchCodeBlock } from './PatchCodeBlock';
 
-const PATH_LIKE = /(?:\b|\W)([\w\-./\\]+\.[a-zA-Z0-9_\-]+)(?:\b|\W)/;
+const PATH_LIKE = /(?:\b|\W)([\w./\\-]+\.[a-zA-Z0-9_-]+)(?:\b|\W)/;
 const PREFIXES = /^(?:File|Path|ファイル|対象)[:\s]+/i;
 
 export class PatchPathHintExtractor {
@@ -31,7 +31,7 @@ export class PatchPathHintExtractor {
         if (!text) return undefined;
         const lines = text.split(/\r?\n/).slice(-3);
         for (const l of lines.reverse()) {
-            const trimmed = l.trim().replace(/^\s*[`\"]|[`\"]\s*$/g, '');
+            const trimmed = l.trim().replace(/^\s*[`"]|[`"]\s*$/g, '');
             const cleaned = trimmed.replace(PREFIXES, '');
             const n = this.normalizePathHint(cleaned);
             if (n) return n;
