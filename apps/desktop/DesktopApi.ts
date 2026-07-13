@@ -9,6 +9,7 @@ import type { Project } from '../../src/features/desktop-core/domain/Project';
 export type DesktopOutput = Readonly<{
   preview: string;
   warning?: string;
+  manifest?: readonly Readonly<{ projectId: string; relativePath: string; included: boolean; reasons: readonly string[] }>[];
 }>;
 
 export type DesktopApi = Readonly<{

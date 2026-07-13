@@ -38,6 +38,11 @@ search returned a candidate array while recipe discovery returned an object.
 Text search is now normalized before shared state updates, and test API fixtures
 include the new discovery method.
 
+Output packing now accepts Full, Skeleton, Directory tree, and Diff-only modes,
+plus a token limit. The build use case returns deterministic budget metadata and
+a per-file manifest containing inclusion state and selection reasons; over-budget
+packs are blocked with a warning.
+
 Task 2 final review is approved. The tree model now covers normalized Windows
 paths, nested directories, directory selection, and mixed selection state.
 Task 3 is approved. Tasks 4 and 5 are implemented directly in this session:

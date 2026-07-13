@@ -6,17 +6,18 @@ import { buildCandidateTree, descendantCandidateKeys, toggleTreeNode as toggleNo
 import type { CandidateTreeNode } from '../model/candidateTree';
 import type { DesktopWorkspace } from '../types';
 import { createSearchRecipe, type SearchRecipeKind } from '../../../../src/features/desktop-core/domain/SearchRecipe';
+import type { PackMode } from '../../../../src/features/desktop-core/domain/PackMode';
 
 type WorkspaceState = Readonly<{
   projects: DesktopWorkspace['projects']; recipeKind: SearchRecipeKind; query: string; candidates: readonly AnalyzedCandidate[];
-  selectedKeys: readonly string[]; format: ContextOutputFormat; preview: string;
+  selectedKeys: readonly string[]; format: ContextOutputFormat; packMode: PackMode; tokenLimit: number; preview: string;
   projectNotice: string | undefined; searchNotice: string | undefined; outputNotice: string | undefined;
 }>;
 
 type SetWorkspace = Dispatch<SetStateAction<WorkspaceState>>;
 
 const initialState: WorkspaceState = {
-  projects: [], query: '', recipeKind: 'text', candidates: [], selectedKeys: [], format: 'markdown', preview: '',
+  projects: [], query: '', recipeKind: 'text', candidates: [], selectedKeys: [], format: 'markdown', packMode: 'full', tokenLimit: 12000, preview: '',
   projectNotice: undefined, searchNotice: undefined, outputNotice: undefined,
 };
 
@@ -31,12 +32,14 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const setQuery = (query: string): void => update(set, { query });
   const setRecipeKind = (recipeKind: SearchRecipeKind): void => update(set, { recipeKind, query: '' });
   const setFormat = (format: ContextOutputFormat): void => update(set, { format });
+  const setPackMode = (packMode: PackMode): void => update(set, { packMode });
+  const setTokenLimit = (tokenLimit: number): void => update(set, { tokenLimit });
   const actions = actionsFor(api, state, set);
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
   const searchPanel = { recipeKind: state.recipeKind, query: state.query, searchNotice: state.searchNotice, setRecipeKind, setQuery, analyze: actions.analyze };
-  const outputPanel = { format: state.format, preview: state.preview, outputNotice: state.outputNotice, setFormat, ...actions.output };
-  return { ...state, tree, setQuery, setRecipeKind, setFormat, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode };
+  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, setFormat, setPackMode, setTokenLimit, ...actions.output };
+  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
@@ -94,7 +97,7 @@ const analyze = async (api: DesktopApi, set: SetWorkspace, value: string, kind: 
 const generate = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {
   const candidates = selectedCandidates(state.candidates, state.selectedKeys);
   if (!candidates.length) return update(set, { outputNotice: 'Select at least one file.' });
-  try { updateOutput(set, await generateOutput(api, { candidates, format: state.format, maxFileSizeKB: 500 })); }
+  try { updateOutput(set, await generateOutput(api, { candidates, format: state.format, maxFileSizeKB: 500, packMode: state.packMode, tokenLimit: state.tokenLimit })); }
   catch (error) { update(set, { outputNotice: desktopErrorMessage(error) }); }
 };
 

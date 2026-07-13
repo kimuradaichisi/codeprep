@@ -3,6 +3,7 @@ import type { AnalyzedCandidate, ContextOutputFormat } from '../../../src/featur
 import type { Project } from '../../../src/features/desktop-core/domain/Project';
 import type { CandidateTreeNode } from './model/candidateTree';
 import type { SearchRecipeKind } from '../../../src/features/desktop-core/domain/SearchRecipe';
+import type { PackMode } from '../../../src/features/desktop-core/domain/PackMode';
 
 declare global {
   interface Window {
@@ -41,10 +42,14 @@ export type CandidateTreeProps = Readonly<{
 }>;
 
 export type OutputPanelProps = Readonly<{
+  packMode: PackMode;
+  tokenLimit: number;
   format: ContextOutputFormat;
   preview: string;
   outputNotice: WorkspaceNotice;
   setFormat(value: ContextOutputFormat): void;
+  setPackMode(value: PackMode): void;
+  setTokenLimit(value: number): void;
   generateOutput(): Promise<void>;
   copyOutput(): Promise<void>;
 }>;
@@ -56,6 +61,8 @@ export type DesktopWorkspace = Readonly<{
   candidates: readonly AnalyzedCandidate[];
   selectedKeys: readonly string[];
   format: ContextOutputFormat;
+  packMode: PackMode;
+  tokenLimit: number;
   preview: string;
   tree: readonly CandidateTreeNode[];
   projectNotice: WorkspaceNotice;
@@ -68,6 +75,8 @@ export type DesktopWorkspace = Readonly<{
   setQuery(value: string): void;
   setRecipeKind(value: SearchRecipeKind): void;
   setFormat(value: ContextOutputFormat): void;
+  setPackMode(value: PackMode): void;
+  setTokenLimit(value: number): void;
   addProject(rootPath: string): Promise<void>;
   chooseProjectFolder(): Promise<void>;
   removeProject(projectId: string): Promise<void>;

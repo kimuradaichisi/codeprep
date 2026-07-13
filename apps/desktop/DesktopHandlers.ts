@@ -7,6 +7,7 @@ import { DiscoverFilesUseCase } from '../../src/features/desktop-core/applicatio
 import type { AnalyzeProjectsInput, BuildDesktopContextInput, DiscoverFilesInput } from '../../src/features/desktop-core/application/ports';
 import { BuildDesktopContextUseCase } from '../../src/features/desktop-core/application/BuildDesktopContextUseCase';
 import type { Project } from '../../src/features/desktop-core/domain/Project';
+import { isPackMode } from '../../src/features/desktop-core/domain/PackMode';
 import { GitMetadataClient } from '../../src/features/desktop-node/GitMetadataClient';
 import { GitHistoryReader } from '../../src/features/desktop-node/GitHistoryReader';
 import { ProjectRegistryStore } from '../../src/features/desktop-node/ProjectRegistryStore';
@@ -95,7 +96,7 @@ const generateOutput = async (registry: ProjectRegistryStore, value: unknown) =>
     projects: registry, fileContent: { canRead: canReadProjectFile, read: readProjectFile }, formatter: new DesktopContextFormatter(),
   });
   const result = await useCase.build(toBuildInput(value));
-  return { preview: result.preview, warning: result.warnings.map(warning => warning.message).join('\n') || undefined };
+  return { preview: result.preview, warning: result.warnings.map(warning => warning.message).join('\n') || undefined, manifest: result.manifest };
 };
 
 const copyOutput = (value: unknown): void => clipboard.writeText(requiredString(value, 'Output'));
@@ -127,8 +128,12 @@ const recipeFields = (value: Record<string, unknown>): boolean =>
 
 const toBuildInput = (value: unknown): BuildDesktopContextInput => {
   if (!isRecord(value) || !isCandidates(value.candidates)) throw new Error('Invalid output request.');
-  return { candidates: value.candidates, format: outputFormat(value.format), maxFileSizeKB: sizeLimit(value.maxFileSizeKB) };
+  return { candidates: value.candidates, format: outputFormat(value.format), maxFileSizeKB: sizeLimit(value.maxFileSizeKB), packMode: packMode(value.packMode), tokenLimit: tokenLimit(value.tokenLimit) };
 };
+
+const packMode = (value: unknown) => value === undefined ? 'full' as const : isPackMode(String(value)) ? value : invalidOutputRequest();
+
+const tokenLimit = (value: unknown): number => value === undefined ? Number.MAX_SAFE_INTEGER : sizeLimit(value);
 
 const isCandidates = (value: unknown): value is BuildDesktopContextInput['candidates'] =>
   Array.isArray(value) && value.every(isCandidate);

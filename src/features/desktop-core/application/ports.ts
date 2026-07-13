@@ -1,6 +1,8 @@
 import type { CandidateFile } from '../domain/CandidateFile';
 import type { Project, ProjectId } from '../domain/Project';
 import type { SearchRecipe } from '../domain/SearchRecipe';
+import type { PackMode } from '../domain/PackMode';
+import type { ContextBudget } from '../domain/ContextBudget';
 
 export type AnalysisWarningKind =
   | 'missingRg'
@@ -87,11 +89,22 @@ export type BuildDesktopContextInput = Readonly<{
   candidates: readonly CandidateFile[];
   format: ContextOutputFormat;
   maxFileSizeKB: number;
+  packMode?: PackMode;
+  tokenLimit?: number;
+}>;
+
+export type ContextManifestEntry = Readonly<{
+  projectId: ProjectId;
+  relativePath: string;
+  included: boolean;
+  reasons: readonly string[];
 }>;
 
 export type BuildDesktopContextResult = Readonly<{
   preview: string;
   warnings: readonly AnalysisWarning[];
+  budget?: ContextBudget;
+  manifest?: readonly ContextManifestEntry[];
 }>;
 
 export type BuildDesktopContextPorts = Readonly<{
