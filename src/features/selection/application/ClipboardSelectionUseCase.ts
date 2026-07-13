@@ -16,23 +16,16 @@ export class ClipboardSelectionUseCase {
   public async selectFromClipboard(): Promise<void> {
     if (!this.isEnabled()) return;
     const text = await vscode.env.clipboard.readText();
-    console.log('DEBUG: clipboard text:', text);  // 追加
 
     const paths = this.extractPaths(text);
-    console.log('DEBUG: extracted paths:', paths);  // 追加
 
     if (paths.length === 0) {
       vscode.window.showWarningMessage(t('noProjectPathsInClipboard'));
-      console.log('DEBUG: no paths, returning early');  // 追加
       return;
     }
 
     const allPaths = PathService.deriveAllPaths(paths);
-    console.log('DEBUG: allPaths with parents:', allPaths);  // 追加
-
     this.selection.addAll(allPaths);
-    console.log('DEBUG: selection after addAll:', this.selection.getPaths());  // 追加
-
     this.notify(t('codeprepSelectedFiles', String(paths.length)));
   }
 

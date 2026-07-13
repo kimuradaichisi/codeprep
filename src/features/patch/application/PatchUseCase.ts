@@ -33,6 +33,7 @@ export class PatchUseCase {
 
     private async openDiff(root: string | undefined, rel: string, code: string): Promise<Result<void>> {
         if (!root) return fail(new Error('No root.'));
+        if (!this.isPathWithinRoot(root, rel)) return fail(new Error(`Unsafe path rejected: ${rel}`));
         const full = vscode.Uri.file(path.join(root, rel));
         const res = await this.fileSystem.readFile(full.fsPath);
         const original = res.isSuccess ? res.value : '';
@@ -110,6 +111,10 @@ ${after}`;
 
     private async performApplyAndOpen(root: string | undefined, rel: string, code: string): Promise<void> {
         if (!root) return;
+        if (!this.isPathWithinRoot(root, rel)) {
+            vscode.window.showErrorMessage(`Unsafe patch path rejected: ${rel}`);
+            return;
+        }
         const full = path.join(root, rel);
         const res = await this.fileSystem.readFile(full);
         const original = res.isSuccess ? res.value : '';
@@ -120,6 +125,11 @@ ${after}`;
             const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(full));
             await vscode.window.showTextDocument(doc, { preview: false });
         }
+    }
+
+    private isPathWithinRoot(root: string, rel: string): boolean {
+        const relative = path.relative(root, path.join(root, rel));
+        return !relative.startsWith('..') && !path.isAbsolute(relative);
     }
 
     private notifyError(msg: string): Result<void> {

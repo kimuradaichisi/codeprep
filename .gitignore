@@ -35,6 +35,7 @@ Thumbs.db
 .superpowers/
 .env
 example.txt
+scratch/
 workplan.md
 
 codeprep-output.txt

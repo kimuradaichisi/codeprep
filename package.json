@@ -2,7 +2,8 @@
   "name": "codeprep-vscode",
   "displayName": "CodePrep",
   "description": "VSCode-first context preparation and safe patch preview workflow for browser-based AI coding.",
-  "version": "0.8.4",
+  "icon": "assets/icon.png",
+  "version": "0.8.5",
   "publisher": "codeprep",
   "repository": {
     "type": "git",
@@ -430,5 +431,9 @@
   "dependencies": {
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
+  },
+  "overrides": {
+    "diff": "^8.0.3",
+    "serialize-javascript": "^7.0.5"
   }
 }

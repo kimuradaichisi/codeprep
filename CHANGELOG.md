@@ -2,11 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2026-05-21
+## [0.8.5] - 2026-05-26
 - feat: クリップボード監視の停止（クリップボード監視OFF機能）を追加 — UseCase 側で通知をガードし、完全に通知を停止できる設定に対応
 - fix: ファイル件数表示のズレを修正 — 実処理結果を基に表示件数を算出するように変更
 - fix: `PatchUseCase` の重複実装を削除し単一実装に統合（パース/プレビュー/適用ワークフローを安定化）
 - test: `PatchUseCase` のユニットテストを追加/修正し通過確認（3 tests passed）
+- security: パストラバーサル脆弱性を修正（`PatchUseCase` — OWASP A01）
+- security: ReDoS 脆弱性を修正（`ExcludePattern`, `SelectionActionHandler` — OWASP A03）
+- security: npm 依存チェーン脆弱性を解消（`diff`, `serialize-javascript` — OWASP A06）
+- chore: デバッグログ（`console.log` / `console.debug`）を削除
+- chore: `any` 型を排除し型安全性を強化（`treeGenerator`, `OutputCommands`, `i18n`）
+- chore: `scratch/` を `.gitignore` に追加
 
 
 ## [0.8.2] - 2026-05-14

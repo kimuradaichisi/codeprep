@@ -1,12 +1,18 @@
 export class ExcludePattern {
     private readonly regex: RegExp;
+    private static readonly MAX_REGEX_LENGTH = 500;
 
     private constructor(pattern: string, isRegex: boolean = false) {
         if (isRegex) {
-            this.regex = new RegExp(pattern);
+            this.regex = ExcludePattern.buildSafeRegex(pattern);
         } else {
             this.regex = this.convertToRegex(pattern);
         }
+    }
+
+    private static buildSafeRegex(pattern: string): RegExp {
+        if (pattern.length > ExcludePattern.MAX_REGEX_LENGTH) return /(?!)/;
+        try { return new RegExp(pattern); } catch { return /(?!)/; }
     }
 
     public static create(pattern: string): ExcludePattern {

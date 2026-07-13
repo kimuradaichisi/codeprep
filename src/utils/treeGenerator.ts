@@ -1,17 +1,19 @@
 
+type TreeNode = Record<string, TreeNode>;
+
 /**
  * ディレクトリパスの配列からツリー形式の文字列を生成する
  */
 export function generateTree(paths: string[]): string {
     if (paths.length === 0) return '';
-    const root = {};
+    const root: TreeNode = {};
     paths.forEach(path => buildTreeObject(root, path));
     return renderTree(root);
 }
 
-function buildTreeObject(root: any, path: string): void {
+function buildTreeObject(root: TreeNode, path: string): void {
     const parts = path.split(/[\\/]/);
-    let current = root;
+    let current: TreeNode = root;
     parts.forEach(part => {
         if (part === '.') return;
         if (!current[part]) current[part] = {};
@@ -20,7 +22,7 @@ function buildTreeObject(root: any, path: string): void {
 }
 
 
-function renderTree(node: any, prefix: string = ''): string {
+function renderTree(node: TreeNode, prefix: string = ''): string {
     const keys = Object.keys(node).sort();
     let result = '';
 

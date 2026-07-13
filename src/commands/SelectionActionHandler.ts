@@ -99,6 +99,7 @@ export class SelectionActionHandler {
     const parts = input.split(',').map(s => s.trim()).filter(Boolean);
     const patterns: RegExp[] = [];
     for (const p of parts) {
+      if (p.length > 500) { vscode.window.showErrorMessage(t('selection.invalidRegex', p)); return null; }
       try { patterns.push(new RegExp(p, 'i')); }
       catch { vscode.window.showErrorMessage(t('selection.invalidRegex', p)); return null; }
     }
