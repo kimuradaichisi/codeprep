@@ -41,7 +41,7 @@ const getOutput = async (
 ): Promise<DesktopOutputSelection> => {
   if (mode === 'directoryTree') return { files: [], warnings: [] };
   const builder = new DesktopOutputBuilder(fileContent, new SkeletonService(), new DependencyScanner());
-  return builder.build(input.candidates, projects, input.maxFileSizeKB, mode, input.includeDependencies);
+  return builder.build(input.candidates, projects, input.maxFileSizeKB, mode, input.includeDependencies, input.tokenLimit);
 };
 
 const getPreview = (

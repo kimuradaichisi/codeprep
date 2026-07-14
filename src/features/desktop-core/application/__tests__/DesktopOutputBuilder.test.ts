@@ -69,4 +69,57 @@ describe('DesktopOutputBuilder', () => {
       { relativePath: 'src/helper.ts', content: "export function helper() {\n  // ... implementation omitted\n}" }
     ]);
   });
+
+  it('automatically degrades low priority files to skeleton to fit token budget', async () => {
+    const filesMap: Record<string, string> = {
+      'src/pinned.ts': "export class Pinned {\n  // important logic here\n}",
+      'src/match.ts': "export function match() {\n  console.log(1);\n  console.log(2);\n  console.log(3);\n  console.log(4);\n  console.log(5);\n}"
+    };
+    const fileContentMock: FileContentPort = {
+      canRead: async () => true,
+      read: async (p, rel) => filesMap[rel]
+    };
+    const builder = new DesktopOutputBuilder(fileContentMock, new SkeletonService(), new DependencyScanner());
+    const candidates = [
+      createCandidateFile('p1', 'src/pinned.ts', ['manualPin']),
+      createCandidateFile('p1', 'src/match.ts', ['extensionMatch'])
+    ];
+
+    const result = await builder.build(candidates, projects, 500, 'full', false, 30);
+
+    expect(result.files).toEqual([
+      { relativePath: 'src/pinned.ts', content: "export class Pinned {\n  // important logic here\n}" },
+      { relativePath: 'src/match.ts', content: "export function match() {\n  // ... implementation omitted\n}" }
+    ]);
+  });
+
+  it('excludes candidates entirely when they exceed the budget even after skeletonization', async () => {
+    const filesMap: Record<string, string> = {
+      'src/pinned.ts': "export class Pinned {\n  // important logic here\n}",
+      'src/match.ts': "export function match() {\n  console.log(1);\n  console.log(2);\n  console.log(3);\n  console.log(4);\n  console.log(5);\n}"
+    };
+    const fileContentMock: FileContentPort = {
+      canRead: async () => true,
+      read: async (p, rel) => filesMap[rel]
+    };
+    const builder = new DesktopOutputBuilder(fileContentMock, new SkeletonService(), new DependencyScanner());
+    const candidates = [
+      createCandidateFile('p1', 'src/pinned.ts', ['manualPin']),
+      createCandidateFile('p1', 'src/match.ts', ['extensionMatch'])
+    ];
+
+    const result = await builder.build(candidates, projects, 500, 'full', false, 20);
+
+    expect(result.files).toEqual([
+      { relativePath: 'src/pinned.ts', content: "export class Pinned {\n  // important logic here\n}" }
+    ]);
+    expect(result.warnings).toEqual([
+      {
+        kind: 'oversizedFile',
+        projectId: 'p1',
+        relativePath: 'src/match.ts',
+        message: 'File src/match.ts was excluded to fit the token budget.'
+      }
+    ]);
+  });
 });

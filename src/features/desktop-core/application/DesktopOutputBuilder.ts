@@ -1,4 +1,5 @@
 import type { CandidateFile } from '../domain/CandidateFile';
+import { scoreCandidate } from '../domain/FileScorer';
 import type { PackMode } from '../domain/PackMode';
 import type { Project } from '../domain/Project';
 import * as path from 'path';
@@ -28,74 +29,193 @@ export class DesktopOutputBuilder {
     projects: readonly Project[],
     maxFileSizeKB: number,
     mode: PackMode,
-    includeDependencies?: boolean
+    includeDependencies?: boolean,
+    tokenLimit?: number
   ): Promise<DesktopOutputSelection> {
     if (mode === 'matchedSnippets') {
       return buildMatchedSnippets(candidates);
     }
 
-    const resolved = candidates.map(c => ({ candidate: c, forcedMode: undefined as PackMode | undefined }));
-
-    if (includeDependencies) {
-      const visited = new Set<string>(candidates.map(c => c.relativePath));
-      const queue: Array<[CandidateFile, number]> = candidates.map(c => [c, 0]);
-
-      while (queue.length > 0) {
-        const [curr, depth] = queue.shift()!;
-        if (depth >= 2) continue;
-
-        const project = projects.find(p => p.id === curr.projectId);
-        if (!project) continue;
-
-        const content = await this.fileContent.read(project, curr.relativePath);
-        if (content === undefined) continue;
-
-        const deps = await this.dependencyScanner.findDependencies(curr.relativePath, content, project.rootPath);
-        for (const depPath of deps) {
-          const resolvedDepPath = await resolveWithExtensions(this.fileContent, project, depPath);
-          if (resolvedDepPath && !visited.has(resolvedDepPath)) {
-            visited.add(resolvedDepPath);
-            const depCandidate = {
-              projectId: curr.projectId,
-              relativePath: resolvedDepPath,
-              reasons: ['pathAffinity'],
-              excluded: false
-            } as CandidateFile;
-            queue.push([depCandidate, depth + 1]);
-            resolved.push({ candidate: depCandidate, forcedMode: 'skeleton' });
-          }
-        }
-      }
-    }
-
-    const attempts = await Promise.all(
-      resolved.map(item => this.readCandidate(item.candidate, projects, maxFileSizeKB, mode, item.forcedMode))
-    );
-    return {
-      files: attempts.flatMap(a => a.file ? [a.file] : []),
-      warnings: attempts.flatMap(a => a.warning ? [a.warning] : []),
-    };
+    const resolved = await this.resolveDependencies(candidates, projects, includeDependencies);
+    const readResults = await this.readCandidatesContent(resolved, projects, maxFileSizeKB);
+    const sorted = this.scoreAndSortCandidates(readResults);
+    return this.packWithBudget(sorted, mode, tokenLimit);
   }
 
-  private async readCandidate(
-    candidate: CandidateFile,
+  private async resolveDependencies(
+    candidates: readonly CandidateFile[],
     projects: readonly Project[],
-    maxFileSizeKB: number,
+    includeDependencies?: boolean
+  ): Promise<Array<{ candidate: CandidateFile; forcedMode?: PackMode }>> {
+    const resolved = candidates.map(c => ({ candidate: c, forcedMode: undefined as PackMode | undefined }));
+    if (!includeDependencies) return resolved;
+    await this.traverseDependencies(candidates, projects, resolved);
+    return resolved;
+  }
+
+  private async traverseDependencies(
+    candidates: readonly CandidateFile[],
+    projects: readonly Project[],
+    resolved: Array<{ candidate: CandidateFile; forcedMode?: PackMode }>
+  ): Promise<void> {
+    const visited = new Set<string>(candidates.map(c => c.relativePath));
+    const queue: Array<[CandidateFile, number]> = candidates.map(c => [c, 0]);
+
+    while (queue.length > 0) {
+      const [curr, depth] = queue.shift()!;
+      if (depth >= 2) continue;
+      await this.processDependencyItem(curr, depth, projects, visited, queue, resolved);
+    }
+  }
+
+  private async processDependencyItem(
+    curr: CandidateFile,
+    depth: number,
+    projects: readonly Project[],
+    visited: Set<string>,
+    queue: Array<[CandidateFile, number]>,
+    resolved: Array<{ candidate: CandidateFile; forcedMode?: PackMode }>
+  ): Promise<void> {
+    const project = projects.find(p => p.id === curr.projectId);
+    if (!project) return;
+    const content = await this.fileContent.read(project, curr.relativePath);
+    if (content === undefined) return;
+    const deps = await this.dependencyScanner.findDependencies(curr.relativePath, content, project.rootPath);
+    for (const depPath of deps) {
+      await this.addDependencyCandidate(depPath, curr, depth, project, visited, queue, resolved);
+    }
+  }
+
+  private async addDependencyCandidate(
+    depPath: string,
+    curr: CandidateFile,
+    depth: number,
+    project: Project,
+    visited: Set<string>,
+    queue: Array<[CandidateFile, number]>,
+    resolved: Array<{ candidate: CandidateFile; forcedMode?: PackMode }>
+  ): Promise<void> {
+    const resolvedDepPath = await resolveWithExtensions(this.fileContent, project, depPath);
+    if (resolvedDepPath && !visited.has(resolvedDepPath)) {
+      visited.add(resolvedDepPath);
+      const depCandidate = {
+        projectId: curr.projectId,
+        relativePath: resolvedDepPath,
+        reasons: ['pathAffinity'],
+        excluded: false
+      } as CandidateFile;
+      queue.push([depCandidate, depth + 1]);
+      resolved.push({ candidate: depCandidate, forcedMode: 'skeleton' });
+    }
+  }
+
+  private async readCandidatesContent(
+    resolved: Array<{ candidate: CandidateFile; forcedMode?: PackMode }>,
+    projects: readonly Project[],
+    maxFileSizeKB: number
+  ) {
+    return Promise.all(
+      resolved.map(async item => {
+        const project = projects.find(p => p.id === item.candidate.projectId);
+        if (!project) return { item, content: undefined, error: 'unreadable' as const };
+        const content = await this.fileContent.read(project, item.candidate.relativePath);
+        if (content === undefined) return { item, content: undefined, error: 'unreadable' as const };
+        if (isOversized(content, maxFileSizeKB)) return { item, content, error: 'oversized' as const };
+        return { item, content, error: undefined };
+      })
+    );
+  }
+
+  private scoreAndSortCandidates(
+    readResults: Array<{
+      item: { candidate: CandidateFile; forcedMode?: PackMode };
+      content: string | undefined;
+      error: 'unreadable' | 'oversized' | undefined;
+    }>
+  ) {
+    const scored = readResults.map(res => {
+      const score = scoreCandidate({
+        reasons: res.item.candidate.reasons,
+        manualPin: res.item.candidate.reasons.includes('manualPin')
+      }).score;
+      return { ...res, score };
+    });
+    return scored.sort((left, right) => right.score - left.score);
+  }
+
+  private packWithBudget(
+    scored: Array<ScoredReadResult>,
     mode: PackMode,
-    forcedMode?: PackMode
-  ): Promise<Readonly<{ file?: DesktopContextFile; warning?: AnalysisWarning }>> {
-    const project = projects.find(item => item.id === candidate.projectId);
-    if (!project) return { warning: unreadableWarning(candidate) };
-    const content = await this.fileContent.read(project, candidate.relativePath);
-    if (content === undefined) return { warning: unreadableWarning(candidate) };
-    if (isOversized(content, maxFileSizeKB)) return { warning: oversizedWarning(candidate) };
-    const currentMode = forcedMode || mode;
-    return {
-      file: {
-        relativePath: candidate.relativePath,
-        content: currentMode === 'skeleton' ? this.skeletonService.extract(content) : content
-      }
-    };
+    tokenLimit?: number
+  ): DesktopOutputSelection {
+    const files: DesktopContextFile[] = [];
+    const warnings: AnalysisWarning[] = [];
+    const state = { accumulatedBytes: 0, byteLimit: tokenLimit ? tokenLimit * 4 : Number.MAX_SAFE_INTEGER };
+
+    for (const res of scored) {
+      this.processBudgetCandidate(res, mode, state, files, warnings);
+    }
+    return { files, warnings };
+  }
+
+  private processBudgetCandidate(
+    res: ScoredReadResult,
+    mode: PackMode,
+    state: { accumulatedBytes: number; byteLimit: number },
+    files: DesktopContextFile[],
+    warnings: AnalysisWarning[]
+  ): void {
+    if (res.error === 'unreadable') {
+      warnings.push(unreadableWarning(res.item.candidate));
+      return;
+    }
+    if (res.error === 'oversized') {
+      warnings.push(oversizedWarning(res.item.candidate));
+      return;
+    }
+    this.packValidCandidate(res, mode, state, files, warnings);
+  }
+
+  private packValidCandidate(
+    res: ScoredReadResult,
+    mode: PackMode,
+    state: { accumulatedBytes: number; byteLimit: number },
+    files: DesktopContextFile[],
+    warnings: AnalysisWarning[]
+  ): void {
+    const content = res.content!;
+    let targetMode = res.item.forcedMode || mode;
+    const fullSize = estimateFilePayloadSize(res.item.candidate.relativePath, content);
+
+    if (targetMode !== 'skeleton' && (state.accumulatedBytes + fullSize) > state.byteLimit) {
+      targetMode = 'skeleton';
+    }
+
+    if (targetMode === 'skeleton') {
+      this.packSkeletonCandidate(res.item.candidate, content, state, files, warnings);
+    } else {
+      files.push({ relativePath: res.item.candidate.relativePath, content });
+      state.accumulatedBytes += fullSize;
+    }
+  }
+
+  private packSkeletonCandidate(
+    candidate: CandidateFile,
+    content: string,
+    state: { accumulatedBytes: number; byteLimit: number },
+    files: DesktopContextFile[],
+    warnings: AnalysisWarning[]
+  ): void {
+    const skeletonContent = this.skeletonService.extract(content);
+    const skeletonSize = estimateFilePayloadSize(candidate.relativePath, skeletonContent);
+
+    if ((state.accumulatedBytes + skeletonSize) > state.byteLimit) {
+      warnings.push(budgetExcludedWarning(candidate));
+      return;
+    }
+
+    files.push({ relativePath: candidate.relativePath, content: skeletonContent });
+    state.accumulatedBytes += skeletonSize;
   }
 }
 
@@ -160,5 +280,23 @@ const resolveWithExtensions = async (
     }
   }
   return undefined;
+};
+
+type ScoredReadResult = Readonly<{
+  item: { candidate: CandidateFile; forcedMode?: PackMode };
+  content: string | undefined;
+  error: 'unreadable' | 'oversized' | undefined;
+  score: number;
+}>;
+
+const budgetExcludedWarning = (candidate: CandidateFile): AnalysisWarning => ({
+  kind: 'oversizedFile',
+  projectId: candidate.projectId,
+  relativePath: candidate.relativePath,
+  message: `File ${candidate.relativePath} was excluded to fit the token budget.`
+});
+
+const estimateFilePayloadSize = (relativePath: string, content: string): number => {
+  return new TextEncoder().encode(content).byteLength;
 };
 
