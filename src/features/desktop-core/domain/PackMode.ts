@@ -1,4 +1,4 @@
-export const packModes = ['full', 'skeleton', 'directoryTree', 'diffOnly'] as const;
+export const packModes = ['full', 'skeleton', 'directoryTree', 'diffOnly', 'matchedSnippets'] as const;
 
 export type PackMode = (typeof packModes)[number];
 

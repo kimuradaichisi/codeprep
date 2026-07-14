@@ -3,6 +3,7 @@ import type { Project, ProjectId } from '../domain/Project';
 import type { SearchRecipe } from '../domain/SearchRecipe';
 import type { PackMode } from '../domain/PackMode';
 import type { ContextBudget } from '../domain/ContextBudget';
+import type { SourceExcerpt } from '../domain/SourceExcerpt';
 
 export type AnalysisWarningKind =
   | 'missingRg'
@@ -11,7 +12,8 @@ export type AnalysisWarningKind =
   | 'unreadableFile'
   | 'oversizedFile'
   | 'invalidRoot'
-  | 'outsideProject';
+  | 'outsideProject'
+  | 'missingExcerpt';
 
 export type AnalysisWarning = Readonly<{
   kind: AnalysisWarningKind;
@@ -22,6 +24,7 @@ export type AnalysisWarning = Readonly<{
 
 export type RipgrepMatch = Readonly<{
   relativePath: string;
+  excerpts?: readonly SourceExcerpt[];
 }>;
 
 export type RipgrepResult = Readonly<{
@@ -43,6 +46,7 @@ export type AnalyzedCandidate = CandidateFile &
 export type AnalyzeProjectsInput = Readonly<{
   query: string;
   projectIds: readonly ProjectId[];
+  contextLines: number;
 }>;
 
 export type AnalyzeProjectsResult = Readonly<{
@@ -55,7 +59,7 @@ export type ProjectRegistryPort = Readonly<{
 }>;
 
 export type RipgrepPort = Readonly<{
-  search(project: Project, query: string): Promise<RipgrepResult>;
+  search(project: Project, query: string, contextLines: number): Promise<RipgrepResult>;
 }>;
 
 export type GitMetadataPort = Readonly<{
