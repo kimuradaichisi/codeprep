@@ -11,8 +11,8 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .workspace-header { margin-bottom: 20px; }
 .workspace-header h1, h2, p { margin: 0; }
 .workspace-header h1 { font-size: 26px; text-wrap: balance; }
-.workspace-grid { display: grid; grid-template-columns: 250px minmax(420px, 1fr) 330px; gap: 14px; min-height: calc(100vh - 120px); }
-.workspace-pane { background: #171e29; border: 1px solid #2c3747; border-radius: 10px; padding: 18px; overflow: hidden; }
+.workspace-grid { display: grid; grid-template-columns: 250px minmax(420px, 1fr) 330px; gap: 14px; height: calc(100vh - 120px); max-height: calc(100vh - 120px); }
+.workspace-pane { background: #171e29; border: 1px solid #2c3747; border-radius: 10px; padding: 18px; overflow: hidden; display: flex; flex-direction: column; }
 .pane-heading { display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; }
 .pane-heading h2 { font-size: 17px; text-wrap: balance; }
 .eyebrow { color: #8ea2bd; font-size: 10px; letter-spacing: .12em; margin-bottom: 5px; }
@@ -28,8 +28,15 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .search-panel { border-bottom: 1px solid #2c3747; padding-bottom: 18px; margin-bottom: 18px; }
 .search-pane { display: flex; flex-direction: column; min-height: 0; }
 .candidate-tree { display: flex; flex: 1; flex-direction: column; min-height: 0; }
-.tree-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-.tree-row { min-height: 32px; display: flex; align-items: center; gap: 7px; }
+.tree-scroll { flex: 1; min-height: 0; overflow: auto; }
+.tree-row { min-height: 32px; display: grid; grid-template-columns: 1fr 80px 80px; align-items: center; gap: 8px; width: 100%; }
+.tree-node-info { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1; }
+.tree-node-size { text-align: right; color: #8998ad; font-size: 11px; font-family: monospace; white-space: nowrap; }
+.tree-node-tokens { text-align: right; color: #76a9ff; font-size: 11px; font-family: monospace; white-space: nowrap; }
+.tree-header-row { display: grid; grid-template-columns: 1fr 80px 80px; align-items: center; gap: 8px; width: 100%; padding: 4px 0; border-bottom: 1px solid #2c3747; font-size: 11px; color: #8998ad; font-weight: bold; margin-bottom: 6px; user-select: none; }
+.tree-header-name { padding-left: 32px; }
+.tree-header-size { text-align: right; }
+.tree-header-tokens { text-align: right; }
 .tree-row input { width: auto; }
 .icon-button { width: 24px; padding: 2px; background: transparent; border: 0; }
 .tree-icon { color: #76a9ff; width: 14px; }

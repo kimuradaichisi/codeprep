@@ -14,9 +14,9 @@ describe('candidate tree', () => {
   it('builds nested project directories and files using normalized candidate keys', () => {
     const tree = buildCandidateTree([candidate('a', 'src\\ui\\App.tsx'), candidate('a', 'README.md')], projects);
 
-    expect(tree[0]).toEqual({ id: 'project:a', kind: 'project', name: 'Alpha', children: [
-      { id: 'a:src', kind: 'directory', name: 'src', children: [{ id: 'a:src/ui', kind: 'directory', name: 'ui', children: [{ id: 'a:src/ui/App.tsx', kind: 'file', name: 'App.tsx', candidateKey: 'a:src/ui/App.tsx', children: [] }] }] },
-      { id: 'a:README.md', kind: 'file', name: 'README.md', candidateKey: 'a:README.md', children: [] },
+    expect(tree[0]).toEqual({ id: 'project:a', kind: 'project', name: 'Alpha', size: 0, children: [
+      { id: 'a:src', kind: 'directory', name: 'src', size: 0, children: [{ id: 'a:src/ui', kind: 'directory', name: 'ui', size: 0, children: [{ id: 'a:src/ui/App.tsx', kind: 'file', name: 'App.tsx', candidateKey: 'a:src/ui/App.tsx', children: [], size: undefined }] }] },
+      { id: 'a:README.md', kind: 'file', name: 'README.md', candidateKey: 'a:README.md', children: [], size: undefined },
     ] });
   });
 

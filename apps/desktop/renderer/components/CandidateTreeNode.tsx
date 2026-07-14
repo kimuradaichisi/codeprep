@@ -23,16 +23,19 @@ export const CandidateTreeNode = ({ node, selectedKeys, toggleTreeNode, viewFile
     return `${(bytes / 1024).toFixed(1)} KB`;
   };
 
+  const sizeLabel = node.size !== undefined ? formatSize(node.size) : '-';
+  const tokensLabel = node.size !== undefined ? `${Math.ceil(node.size / 4)}` : '-';
+
   return <li className={`tree-node tree-${node.kind}`} style={{ paddingLeft: depth * 14 }}>
-    <div className="tree-row">{node.children.length > 0 && <button className="icon-button" aria-label={`${expanded ? 'Collapse' : 'Expand'} ${node.name}`} onClick={() => setExpanded(value => !value)}>{expanded ? '⌄' : '›'}</button>}
-      <input ref={checkbox} type="checkbox" aria-label={`Include ${node.candidateKey?.split(':').slice(1).join(':') ?? node.name}`} checked={state === 'checked'} onChange={() => toggleTreeNode(node, node.id)} />
-      <span className="tree-icon">{node.kind === 'file' ? '·' : '▾'}</span>
-      <span className="tree-name" onDoubleClick={handleDoubleClick} style={{ cursor: node.kind === 'file' ? 'pointer' : 'default', userSelect: 'none' }}>{node.name}</span>
-      {node.kind === 'file' && node.size !== undefined && (
-        <span style={{ fontSize: '10px', color: '#4f5e75', marginLeft: '6px', userSelect: 'none' }}>
-          ({formatSize(node.size)} / {Math.ceil(node.size / 4)} tokens)
-        </span>
-      )}
+    <div className="tree-row">
+      <div className="tree-node-info">
+        {node.children.length > 0 && <button className="icon-button" aria-label={`${expanded ? 'Collapse' : 'Expand'} ${node.name}`} onClick={() => setExpanded(value => !value)}>{expanded ? '⌄' : '›'}</button>}
+        <input ref={checkbox} type="checkbox" aria-label={`Include ${node.candidateKey?.split(':').slice(1).join(':') ?? node.name}`} checked={state === 'checked'} onChange={() => toggleTreeNode(node, node.id)} />
+        <span className="tree-icon">{node.kind === 'file' ? '·' : '▾'}</span>
+        <span className="tree-name" onDoubleClick={handleDoubleClick} style={{ cursor: node.kind === 'file' ? 'pointer' : 'default', userSelect: 'none' }}>{node.name}</span>
+      </div>
+      <span className="tree-node-size">{sizeLabel}</span>
+      <span className="tree-node-tokens">{tokensLabel}</span>
     </div>
     {expanded && node.children.length > 0 && <ul>{node.children.map(child => <CandidateTreeNode key={child.id} node={child} selectedKeys={selectedKeys} toggleTreeNode={toggleTreeNode} viewFile={viewFile} depth={depth + 1} />)}</ul>}
   </li>;

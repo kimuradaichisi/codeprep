@@ -50,11 +50,15 @@ const selectedFolder = (result: Readonly<{ canceled: boolean; filePaths: readonl
 const listProjects = async (registry: ProjectRegistryStore): Promise<readonly Project[]> =>
   (await registry.readAll()).projects;
 
-const listFiles = async (registry: ProjectRegistryStore, value: unknown): Promise<readonly string[]> => {
+const listFiles = async (registry: ProjectRegistryStore, value: unknown): Promise<readonly Readonly<{ relativePath: string; size: number }>[]> => {
   const projectId = requiredString(value, 'Project id');
   const project = (await listProjects(registry)).find(item => item.id === projectId);
   if (!project) throw new Error('Project was not found.');
-  return listProjectFiles(project.rootPath);
+  const relativePaths = await listProjectFiles(project.rootPath);
+  return Promise.all(relativePaths.map(async relativePath => {
+    const size = await getProjectFileSize(project, relativePath);
+    return { relativePath, size };
+  }));
 };
 
 const addProject = async (registry: ProjectRegistryStore, value: unknown): Promise<readonly Project[]> => {
@@ -85,7 +89,15 @@ const analyzeProjects = async (registry: ProjectRegistryStore, value: unknown) =
 const discoverFiles = async (registry: ProjectRegistryStore, value: unknown) => {
   const useCase = new DiscoverFilesUseCase({
     projects: registry, ripgrep: new RipgrepClient(), gitMetadata: new GitMetadataClient(),
-    files: { list: project => listProjectFiles(project.rootPath) },
+    files: {
+      list: async project => {
+        const relativePaths = await listProjectFiles(project.rootPath);
+        return Promise.all(relativePaths.map(async relativePath => {
+          const size = await getProjectFileSize(project, relativePath);
+          return { relativePath, size };
+        }));
+      }
+    },
     clipboard: { readText: () => Promise.resolve(clipboard.readText()) }, gitHistory: new GitHistoryReader(),
     fileSize: { getSize: getProjectFileSize },
   });

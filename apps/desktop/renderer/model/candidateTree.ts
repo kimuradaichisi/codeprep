@@ -64,12 +64,17 @@ const normalizeCandidate = (candidate: AnalyzedCandidate): NormalizedCandidate =
 const projectNode = (
   project: Project,
   candidates: readonly NormalizedCandidate[],
-): CandidateTreeNode => ({
-  id: `project:${project.id}`,
-  kind: 'project',
-  name: project.name,
-  children: childNodes(candidates, project.id, []),
-});
+): CandidateTreeNode => {
+  const children = childNodes(candidates, project.id, []);
+  const size = children.reduce((sum, child) => sum + (child.size ?? 0), 0);
+  return {
+    id: `project:${project.id}`,
+    kind: 'project',
+    name: project.name,
+    children,
+    size,
+  };
+};
 
 const childNodes = (
   candidates: readonly NormalizedCandidate[],
@@ -96,12 +101,17 @@ const directoryNode = (
   projectId: string,
   parent: readonly string[],
   name: string,
-): CandidateTreeNode => ({
-  id: `${projectId}:${[...parent, name].join('/')}`,
-  kind: 'directory',
-  name,
-  children: childNodes(candidates, projectId, [...parent, name]),
-});
+): CandidateTreeNode => {
+  const children = childNodes(candidates, projectId, [...parent, name]);
+  const size = children.reduce((sum, child) => sum + (child.size ?? 0), 0);
+  return {
+    id: `${projectId}:${[...parent, name].join('/')}`,
+    kind: 'directory',
+    name,
+    children,
+    size,
+  };
+};
 
 const fileNodes = (
   candidates: readonly NormalizedCandidate[],

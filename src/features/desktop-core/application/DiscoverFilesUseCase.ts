@@ -31,11 +31,8 @@ export class DiscoverFilesUseCase {
 
   private async eligible(project: Project, recipe: Exclude<SearchRecipe, { kind: 'clipboardPaths' | 'gitDiff' | 'gitCommit' }>): Promise<readonly AnalyzedCandidate[]> {
     const files = await this.ports.files.list(project);
-    const matched = files.filter(path => matches(recipe, path));
-    return Promise.all(matched.map(async path => {
-      const size = await this.ports.fileSize.getSize(project, path);
-      return { ...createCandidateFile(project.id, path, [reason(recipe)], undefined, size), score: 0 };
-    }));
+    const matched = files.filter(f => matches(recipe, f.relativePath));
+    return matched.map(f => ({ ...createCandidateFile(project.id, f.relativePath, [reason(recipe)], undefined, f.size), score: 0 }));
   }
 
   private async clipboard(projects: readonly Project[]): Promise<AnalyzeProjectsResult> {

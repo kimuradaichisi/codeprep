@@ -23,12 +23,13 @@ export const fileCandidates = async (
 ): Promise<readonly AnalyzedCandidate[]> => {
   const entries = await Promise.all(projects.map(async project => {
     const files = await api.listProjectFiles(project.id);
-    return files.map(relativePath => ({
+    return files.map(f => ({
       projectId: project.id,
-      relativePath,
+      relativePath: f.relativePath,
       reasons: ['pathAffinity'] as const,
       excluded: false,
       score: 0,
+      size: f.size,
     }));
   }));
   return entries.flat();

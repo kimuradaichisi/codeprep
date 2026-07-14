@@ -14,7 +14,7 @@ export type DesktopOutput = Readonly<{
 
 export type DesktopApi = Readonly<{
   chooseProjectFolder(): Promise<string | undefined>;
-  listProjectFiles(projectId: string): Promise<readonly string[]>;
+  listProjectFiles(projectId: string): Promise<readonly Readonly<{ relativePath: string; size: number }>[]>;
   listProjects(): Promise<readonly Project[]>;
   addProject(rootPath: string): Promise<readonly Project[]>;
   removeProject(projectId: string): Promise<readonly Project[]>;

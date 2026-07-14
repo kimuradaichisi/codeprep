@@ -121,7 +121,7 @@ export type BuildDesktopContextPorts = Readonly<{
 }>;
 
 export type ProjectFilePort = Readonly<{
-  list(project: Project): Promise<readonly string[]>;
+  list(project: Project): Promise<readonly Readonly<{ relativePath: string; size: number }>[]>;
 }>;
 
 export type ClipboardPathPort = Readonly<{
