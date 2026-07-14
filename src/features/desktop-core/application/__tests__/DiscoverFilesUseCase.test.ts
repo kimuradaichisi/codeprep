@@ -13,6 +13,7 @@ const ports: DiscoverFilesPorts = {
   files: { list: async () => ['src/auth.ts', 'src/app.ts', 'README.md'] },
   clipboard: { readText: async () => `${dummyRepoPath}\n${dummyOutsidePath}` },
   gitHistory: { getCommitPaths: async () => ({ paths: [] }) },
+  fileSize: { getSize: async () => 100 },
 };
 
 describe('DiscoverFilesUseCase', () => {

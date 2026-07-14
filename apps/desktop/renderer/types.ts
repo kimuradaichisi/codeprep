@@ -41,6 +41,9 @@ export type CandidateTreeProps = Readonly<{
   candidates?: readonly AnalyzedCandidate[];
   selectedKeys: readonly string[];
   toggleTreeNode(root: CandidateTreeNode, nodeId: string): void;
+  selectAll(): void;
+  clearAll(): void;
+  viewFile(projectId: string, relativePath: string): void;
 }>;
 
 export type OutputPanelProps = Readonly<{
@@ -77,6 +80,7 @@ export type DesktopWorkspace = Readonly<{
   projectNotice: WorkspaceNotice;
   searchNotice: WorkspaceNotice;
   outputNotice: WorkspaceNotice;
+  activePreviewFile?: Readonly<{ projectId: string; relativePath: string }>;
   projectPanel: ProjectPanelProps;
   searchPanel: SearchPanelProps;
   treePanel: CandidateTreeProps;
@@ -89,6 +93,8 @@ export type DesktopWorkspace = Readonly<{
   setContextLines(value: number): void;
   setIncludeDependencies(value: boolean): void;
   setAutoOptimize(value: boolean): void;
+  viewFile(projectId: string, relativePath: string): void;
+  closeFile(): void;
   addProject(rootPath: string): Promise<void>;
   chooseProjectFolder(): Promise<void>;
   removeProject(projectId: string): Promise<void>;

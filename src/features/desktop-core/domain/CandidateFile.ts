@@ -20,6 +20,7 @@ export type CandidateFile = Readonly<{
   reasons: readonly CandidateReason[];
   excluded: boolean;
   excerpts?: readonly SourceExcerpt[];
+  size?: number;
 }>;
 
 export const createCandidateFile = (
@@ -27,10 +28,12 @@ export const createCandidateFile = (
   relativePath: string,
   reasons: readonly CandidateReason[],
   excerpts?: readonly SourceExcerpt[],
+  size?: number,
 ): CandidateFile => ({
   projectId,
   relativePath,
   reasons: [...reasons],
   excluded: reasons.includes('excluded'),
   excerpts,
+  size,
 });

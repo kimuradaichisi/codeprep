@@ -8,6 +8,7 @@ export type CandidateTreeNode = Readonly<{
   name: string;
   candidateKey?: string;
   children: readonly CandidateTreeNode[];
+  size?: number;
 }>;
 export type NodeCheckState = 'checked' | 'unchecked' | 'mixed';
 
@@ -15,6 +16,7 @@ type NormalizedCandidate = Readonly<{
   projectId: string;
   key: string;
   segments: readonly string[];
+  size?: number;
 }>;
 
 export const buildCandidateTree = (
@@ -56,7 +58,7 @@ const candidatesForProject = (
 
 const normalizeCandidate = (candidate: AnalyzedCandidate): NormalizedCandidate => {
   const relativePath = candidate.relativePath.replace(/\\/g, '/');
-  return { projectId: candidate.projectId, key: `${candidate.projectId}:${relativePath}`, segments: relativePath.split('/') };
+  return { projectId: candidate.projectId, key: `${candidate.projectId}:${relativePath}`, segments: relativePath.split('/'), size: candidate.size };
 };
 
 const projectNode = (
@@ -118,6 +120,7 @@ const fileNode = (candidate: NormalizedCandidate): CandidateTreeNode => ({
   name: candidate.segments.at(-1) ?? '',
   candidateKey: candidate.key,
   children: [],
+  size: candidate.size,
 });
 
 const byName = (left: CandidateTreeNode, right: CandidateTreeNode): number => left.name.localeCompare(right.name);

@@ -45,4 +45,5 @@ const createApi = (): DesktopApi => ({
   chooseProjectFolder: vi.fn(async () => undefined),
   copyOutput: vi.fn(async () => undefined), generateOutput: vi.fn(async () => ({ preview: 'context', warning: 'Unavailable' })),
   listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []),
+  readFileContent: vi.fn(async () => ''),
 });

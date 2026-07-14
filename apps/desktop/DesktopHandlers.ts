@@ -11,7 +11,7 @@ import { GitHistoryReader } from '../../src/features/desktop-node/GitHistoryRead
 import { ProjectRegistryStore } from '../../src/features/desktop-node/ProjectRegistryStore';
 import { RipgrepClient } from '../../src/features/desktop-node/RipgrepClient';
 import { DesktopContextFormatter } from '../../src/features/desktop-node/DesktopContextFormatter';
-import { canReadProjectFile, readProjectFile } from '../../src/features/desktop-node/ProjectFileContentReader';
+import { canReadProjectFile, readProjectFile, getProjectFileSize } from '../../src/features/desktop-node/ProjectFileContentReader';
 
 export const registerDesktopHandlers = (registryPath: string): void => {
   const registry = new ProjectRegistryStore(registryPath);
@@ -24,6 +24,7 @@ export const registerDesktopHandlers = (registryPath: string): void => {
   ipcMain.handle('discoverFiles', (_event, value: unknown) => discoverFiles(registry, value));
   ipcMain.handle('generateOutput', (_event, value: unknown) => generateOutput(registry, value));
   ipcMain.handle('copyOutput', (_event, value: unknown) => copyOutput(value));
+  ipcMain.handle('readFileContent', (_event, projectId: unknown, relativePath: unknown) => readFileContent(registry, projectId, relativePath));
 };
 
 export type OpenFolderDialog = () => Promise<Readonly<{
@@ -76,6 +77,7 @@ const analyzeProjects = async (registry: ProjectRegistryStore, value: unknown) =
   const useCase = new AnalyzeProjectsUseCase({
     projects: registry, ripgrep: new RipgrepClient(), gitMetadata: new GitMetadataClient(),
     fileContent: { canRead: canReadProjectFile, read: readProjectFile },
+    fileSize: { getSize: getProjectFileSize },
   });
   return useCase.analyze(toAnalyzeInput(value));
 };
@@ -85,6 +87,7 @@ const discoverFiles = async (registry: ProjectRegistryStore, value: unknown) => 
     projects: registry, ripgrep: new RipgrepClient(), gitMetadata: new GitMetadataClient(),
     files: { list: project => listProjectFiles(project.rootPath) },
     clipboard: { readText: () => Promise.resolve(clipboard.readText()) }, gitHistory: new GitHistoryReader(),
+    fileSize: { getSize: getProjectFileSize },
   });
   return useCase.discover(toDiscoverInput(value));
 };
@@ -95,6 +98,16 @@ const generateOutput = async (registry: ProjectRegistryStore, value: unknown) =>
   });
   const result = await useCase.build(toBuildInput(value));
   return { preview: result.preview, warning: result.warnings.map(warning => warning.message).join('\n') || undefined, manifest: result.manifest };
+};
+
+const readFileContent = async (registry: ProjectRegistryStore, projectId: unknown, relativePath: unknown): Promise<string> => {
+  const pId = requiredString(projectId, 'Project id');
+  const relPath = requiredString(relativePath, 'Relative path');
+  const project = (await listProjects(registry)).find(item => item.id === pId);
+  if (!project) throw new Error('Project was not found.');
+  const content = await readProjectFile(project, relPath);
+  if (content === undefined) throw new Error('Unable to read file.');
+  return content;
 };
 
 const copyOutput = (value: unknown): void => clipboard.writeText(requiredString(value, 'Output'));

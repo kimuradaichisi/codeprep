@@ -76,6 +76,7 @@ export type AnalyzeProjectsPorts = Readonly<{
   ripgrep: RipgrepPort;
   gitMetadata: GitMetadataPort;
   fileContent: FileContentPort;
+  fileSize: FileSizePort;
 }>;
 
 export type ContextOutputFormat = 'markdown' | 'xml' | 'json';
@@ -143,4 +144,9 @@ export type DiscoverFilesPorts = Readonly<{
   files: ProjectFilePort;
   clipboard: ClipboardPathPort;
   gitHistory: GitHistoryPort;
+  fileSize: FileSizePort;
+}>;
+
+export type FileSizePort = Readonly<{
+  getSize(project: Project, relativePath: string): Promise<number>;
 }>;

@@ -13,11 +13,26 @@ const unavailableApi: DesktopApi = {
   discoverFiles: async () => ({ candidates: [], warnings: [] }),
   listProjectFiles: async () => [],
   generateOutput: async () => ({ preview: '' }), listProjects: async () => [], removeProject: async () => [],
+  readFileContent: async () => '',
 };
+
+import { FileViewerModal } from './components/FileViewerModal';
 
 export const App = ({ api = defaultApi() }: AppProps) => {
   const workspace = useDesktopWorkspace(api);
-  return <AppShell projects={<ProjectPanel {...workspace.projectPanel} />} explorer={<><SearchPanel {...workspace.searchPanel} /><CandidateTree {...workspace.treePanel} /></>} output={<OutputPanel {...workspace.outputPanel} />} />;
+  return (
+    <>
+      <AppShell projects={<ProjectPanel {...workspace.projectPanel} />} explorer={<><SearchPanel {...workspace.searchPanel} /><CandidateTree {...workspace.treePanel} /></>} output={<OutputPanel {...workspace.outputPanel} />} />
+      {workspace.activePreviewFile && (
+        <FileViewerModal
+          projectId={workspace.activePreviewFile.projectId}
+          relativePath={workspace.activePreviewFile.relativePath}
+          api={api}
+          onClose={workspace.closeFile}
+        />
+      )}
+    </>
+  );
 };
 
 const defaultApi = (): DesktopApi =>

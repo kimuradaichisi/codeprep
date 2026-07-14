@@ -43,6 +43,7 @@ const createApi = (): DesktopApi => ({
   copyOutput: vi.fn(async () => Promise.reject(new Error('Clipboard unavailable'))),
   generateOutput: vi.fn(async () => ({ preview: 'context', warning: 'Output is temporary.' })),
   listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []),
+  readFileContent: vi.fn(async () => ''),
 });
 
 const render = async (root: ReturnType<typeof createRoot>, element: ReactElement): Promise<void> => {

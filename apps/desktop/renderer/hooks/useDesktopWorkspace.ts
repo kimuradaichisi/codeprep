@@ -25,6 +25,7 @@ type WorkspaceState = Readonly<{
   projectNotice: string | undefined;
   searchNotice: string | undefined;
   outputNotice: string | undefined;
+  activePreviewFile?: Readonly<{ projectId: string; relativePath: string }>;
 }>;
 
 type SetWorkspace = Dispatch<SetStateAction<WorkspaceState>>;
@@ -45,6 +46,7 @@ const initialState: WorkspaceState = {
   projectNotice: undefined,
   searchNotice: undefined,
   outputNotice: undefined,
+  activePreviewFile: undefined,
 };
 
 export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
@@ -63,12 +65,16 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const setContextLines = (contextLines: number): void => update(set, { contextLines });
   const setIncludeDependencies = (includeDependencies: boolean): void => update(set, { includeDependencies });
   const setAutoOptimize = (autoOptimize: boolean): void => update(set, { autoOptimize });
+  const viewFile = (projectId: string, relativePath: string): void => update(set, { activePreviewFile: { projectId, relativePath } });
+  const closeFile = (): void => update(set, { activePreviewFile: undefined });
   const actions = actionsFor(api, state, set);
-  const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode };
+  const selectAll = (): void => update(set, { selectedKeys: state.candidates.map(c => `${c.projectId}:${c.relativePath.replace(/\\/g, '/')}`) });
+  const clearAll = (): void => update(set, { selectedKeys: [] });
+  const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
   const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, setRecipeKind, setQuery, setContextLines, analyze: actions.analyze };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, autoOptimize: state.autoOptimize, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setAutoOptimize, ...actions.output };
-  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode };
+  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({

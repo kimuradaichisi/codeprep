@@ -1,6 +1,15 @@
-import { access, readFile, realpath } from 'node:fs/promises';
+import { access, readFile, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 import type { Project } from '../desktop-core/domain/Project';
+
+export const getProjectFileSize = async (
+  project: Project,
+  relativePath: string,
+): Promise<number> => {
+  const path = await resolveReadableProjectFile(project.rootPath, relativePath);
+  if (!path) return 0;
+  try { const s = await stat(path); return s.size; } catch { return 0; }
+};
 
 export const canReadProjectFile = async (
   project: Project,

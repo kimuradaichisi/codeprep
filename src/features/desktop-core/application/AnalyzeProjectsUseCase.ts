@@ -52,7 +52,14 @@ export class AnalyzeProjectsUseCase {
     analysis: ProjectAnalysis,
   ): Promise<ProjectAnalysis> {
     const checks = await Promise.all(
-      analysis.signals.map(signal => this.checkReadable(signal)),
+      analysis.signals.map(async signal => {
+        const check = await this.checkReadable(signal);
+        if (check.signal) {
+          const size = await this.ports.fileSize.getSize(signal.project, signal.relativePath);
+          return { signal: { ...check.signal, size } };
+        }
+        return check;
+      }),
     );
 
     return mergeReadChecks(analysis.warnings, checks);

@@ -10,6 +10,7 @@ const api = {
   generateOutput: async () => ({ preview: '', warning: 'Output generation is not available yet.' }),
   listProjectFiles: async () => [], listProjects: async () => [{ id: 'project-1', name: 'Demo', rootPath: 'C:/demo' }],
   removeProject: async () => [],
+  readFileContent: async () => '',
 };
 
 describe('App', () => {

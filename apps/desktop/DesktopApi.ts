@@ -22,4 +22,5 @@ export type DesktopApi = Readonly<{
   discoverFiles(input: DiscoverFilesInput): Promise<AnalyzeProjectsResult>;
   generateOutput(input: BuildDesktopContextInput): Promise<DesktopOutput>;
   copyOutput(text: string): Promise<void>;
+  readFileContent(projectId: string, relativePath: string): Promise<string>;
 }>;

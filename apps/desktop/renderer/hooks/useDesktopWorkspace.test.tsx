@@ -81,6 +81,32 @@ describe('useDesktopWorkspace', () => {
       includeDependencies: true
     }));
   });
+
+  it('performs selectAll and clearAll selection management', async () => {
+    const { result } = await renderWorkspace();
+    await act(async () => { await result.current?.analyze('auth'); });
+    
+    // すべて選択
+    await act(async () => { result.current?.treePanel.selectAll(); });
+    expect(result.current?.selectedKeys).toEqual(['p1:src/app.ts']);
+
+    // 選択クリア
+    await act(async () => { result.current?.treePanel.clearAll(); });
+    expect(result.current?.selectedKeys).toEqual([]);
+  });
+
+  it('manages activePreviewFile state via viewFile and closeFile', async () => {
+    const { result } = await renderWorkspace();
+    expect(result.current?.activePreviewFile).toBeUndefined();
+
+    // ファイルプレビューを開く
+    await act(async () => { result.current?.viewFile('p1', 'src/app.ts'); });
+    expect(result.current?.activePreviewFile).toEqual({ projectId: 'p1', relativePath: 'src/app.ts' });
+
+    // ファイルプレビューを閉じる
+    await act(async () => { result.current?.closeFile(); });
+    expect(result.current?.activePreviewFile).toBeUndefined();
+  });
 });
 
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
@@ -97,7 +123,7 @@ const createApi = (overrides: Partial<DesktopApi>): DesktopApi => ({
   chooseProjectFolder: vi.fn(async () => undefined), copyOutput: vi.fn(async () => undefined),
   discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
   generateOutput: vi.fn(async () => ({ preview: 'context' })), listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects),
-  removeProject: vi.fn(async () => []), ...overrides,
+  removeProject: vi.fn(async () => []), readFileContent: vi.fn(async () => 'file content'), ...overrides,
 });
 
 const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));

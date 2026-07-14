@@ -23,6 +23,9 @@ const basePorts: AnalyzeProjectsPorts = {
     canRead: async () => true,
     read: async () => undefined,
   },
+  fileSize: {
+    getSize: async () => 100,
+  },
 };
 
 

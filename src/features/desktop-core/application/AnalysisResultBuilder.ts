@@ -19,6 +19,7 @@ export type CandidateSignal = Readonly<{
   relativePath: string;
   reason: CandidateReason;
   excerpts?: readonly SourceExcerpt[];
+  size?: number;
 }>;
 
 export type ProjectAnalysis = Readonly<{
@@ -68,11 +69,13 @@ const toAnalyzedCandidate = (
   const [first] = signals;
   const reasons = uniqueReasons(signals.map(signal => signal.reason));
   const excerpts = signals.flatMap(signal => signal.excerpts ?? []);
+  const size = signals.find(s => s.size !== undefined)?.size;
   const candidate = createCandidateFile(
     first.project.id,
     first.relativePath,
     reasons,
-    excerpts.length > 0 ? excerpts : undefined
+    excerpts.length > 0 ? excerpts : undefined,
+    size
   );
   const scored = scoreCandidate({ reasons, manualPin: false });
 

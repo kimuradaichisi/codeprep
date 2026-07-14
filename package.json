@@ -407,6 +407,7 @@
     "desktop:test": "vitest run apps/desktop",
     "desktop:build": "esbuild apps/desktop/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=apps/desktop/dist/main.js && esbuild apps/desktop/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=apps/desktop/dist/preload.js && esbuild apps/desktop/renderer/bootstrap.tsx --bundle --platform=browser --format=esm --outfile=apps/desktop/dist/renderer/App.js && node -e \"require('fs').mkdirSync('apps/desktop/dist/renderer',{recursive:true});require('fs').copyFileSync('apps/desktop/renderer/index.html','apps/desktop/dist/renderer/index.html')\"",
     "desktop:dev": "npm run desktop:build && electron apps/desktop/dist/main.js",
+    "desktop:package": "npm run desktop:build && node -e \"require('fs').writeFileSync('apps/desktop/dist/package.json', JSON.stringify({name:'codeprep-desktop',main:'main.js',version:'0.8.5'}))\" && electron-builder --win",
     "lint": "eslint src apps/desktop --ext .ts --ext .tsx --cache",
     "lint:standards": "ts-node scripts/check-standards.ts",
     "check": "npm run compile && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
@@ -424,6 +425,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
     "electron": "^43.1.0",
+    "electron-builder": "^24.13.3",
     "esbuild": "^0.28.0",
     "eslint": "^8.56.0",
     "glob": "^13.0.6",
@@ -440,5 +442,16 @@
   "overrides": {
     "diff": "^8.0.3",
     "serialize-javascript": "^7.0.5"
+  },
+  "build": {
+    "appId": "com.codeprep.desktop",
+    "productName": "CodePrepDesktop",
+    "directories": {
+      "output": "dist-desktop",
+      "app": "apps/desktop/dist"
+    },
+    "win": {
+      "target": "portable"
+    }
   }
 }

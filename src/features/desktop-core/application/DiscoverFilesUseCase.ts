@@ -31,23 +31,42 @@ export class DiscoverFilesUseCase {
 
   private async eligible(project: Project, recipe: Exclude<SearchRecipe, { kind: 'clipboardPaths' | 'gitDiff' | 'gitCommit' }>): Promise<readonly AnalyzedCandidate[]> {
     const files = await this.ports.files.list(project);
-    return files.filter(path => matches(recipe, path)).map(path => candidate(project.id, path, reason(recipe)));
+    const matched = files.filter(path => matches(recipe, path));
+    return Promise.all(matched.map(async path => {
+      const size = await this.ports.fileSize.getSize(project, path);
+      return { ...createCandidateFile(project.id, path, [reason(recipe)], undefined, size), score: 0 };
+    }));
   }
 
   private async clipboard(projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
     const paths = (await this.ports.clipboard.readText()).split(/\r?\n/).filter(Boolean);
-    const candidates = paths.flatMap(path => projectPath(path, projects));
+    const rawCandidates = paths.flatMap(path => projectPath(path, projects));
+    const candidates = await Promise.all(rawCandidates.map(async c => {
+      const project = projects.find(p => p.id === c.projectId);
+      const size = project ? await this.ports.fileSize.getSize(project, c.relativePath) : undefined;
+      return { ...c, size };
+    }));
     return { candidates, warnings: outsideWarnings(paths, candidates, projects) };
   }
 
   private async gitDiff(projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
     const results = await Promise.all(projects.map(project => this.ports.gitMetadata.getMetadata(project)));
-    return { candidates: results.flatMap((result, index) => result.modifiedPaths.map(path => candidate(projects[index].id, path, 'gitModified'))), warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
+    const flat = results.flatMap((result, index) => result.modifiedPaths.map(path => ({ project: projects[index], path })));
+    const candidates = await Promise.all(flat.map(async item => {
+      const size = await this.ports.fileSize.getSize(item.project, item.path);
+      return { ...candidate(item.project.id, item.path, 'gitModified'), size };
+    }));
+    return { candidates, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
   }
 
   private async gitCommit(ref: string, projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
     const results = await Promise.all(projects.map(project => this.ports.gitHistory.getCommitPaths(project, ref)));
-    return { candidates: results.flatMap((result, index) => result.paths.map(path => candidate(projects[index].id, path, 'gitCommit'))), warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
+    const flat = results.flatMap((result, index) => result.paths.map(path => ({ project: projects[index], path })));
+    const candidates = await Promise.all(flat.map(async item => {
+      const size = await this.ports.fileSize.getSize(item.project, item.path);
+      return { ...candidate(item.project.id, item.path, 'gitCommit'), size };
+    }));
+    return { candidates, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
   }
 }
 
