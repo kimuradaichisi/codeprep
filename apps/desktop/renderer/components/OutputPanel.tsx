@@ -41,6 +41,18 @@ const OutputConfig = (props: OutputPanelProps) => (
         Include dependencies
       </label>
     </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0 6px' }}>
+      <input
+        id="auto-optimize"
+        type="checkbox"
+        style={{ width: 'auto', margin: 0 }}
+        checked={props.autoOptimize}
+        onChange={event => props.setAutoOptimize(event.target.checked)}
+      />
+      <label htmlFor="auto-optimize" style={{ color: '#9eafc8', fontSize: '12px', cursor: 'pointer' }}>
+        Auto-optimize by budget
+      </label>
+    </div>
   </>
 );
 

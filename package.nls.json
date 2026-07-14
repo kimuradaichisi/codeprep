@@ -94,5 +94,6 @@
   "prompt.unitTest": "Generate unit tests for the provided code, covering edge cases and typical flows.",
   "prompt.codeReview": "Provide a code review highlighting issues, improvements, and suggested fixes.",
   "extension.description": "ファイルをGUIで選択し、LLMに渡すためのコンテキストを準備します。",
-  "config.useNativeEngine.description": "パフォーマンス向上のために組み込みエンジンを使用します。"
+  "config.useNativeEngine.description": "パフォーマンス向上のために組み込みエンジンを使用します。",
+  "warning.budgetExcluded": "File {0} was excluded to fit the token budget."
 }

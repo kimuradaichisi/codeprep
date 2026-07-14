@@ -327,6 +327,11 @@
           "default": false,
           "description": "実装を省略し、構造のみ抽出します。(Feature 1)"
         },
+        "codeprep.autoOptimizeByBudget": {
+          "type": "boolean",
+          "default": false,
+          "description": "トークン予算に収まるように、優先度の低いファイルを自動的にスケルトン化・除外します。(Feature 3)"
+        },
         "codeprep.includeDependencies": {
           "type": "boolean",
           "default": false,

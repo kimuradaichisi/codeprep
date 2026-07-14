@@ -30,7 +30,8 @@ export class DesktopOutputBuilder {
     maxFileSizeKB: number,
     mode: PackMode,
     includeDependencies?: boolean,
-    tokenLimit?: number
+    tokenLimit?: number,
+    autoOptimize?: boolean
   ): Promise<DesktopOutputSelection> {
     if (mode === 'matchedSnippets') {
       return buildMatchedSnippets(candidates);
@@ -38,8 +39,8 @@ export class DesktopOutputBuilder {
 
     const resolved = await this.resolveDependencies(candidates, projects, includeDependencies);
     const readResults = await this.readCandidatesContent(resolved, projects, maxFileSizeKB);
-    const sorted = this.scoreAndSortCandidates(readResults);
-    return this.packWithBudget(sorted, mode, tokenLimit);
+    const sorted = this.scoreAndSortCandidates(readResults, autoOptimize);
+    return this.packWithBudget(sorted, mode, tokenLimit, autoOptimize);
   }
 
   private async resolveDependencies(
@@ -131,7 +132,8 @@ export class DesktopOutputBuilder {
       item: { candidate: CandidateFile; forcedMode?: PackMode };
       content: string | undefined;
       error: 'unreadable' | 'oversized' | undefined;
-    }>
+    }>,
+    autoOptimize?: boolean
   ) {
     const scored = readResults.map(res => {
       const score = scoreCandidate({
@@ -140,20 +142,24 @@ export class DesktopOutputBuilder {
       }).score;
       return { ...res, score };
     });
-    return scored.sort((left, right) => right.score - left.score);
+    if (autoOptimize) {
+      scored.sort((left, right) => right.score - left.score);
+    }
+    return scored;
   }
 
   private packWithBudget(
     scored: Array<ScoredReadResult>,
     mode: PackMode,
-    tokenLimit?: number
+    tokenLimit?: number,
+    autoOptimize?: boolean
   ): DesktopOutputSelection {
     const files: DesktopContextFile[] = [];
     const warnings: AnalysisWarning[] = [];
-    const state = { accumulatedBytes: 0, byteLimit: tokenLimit ? tokenLimit * 4 : Number.MAX_SAFE_INTEGER };
+    const state = { accumulatedBytes: 0, byteLimit: tokenLimit && autoOptimize ? tokenLimit * 4 : Number.MAX_SAFE_INTEGER };
 
     for (const res of scored) {
-      this.processBudgetCandidate(res, mode, state, files, warnings);
+      this.processBudgetCandidate(res, mode, state, files, warnings, autoOptimize);
     }
     return { files, warnings };
   }
@@ -163,7 +169,8 @@ export class DesktopOutputBuilder {
     mode: PackMode,
     state: { accumulatedBytes: number; byteLimit: number },
     files: DesktopContextFile[],
-    warnings: AnalysisWarning[]
+    warnings: AnalysisWarning[],
+    autoOptimize?: boolean
   ): void {
     if (res.error === 'unreadable') {
       warnings.push(unreadableWarning(res.item.candidate));
@@ -173,7 +180,7 @@ export class DesktopOutputBuilder {
       warnings.push(oversizedWarning(res.item.candidate));
       return;
     }
-    this.packValidCandidate(res, mode, state, files, warnings);
+    this.packValidCandidate(res, mode, state, files, warnings, autoOptimize);
   }
 
   private packValidCandidate(
@@ -181,18 +188,19 @@ export class DesktopOutputBuilder {
     mode: PackMode,
     state: { accumulatedBytes: number; byteLimit: number },
     files: DesktopContextFile[],
-    warnings: AnalysisWarning[]
+    warnings: AnalysisWarning[],
+    autoOptimize?: boolean
   ): void {
     const content = res.content!;
     let targetMode = res.item.forcedMode || mode;
     const fullSize = estimateFilePayloadSize(res.item.candidate.relativePath, content);
 
-    if (targetMode !== 'skeleton' && (state.accumulatedBytes + fullSize) > state.byteLimit) {
+    if (autoOptimize && targetMode !== 'skeleton' && (state.accumulatedBytes + fullSize) > state.byteLimit) {
       targetMode = 'skeleton';
     }
 
     if (targetMode === 'skeleton') {
-      this.packSkeletonCandidate(res.item.candidate, content, state, files, warnings);
+      this.packSkeletonCandidate(res.item.candidate, content, state, files, warnings, autoOptimize);
     } else {
       files.push({ relativePath: res.item.candidate.relativePath, content });
       state.accumulatedBytes += fullSize;
@@ -204,12 +212,13 @@ export class DesktopOutputBuilder {
     content: string,
     state: { accumulatedBytes: number; byteLimit: number },
     files: DesktopContextFile[],
-    warnings: AnalysisWarning[]
+    warnings: AnalysisWarning[],
+    autoOptimize?: boolean
   ): void {
     const skeletonContent = this.skeletonService.extract(content);
     const skeletonSize = estimateFilePayloadSize(candidate.relativePath, skeletonContent);
 
-    if ((state.accumulatedBytes + skeletonSize) > state.byteLimit) {
+    if (autoOptimize && ((state.accumulatedBytes + skeletonSize) > state.byteLimit)) {
       warnings.push(budgetExcludedWarning(candidate));
       return;
     }

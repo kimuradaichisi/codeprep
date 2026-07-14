@@ -162,4 +162,28 @@ describe('OutputCommands (Context Intelligence & Tab Reuse)', () => {
     await outputCommands.generate(); // 2回目
     expect(mockEngine.generate.mock.calls[1]).toBeUndefined(); // ファイルが0件なので generate が呼ばれない
   });
+
+  it('Feature 3 (VSCode): autoOptimizeByBudget が有効なときにファイルを自動最適化すること', async () => {
+    (vscode.workspace.getConfiguration as any).mockReturnValue({
+      get: vi.fn((k, d) => {
+        if (k === 'autoOptimizeByBudget') return true;
+        if (k === 'tokenLimit') return 5; // 厳しいトークン上限 (5 * 4 = 20B)
+        return d;
+      })
+    });
+    mockSelectionUseCase.currentSelection.getPaths.mockReturnValue(['a.ts', 'b.ts']);
+    mockFileSystem.readFile.mockImplementation(async (fullPath: string) => {
+      if (fullPath.endsWith('a.ts')) return ok('a'.repeat(30)); // トークン上限オーバー
+      return ok('b'); // 収まる
+    });
+    mockEngine.generate.mockReturnValue({ content: 'res' });
+
+    await outputCommands.generate();
+
+    expect(mockEngine.generate).toHaveBeenCalled();
+    const files = mockEngine.generate.mock.calls[0][0];
+    // a.ts は skeleton になるか、サイズ超過で除外される（skeleton 化したサイズ: // skeleton: a.ts などが 20B を超えると除外される）
+    // いずれにせよ、b.ts は Full のまま残り、a.ts に関する警告が表示されるはず
+    expect(vscode.window.showWarningMessage).toHaveBeenCalled();
+  });
 });

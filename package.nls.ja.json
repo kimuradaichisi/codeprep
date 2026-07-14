@@ -94,5 +94,6 @@
   "patch.selectPatchCandidate": "プレビューする候補を選択してください",
   "patch.menuClipboard": "プレビュー: クリップボードのパッチ",
   "patch.menuSmart": "プレビュー: スマートパッチ",
-  "prompt.patchInjection": "\n\n---\n## 重要: 回答形式 (Patch Mode)\n修正案は必ず各コードブロックの直前に `path/to/file.ts`: を記述し、変更のない部分は `// ... existing code ...` 等の省略コメント（前後に1行ずつのアンカーを含む）を活用して記述してください。同一ファイルへの複数箇所の修正も歓迎します。"
+  "prompt.patchInjection": "\n\n---\n## 重要: 回答形式 (Patch Mode)\n修正案は必ず各コードブロックの直前に `path/to/file.ts`: を記述し、変更のない部分は `// ... existing code ...` 等の省略コメント（前後に1行ずつのアンカーを含む）を活用して記述してください。同一ファイルへの複数箇所の修正も歓迎します。",
+  "warning.budgetExcluded": "ファイル {0} はトークン予算に収めるため除外されました。"
 }

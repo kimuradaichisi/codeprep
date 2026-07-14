@@ -38,7 +38,8 @@ describe('DesktopRequestParser', () => {
         maxFileSizeKB: 500,
         packMode: 'matchedSnippets',
         tokenLimit: 12000,
-        includeDependencies: false
+        includeDependencies: false,
+        autoOptimize: false
       };
       expect(toBuildInput(valid)).toEqual(valid);
     });

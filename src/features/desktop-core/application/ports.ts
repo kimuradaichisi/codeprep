@@ -96,6 +96,7 @@ export type BuildDesktopContextInput = Readonly<{
   packMode?: PackMode;
   tokenLimit?: number;
   includeDependencies?: boolean;
+  autoOptimize?: boolean;
 }>;
 
 export type ContextManifestEntry = Readonly<{

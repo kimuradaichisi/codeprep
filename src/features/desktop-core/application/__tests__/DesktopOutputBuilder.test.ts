@@ -85,7 +85,7 @@ describe('DesktopOutputBuilder', () => {
       createCandidateFile('p1', 'src/match.ts', ['extensionMatch'])
     ];
 
-    const result = await builder.build(candidates, projects, 500, 'full', false, 30);
+    const result = await builder.build(candidates, projects, 500, 'full', false, 30, true);
 
     expect(result.files).toEqual([
       { relativePath: 'src/pinned.ts', content: "export class Pinned {\n  // important logic here\n}" },
@@ -93,7 +93,7 @@ describe('DesktopOutputBuilder', () => {
     ]);
   });
 
-  it('excludes candidates entirely when they exceed the budget even after skeletonization', async () => {
+  it('excludes candidates entirely when they exceed the budget even after skeletonization when autoOptimize is true', async () => {
     const filesMap: Record<string, string> = {
       'src/pinned.ts': "export class Pinned {\n  // important logic here\n}",
       'src/match.ts': "export function match() {\n  console.log(1);\n  console.log(2);\n  console.log(3);\n  console.log(4);\n  console.log(5);\n}"
@@ -108,7 +108,7 @@ describe('DesktopOutputBuilder', () => {
       createCandidateFile('p1', 'src/match.ts', ['extensionMatch'])
     ];
 
-    const result = await builder.build(candidates, projects, 500, 'full', false, 20);
+    const result = await builder.build(candidates, projects, 500, 'full', false, 20, true);
 
     expect(result.files).toEqual([
       { relativePath: 'src/pinned.ts', content: "export class Pinned {\n  // important logic here\n}" }
@@ -121,5 +121,30 @@ describe('DesktopOutputBuilder', () => {
         message: 'File src/match.ts was excluded to fit the token budget.'
       }
     ]);
+  });
+
+  it('does not degrade or exclude candidates when autoOptimize is false', async () => {
+    const filesMap: Record<string, string> = {
+      'src/pinned.ts': "export class Pinned {\n  // important logic here\n}",
+      'src/match.ts': "export function match() {\n  // ... implementation\n}"
+    };
+    const fileContentMock: FileContentPort = {
+      canRead: async () => true,
+      read: async (p, rel) => filesMap[rel]
+    };
+    const builder = new DesktopOutputBuilder(fileContentMock, new SkeletonService(), new DependencyScanner());
+    const candidates = [
+      createCandidateFile('p1', 'src/pinned.ts', ['manualPin']),
+      createCandidateFile('p1', 'src/match.ts', ['extensionMatch'])
+    ];
+
+    const result = await builder.build(candidates, projects, 500, 'full', false, 20, false);
+
+    // 縮退されないため、元のコンテンツのままパッキングされる
+    expect(result.files).toEqual([
+      { relativePath: 'src/pinned.ts', content: "export class Pinned {\n  // important logic here\n}" },
+      { relativePath: 'src/match.ts', content: "export function match() {\n  // ... implementation\n}" }
+    ]);
+    expect(result.warnings).toEqual([]);
   });
 });

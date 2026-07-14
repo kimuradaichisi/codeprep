@@ -12,6 +12,8 @@ import { DependencyScanner } from '../features/engine/application/DependencyScan
 import { DiagnosticService } from '../features/engine/infrastructure/DiagnosticService';
 import { countValidFiles } from '../features/selection/application/util/countValidFiles';
 import { OutputFormat, OutputOptions } from '../features/engine/domain/OutputOptions';
+import { SkeletonService } from '../features/engine/infrastructure/SkeletonService';
+import { BudgetOptimizer } from '../features/engine/application/BudgetOptimizer';
 
 export interface OutputCommandsDeps {
   selectionUseCase: SelectionUseCase; promptUseCase: PromptUseCase;
@@ -24,6 +26,8 @@ export class OutputCommands {
   private static lastOutputDoc: vscode.TextDocument | undefined; // テスト再利用用
   private readonly scanner = new DependencyScanner();
   private readonly diag = new DiagnosticService();
+  private readonly skeletonService = new SkeletonService();
+  private readonly optimizer = new BudgetOptimizer(this.skeletonService);
 
   constructor(private readonly deps: OutputCommandsDeps) { }
 
@@ -69,7 +73,7 @@ export class OutputCommands {
   }
 
   private async processFiles(paths: string[], opts: OutputOptions): Promise<FileContent[]> {
-    const files = await this.readFiles(paths);
+    let files = await this.readFiles(paths);
     if (opts.includeDependencies) {
       for (const f of [...files]) {
         const deps = await this.scanner.findDependencies(f.path, f.content, this.deps.root || '');
@@ -77,7 +81,22 @@ export class OutputCommands {
         files.push(...newFiles.map(nf => ({ ...nf, skeleton: true })));
       }
     }
+    if (opts.autoOptimizeByBudget) {
+      files = this.optimizeFiles(files);
+    }
     return opts.incrementalMode ? files.filter(f => OutputCommands.lastState.get(f.path) !== f.content) : files;
+  }
+
+  private optimizeFiles(files: FileContent[]): FileContent[] {
+    const c = vscode.workspace.getConfiguration('codeprep');
+    const limit = c.get<number>('tokenLimit', 100000);
+    const active = vscode.window.activeTextEditor
+      ? path.relative(this.deps.root || '', vscode.window.activeTextEditor.document.fileName).replace(/\\/g, '/')
+      : undefined;
+    return this.optimizer.optimize(
+      { files, byteLimit: limit * 4, activePath: active },
+      p => vscode.window.showWarningMessage(t('warning.budgetExcluded', p))
+    );
   }
 
   private async readFiles(paths: string[]): Promise<FileContent[]> {
@@ -102,6 +121,7 @@ export class OutputCommands {
       outputMode: c.get<'everything' | 'structureOnly'>('outputMode', 'everything'),
       maxFileSizeKB: c.get<number>('maxFileSizeKB', 500),
       skeletonMode: c.get<boolean>('skeletonMode', false),
+      autoOptimizeByBudget: c.get<boolean>('autoOptimizeByBudget', false),
       includeDependencies: c.get<boolean>('includeDependencies', false),
       includeErrors: c.get<boolean>('includeErrors', false),
       incrementalMode: c.get<boolean>('incrementalMode', false)

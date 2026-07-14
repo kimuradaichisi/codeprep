@@ -11,6 +11,7 @@ export interface OutputOptions {
   outputMode: 'everything' | 'structureOnly';
   maxFileSizeKB?: number;
   skeletonMode?: boolean;
+  autoOptimizeByBudget?: boolean;
   includeDependencies?: boolean;
   includeErrors?: boolean;
   incrementalMode?: boolean;
