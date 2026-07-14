@@ -26,7 +26,27 @@ describe('BuildDesktopContextUseCase', () => {
     expect(result.preview).toBe('markdown:');
     expect(result.warnings[0]).toMatchObject({ kind: 'oversizedFile', relativePath: 'src/app.ts' });
   });
+
+  it('supports matchedSnippets mode utilizing excerpts without file reads', async () => {
+    const candidateWithExcerpts = {
+      projectId: project.id,
+      relativePath: 'src/app.ts',
+      reasons: ['rgMatch'] as const,
+      excluded: false,
+      excerpts: [{ startLine: 1, endLine: 2, content: 'excerpt line\n' }]
+    };
+    const result = await createUseCase(undefined).build({
+      candidates: [candidateWithExcerpts],
+      format: 'markdown',
+      maxFileSizeKB: 1,
+      packMode: 'matchedSnippets'
+    });
+
+    expect(result.preview).toBe('markdown:src/app.ts:1-2:excerpt line\n');
+    expect(result.warnings).toEqual([]);
+  });
 });
+
 
 const createUseCase = (content: string | undefined): BuildDesktopContextUseCase =>
   new BuildDesktopContextUseCase(createPorts(content));

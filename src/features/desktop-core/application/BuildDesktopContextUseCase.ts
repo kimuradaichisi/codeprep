@@ -2,6 +2,7 @@ import type { CandidateFile } from '../domain/CandidateFile';
 import { evaluateBudget } from '../domain/ContextBudget';
 import type { PackMode } from '../domain/PackMode';
 import type { Project } from '../domain/Project';
+import { DesktopOutputBuilder, type DesktopOutputSelection } from './DesktopOutputBuilder';
 import type {
   AnalysisWarning,
   BuildDesktopContextInput,
@@ -10,59 +11,53 @@ import type {
   DesktopContextFile,
 } from './ports';
 
-type ReadAttempt = Readonly<{
-  file?: DesktopContextFile;
-  warning?: AnalysisWarning;
-}>;
-
 export class BuildDesktopContextUseCase {
   constructor(private readonly ports: BuildDesktopContextPorts) {}
 
   async build(input: BuildDesktopContextInput): Promise<BuildDesktopContextResult> {
     const projects = await this.ports.projects.getByIds(projectIds(input.candidates));
     const mode = input.packMode ?? 'full';
-    const attempts = mode === 'directoryTree' ? [] : await Promise.all(input.candidates.map(candidate =>
-      this.readCandidate(candidate, projects, input.maxFileSizeKB, mode)));
-    const files = attempts.flatMap(attempt => attempt.file ? [attempt.file] : []);
-    const warnings = attempts.flatMap(attempt => attempt.warning ? [attempt.warning] : []);
-    const preview = mode === 'directoryTree' ? input.candidates.map(candidate => candidate.relativePath).join('\n') : this.ports.formatter.format({ format: input.format, files });
+    const output = await getOutput(input, projects, this.ports.fileContent, mode);
+    const preview = getPreview(input, output.files, this.ports.formatter, mode);
     const budget = evaluateBudget(new TextEncoder().encode(preview).byteLength, input.tokenLimit ?? Number.MAX_SAFE_INTEGER);
-    const manifest = input.candidates.map(candidate => ({ projectId: candidate.projectId, relativePath: candidate.relativePath, included: files.some(file => file.relativePath === candidate.relativePath), reasons: candidate.reasons }));
-    if (!budget.withinLimit) return { preview: '', warnings: [...warnings, budgetWarning()], budget, manifest };
-    return { preview, warnings, budget, manifest };
-  }
-
-  private async readCandidate(
-    candidate: CandidateFile,
-    projects: readonly Project[],
-    maxFileSizeKB: number,
-    mode: PackMode,
-  ): Promise<ReadAttempt> {
-    const project = projects.find(item => item.id === candidate.projectId);
-    if (!project) return { warning: unreadableWarning(candidate) };
-    const content = await this.ports.fileContent.read(project, candidate.relativePath);
-    if (content === undefined) return { warning: unreadableWarning(candidate) };
-    if (isOversized(content, maxFileSizeKB)) return { warning: oversizedWarning(candidate) };
-    return { file: { relativePath: candidate.relativePath, content: mode === 'skeleton' ? skeleton(content) : content } };
+    const manifest = input.candidates.map(c => ({
+      projectId: c.projectId,
+      relativePath: c.relativePath,
+      included: output.files.some(f => f.relativePath === c.relativePath || f.relativePath.startsWith(`${c.relativePath}:`)),
+      reasons: c.reasons
+    }));
+    if (!budget.withinLimit) return { preview: '', warnings: [...output.warnings, budgetWarning()], budget, manifest };
+    return { preview, warnings: output.warnings, budget, manifest };
   }
 }
+
+const getOutput = async (
+  input: BuildDesktopContextInput,
+  projects: readonly Project[],
+  fileContent: BuildDesktopContextPorts['fileContent'],
+  mode: PackMode
+): Promise<DesktopOutputSelection> => {
+  if (mode === 'directoryTree') return { files: [], warnings: [] };
+  const builder = new DesktopOutputBuilder(fileContent);
+  return builder.build(input.candidates, projects, input.maxFileSizeKB, mode);
+};
+
+const getPreview = (
+  input: BuildDesktopContextInput,
+  files: readonly DesktopContextFile[],
+  formatter: BuildDesktopContextPorts['formatter'],
+  mode: PackMode
+): string =>
+  mode === 'directoryTree'
+    ? input.candidates.map(c => c.relativePath).join('\n')
+    : formatter.format({ format: input.format, files });
 
 const projectIds = (candidates: readonly CandidateFile[]): readonly string[] =>
   [...new Set(candidates.map(candidate => candidate.projectId))];
 
-const isOversized = (content: string, maxFileSizeKB: number): boolean =>
-  new TextEncoder().encode(content).byteLength > maxFileSizeKB * 1024;
-
-const unreadableWarning = (candidate: CandidateFile): AnalysisWarning => ({
-  kind: 'unreadableFile', projectId: candidate.projectId,
-  relativePath: candidate.relativePath, message: `${candidate.relativePath} cannot be read.`,
+const budgetWarning = (): AnalysisWarning => ({
+  kind: 'oversizedFile',
+  projectId: 'workspace',
+  message: 'The generated context exceeds the token budget.'
 });
 
-const oversizedWarning = (candidate: CandidateFile): AnalysisWarning => ({
-  kind: 'oversizedFile', projectId: candidate.projectId,
-  relativePath: candidate.relativePath, message: `${candidate.relativePath} exceeds the output size limit.`,
-});
-
-const skeleton = (content: string): string => content.split(/\r?\n/).filter(line => /\b(class|interface|type|function|export|const|def)\b/.test(line)).join('\n');
-
-const budgetWarning = (): AnalysisWarning => ({ kind: 'oversizedFile', projectId: 'workspace', message: 'The generated context exceeds the token budget.' });
