@@ -28,9 +28,11 @@ export type ProjectPanelProps = Readonly<{
 export type SearchPanelProps = Readonly<{
   recipeKind: SearchRecipeKind;
   query: string;
+  contextLines: number;
   searchNotice: WorkspaceNotice;
   setRecipeKind(value: SearchRecipeKind): void;
   setQuery(value: string): void;
+  setContextLines(value: number): void;
   analyze(query?: string): Promise<void>;
 }>;
 
@@ -58,6 +60,7 @@ export type DesktopWorkspace = Readonly<{
   recipeKind: SearchRecipeKind;
   projects: readonly Project[];
   query: string;
+  contextLines: number;
   candidates: readonly AnalyzedCandidate[];
   selectedKeys: readonly string[];
   format: ContextOutputFormat;
@@ -77,6 +80,7 @@ export type DesktopWorkspace = Readonly<{
   setFormat(value: ContextOutputFormat): void;
   setPackMode(value: PackMode): void;
   setTokenLimit(value: number): void;
+  setContextLines(value: number): void;
   addProject(rootPath: string): Promise<void>;
   chooseProjectFolder(): Promise<void>;
   removeProject(projectId: string): Promise<void>;
@@ -85,3 +89,4 @@ export type DesktopWorkspace = Readonly<{
   generateOutput(): Promise<void>;
   copyOutput(): Promise<void>;
 }>;
+

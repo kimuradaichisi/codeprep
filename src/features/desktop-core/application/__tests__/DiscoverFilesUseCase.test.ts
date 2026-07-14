@@ -5,7 +5,7 @@ import type { DiscoverFilesPorts } from '../ports';
 
 const ports: DiscoverFilesPorts = {
   projects: { getByIds: async () => [{ id: 'p1', name: 'App', rootPath: '/repo' }] },
-  ripgrep: { search: async (_p, _q, _c) => ({ matches: [] }) },
+  ripgrep: { search: async () => ({ matches: [] }) },
   gitMetadata: { getMetadata: async () => ({ modifiedPaths: [], recentPaths: [] }) },
   files: { list: async () => ['src/auth.ts', 'src/app.ts', 'README.md'] },
   clipboard: { readText: async () => '/repo/src/auth.ts\n/outside/secret.ts' },

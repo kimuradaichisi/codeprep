@@ -1,24 +1,46 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AnalyzedCandidate, ContextOutputFormat } from '../../../../src/features/desktop-core/application/ports';
 import type { DesktopApi, DesktopOutput } from '../../DesktopApi';
-import { addProject, analyzeProjects, copyOutput, desktopErrorMessage, generateOutput, loadProjects, removeProject } from '../DesktopWorkflow';
-import { buildCandidateTree, descendantCandidateKeys, toggleTreeNode as toggleNode } from '../model/candidateTree';
+import { addProject, copyOutput, desktopErrorMessage, generateOutput, loadProjects, removeProject } from '../DesktopWorkflow';
+import { buildCandidateTree, toggleTreeNode as toggleNode } from '../model/candidateTree';
 import type { CandidateTreeNode } from '../model/candidateTree';
 import type { DesktopWorkspace } from '../types';
-import { createSearchRecipe, type SearchRecipeKind } from '../../../../src/features/desktop-core/domain/SearchRecipe';
+import type { SearchRecipeKind } from '../../../../src/features/desktop-core/domain/SearchRecipe';
 import type { PackMode } from '../../../../src/features/desktop-core/domain/PackMode';
+import { selectedCandidates, fileCandidates, analyzeWorkspace } from './workspaceAnalysis';
 
 type WorkspaceState = Readonly<{
-  projects: DesktopWorkspace['projects']; recipeKind: SearchRecipeKind; query: string; candidates: readonly AnalyzedCandidate[];
-  selectedKeys: readonly string[]; format: ContextOutputFormat; packMode: PackMode; tokenLimit: number; preview: string;
-  projectNotice: string | undefined; searchNotice: string | undefined; outputNotice: string | undefined;
+  projects: DesktopWorkspace['projects'];
+  recipeKind: SearchRecipeKind;
+  query: string;
+  contextLines: number;
+  candidates: readonly AnalyzedCandidate[];
+  selectedKeys: readonly string[];
+  format: ContextOutputFormat;
+  packMode: PackMode;
+  tokenLimit: number;
+  preview: string;
+  projectNotice: string | undefined;
+  searchNotice: string | undefined;
+  outputNotice: string | undefined;
 }>;
 
 type SetWorkspace = Dispatch<SetStateAction<WorkspaceState>>;
 
 const initialState: WorkspaceState = {
-  projects: [], query: '', recipeKind: 'text', candidates: [], selectedKeys: [], format: 'markdown', packMode: 'full', tokenLimit: 12000, preview: '',
-  projectNotice: undefined, searchNotice: undefined, outputNotice: undefined,
+  projects: [],
+  query: '',
+  recipeKind: 'text',
+  contextLines: 3,
+  candidates: [],
+  selectedKeys: [],
+  format: 'markdown',
+  packMode: 'full',
+  tokenLimit: 12000,
+  preview: '',
+  projectNotice: undefined,
+  searchNotice: undefined,
+  outputNotice: undefined,
 };
 
 export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
@@ -34,17 +56,18 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const setFormat = (format: ContextOutputFormat): void => update(set, { format });
   const setPackMode = (packMode: PackMode): void => update(set, { packMode });
   const setTokenLimit = (tokenLimit: number): void => update(set, { tokenLimit });
+  const setContextLines = (contextLines: number): void => update(set, { contextLines });
   const actions = actionsFor(api, state, set);
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
-  const searchPanel = { recipeKind: state.recipeKind, query: state.query, searchNotice: state.searchNotice, setRecipeKind, setQuery, analyze: actions.analyze };
+  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, setRecipeKind, setQuery, setContextLines, analyze: actions.analyze };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, setFormat, setPackMode, setTokenLimit, ...actions.output };
-  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode };
+  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
   project: { addProject: (path: string) => saveProject(api, set, path), chooseProjectFolder: () => chooseFolder(api, set), removeProject: (id: string) => deleteProject(api, set, id) },
-  analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.projects),
+  analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.contextLines, state.projects),
   toggleTreeNode: (root: CandidateTreeNode, id: string) => update(set, { selectedKeys: toggleNode(root, id, state.selectedKeys) }),
   output: { generateOutput: () => generate(api, set, state), copyOutput: () => copy(api, set, state.preview) },
 });
@@ -83,15 +106,16 @@ const deleteProject = async (api: DesktopApi, set: SetWorkspace, value: string):
   catch (error) { update(set, { projectNotice: desktopErrorMessage(error) }); }
 };
 
-const analyze = async (api: DesktopApi, set: SetWorkspace, value: string, kind: SearchRecipeKind, projects: DesktopWorkspace['projects']): Promise<void> => {
-  try {
-    const recipe = createSearchRecipe(kind, value);
-    const result = recipe.kind === 'text'
-      ? { candidates: await analyzeProjects(api, recipe.query, projects), warnings: [] }
-      : await api.discoverFiles({ recipe, projectIds: projects.map(project => project.id) });
-    update(set, { candidates: result.candidates, selectedKeys: candidateKeys(result.candidates, projects), searchNotice: result.warnings.map(warning => warning.message).join('\n') || undefined });
-  }
-  catch (error) { update(set, { searchNotice: desktopErrorMessage(error) }); }
+const analyze = async (
+  api: DesktopApi,
+  set: SetWorkspace,
+  value: string,
+  kind: SearchRecipeKind,
+  contextLines: number,
+  projects: DesktopWorkspace['projects']
+): Promise<void> => {
+  const result = await analyzeWorkspace(api, value, kind, contextLines, projects);
+  update(set, result);
 };
 
 const generate = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {
@@ -110,18 +134,6 @@ const copy = async (api: DesktopApi, set: SetWorkspace, preview: string): Promis
 
 const update = (set: SetWorkspace, value: Partial<WorkspaceState>): void => set(current => ({ ...current, ...value }));
 
-const candidateKeys = (candidates: readonly AnalyzedCandidate[], projects: DesktopWorkspace['projects']): readonly string[] =>
-  buildCandidateTree(candidates, projects).flatMap(descendantCandidateKeys);
-
-const selectedCandidates = (candidates: readonly AnalyzedCandidate[], selectedKeys: readonly string[]): readonly AnalyzedCandidate[] =>
-  candidates.filter(candidate => selectedKeys.includes(`${candidate.projectId}:${candidate.relativePath.replace(/\\/g, '/')}`));
-
 const updateOutput = (set: SetWorkspace, output: DesktopOutput): void =>
   update(set, { preview: output.preview, outputNotice: output.warning });
 
-const fileCandidates = async (api: DesktopApi, projects: DesktopWorkspace['projects']): Promise<readonly AnalyzedCandidate[]> => {
-  const entries = await Promise.all(projects.map(async project => (await api.listProjectFiles(project.id)).map(relativePath => ({
-    projectId: project.id, relativePath, reasons: ['pathAffinity'] as const, excluded: false, score: 0,
-  }))));
-  return entries.flat();
-};

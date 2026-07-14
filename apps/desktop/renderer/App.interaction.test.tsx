@@ -27,8 +27,9 @@ describe('App interactions', () => {
     expect(container.textContent).toContain('Demo');
     expect(api.removeProject).toHaveBeenCalledWith('p1');
     expect(api.addProject).toHaveBeenCalledWith('C:/new');
-    expect(api.analyzeProjects).toHaveBeenCalledWith({ query: 'auth', projectIds: ['p1'] });
-    expect(api.generateOutput).toHaveBeenCalledWith({ candidates, format: 'markdown', maxFileSizeKB: 500 });
+    expect(api.analyzeProjects).toHaveBeenCalledWith({ query: 'auth', projectIds: ['p1'], contextLines: 3 });
+    expect(api.generateOutput).toHaveBeenCalledWith({ candidates, format: 'markdown', maxFileSizeKB: 500, packMode: 'full', tokenLimit: 12000 });
+
     expect(container.textContent).toContain('context');
     expect(container.querySelector('[role="alert"]')?.textContent).toBe('Clipboard unavailable');
     await act(async () => root.unmount());

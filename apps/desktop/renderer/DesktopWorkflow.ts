@@ -18,11 +18,13 @@ export const removeProject = (
 export const analyzeProjects = async (
   api: DesktopApi,
   query: string,
+  contextLines: number,
   projects: readonly Project[],
 ): Promise<readonly AnalyzedCandidate[]> => {
-  const input = { query, projectIds: projects.map(project => project.id) };
+  const input = { query, projectIds: projects.map(project => project.id), contextLines };
   return (await api.analyzeProjects(input)).candidates;
 };
+
 
 export const generateOutput = (api: DesktopApi, input: BuildDesktopContextInput): Promise<DesktopOutput> =>
   api.generateOutput(input);

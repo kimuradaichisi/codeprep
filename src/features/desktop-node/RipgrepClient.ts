@@ -1,7 +1,6 @@
 import { spawn } from 'child_process';
 import type {
   AnalysisWarning,
-  RipgrepMatch,
   RipgrepPort,
   RipgrepResult,
 } from '../desktop-core/application/ports';

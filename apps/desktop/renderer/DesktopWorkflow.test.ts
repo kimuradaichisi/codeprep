@@ -20,8 +20,9 @@ describe('Desktop workflow', () => {
     expect(await loadProjects(api)).toEqual(projects);
     expect(await addProject(api, 'C:/new')).toEqual(projects);
     expect(await removeProject(api, 'p1')).toEqual([]);
-    expect(await analyzeProjects(api, 'auth', projects)).toEqual(candidates);
+    expect(await analyzeProjects(api, 'auth', 3, projects)).toEqual(candidates);
     const output = { candidates, format: 'xml', maxFileSizeKB: 128 } as const;
+
     expect(await generateOutput(api, output)).toEqual({ preview: 'context', warning: 'Unavailable' });
     expect(api.generateOutput).toHaveBeenCalledWith(output);
     await copyOutput(api, 'context');

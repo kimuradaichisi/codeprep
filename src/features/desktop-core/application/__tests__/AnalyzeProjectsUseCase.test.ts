@@ -9,7 +9,9 @@ const basePorts: AnalyzeProjectsPorts = {
     getByIds: async () => [{ id: 'p1', name: 'App', rootPath: '/repo' }],
   },
   ripgrep: {
-    search: async (_project, _query, contextLines) => {
+    search: async (project, query, contextLines) => {
+      void project;
+      void query;
       receivedContextLines = contextLines;
       return { matches: [{ relativePath: 'src/auth.ts', excerpts: [{ startLine: 8, endLine: 10, content: 'a\nb\nc\n' }] }] };
     },
@@ -22,6 +24,7 @@ const basePorts: AnalyzeProjectsPorts = {
     read: async () => undefined,
   },
 };
+
 
 const analyze = (ports: AnalyzeProjectsPorts = basePorts) => {
   receivedContextLines = undefined;
@@ -65,7 +68,7 @@ describe('AnalyzeProjectsUseCase', () => {
   it('preserves missingRg warnings from ripgrep', async () => {
     const missingRg = warning('missingRg');
     const result = await analyze(
-      withPorts({ ripgrep: { search: async (_p, _q, _c) => ({ matches: [], warning: missingRg }) } }),
+      withPorts({ ripgrep: { search: async () => ({ matches: [], warning: missingRg }) } }),
     );
 
     expect(result.warnings).toContainEqual(missingRg);
@@ -102,7 +105,7 @@ describe('AnalyzeProjectsUseCase', () => {
   it('merges duplicate signals and preserves combined reasons', async () => {
     const result = await analyze(
       withPorts({
-        ripgrep: { search: async (_p, _q, _c) => ({ matches: [{ relativePath: 'src/auth.ts' }] }) },
+        ripgrep: { search: async () => ({ matches: [{ relativePath: 'src/auth.ts' }] }) },
         gitMetadata: {
           getMetadata: async () => ({ modifiedPaths: ['src/auth.ts'], recentPaths: [] }),
         },
@@ -116,12 +119,13 @@ describe('AnalyzeProjectsUseCase', () => {
   it('adds recentCommit reasons from git recent paths', async () => {
     const result = await analyze(
       withPorts({
-        ripgrep: { search: async (_p, _q, _c) => ({ matches: [] }) },
+        ripgrep: { search: async () => ({ matches: [] }) },
         gitMetadata: {
           getMetadata: async () => ({ modifiedPaths: [], recentPaths: ['src/recent.ts'] }),
         },
       }),
     );
+
 
 
     expect(result.candidates[0].relativePath).toBe('src/recent.ts');
