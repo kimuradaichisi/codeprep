@@ -6,6 +6,7 @@ import type {
   RipgrepResult,
 } from '../desktop-core/application/ports';
 import type { Project } from '../desktop-core/domain/Project';
+import { parseRipgrepJson } from './RipgrepJsonParser';
 
 export type ProcessOutput = Readonly<{
   stdout: string;
@@ -25,10 +26,10 @@ export class RipgrepClient implements RipgrepPort {
     private readonly excludes: readonly string[] = [],
   ) {}
 
-  public async search(project: Project, query: string): Promise<RipgrepResult> {
+  public async search(project: Project, query: string, contextLines: number): Promise<RipgrepResult> {
     try {
       const excludes = [...this.excludes, ...(project.excludePatterns ?? [])];
-      const output = await this.runner.run('rg', rgArgs(query, excludes), project.rootPath);
+      const output = await this.runner.run('rg', rgArgs(query, contextLines, excludes), project.rootPath);
       return toRipgrepResult(project, output);
     } catch (error) {
       const warning = isMissingRgError(error) ? missingRgWarning(project) : rgFailureWarning(project);
@@ -37,13 +38,14 @@ export class RipgrepClient implements RipgrepPort {
   }
 }
 
-export const parseRipgrepJson = (output: string): readonly RipgrepMatch[] =>
-  uniquePaths(output.split(/\r?\n/).flatMap(parseRipgrepLine)).map(relativePath => ({
-    relativePath,
-  }));
-
-const rgArgs = (query: string, excludes: readonly string[]): readonly string[] => [
+const rgArgs = (
+  query: string,
+  contextLines: number,
+  excludes: readonly string[],
+): readonly string[] => [
   '--json',
+  '--context',
+  String(contextLines),
   '--hidden',
   ...excludes.flatMap(exclude => ['--glob', `!${exclude}`]),
   '--',
@@ -55,27 +57,6 @@ const toRipgrepResult = (project: Project, output: ProcessOutput): RipgrepResult
   return { matches: [], warning: rgFailureWarning(project) };
 };
 
-const parseRipgrepLine = (line: string): readonly string[] => {
-  if (!line.trim()) return [];
-  try {
-    return parseJsonPath(JSON.parse(line));
-  } catch {
-    return [];
-  }
-};
-
-const parseJsonPath = (value: unknown): readonly string[] => {
-  if (!isRecord(value) || value.type !== 'match') return [];
-  const path = getTextPath(value.data);
-  return path ? [path] : [];
-};
-
-const getTextPath = (data: unknown): string | undefined => {
-  if (!isRecord(data) || !isRecord(data.path)) return undefined;
-  return typeof data.path.text === 'string' ? data.path.text : undefined;
-};
-
-const uniquePaths = (paths: readonly string[]): readonly string[] => [...new Set(paths)];
 
 const missingRgWarning = (project: Project): AnalysisWarning => ({
   kind: 'missingRg',
