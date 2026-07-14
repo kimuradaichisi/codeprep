@@ -88,6 +88,7 @@ export const toBuildInput = (value: unknown): BuildDesktopContextInput => {
     format: outputFormat(value.format),
     maxFileSizeKB: sizeLimit(value.maxFileSizeKB),
     packMode: packMode(value.packMode),
-    tokenLimit: tokenLimit(value.tokenLimit)
+    tokenLimit: tokenLimit(value.tokenLimit),
+    includeDependencies: value.includeDependencies === true
   };
 };

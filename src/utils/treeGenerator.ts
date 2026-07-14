@@ -1,5 +1,7 @@
 
-type TreeNode = Record<string, TreeNode>;
+interface TreeNode {
+  [key: string]: TreeNode;
+}
 
 /**
  * ディレクトリパスの配列からツリー形式の文字列を生成する

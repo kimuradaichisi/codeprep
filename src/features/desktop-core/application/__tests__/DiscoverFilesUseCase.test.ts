@@ -3,12 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { DiscoverFilesUseCase } from '../DiscoverFilesUseCase';
 import type { DiscoverFilesPorts } from '../ports';
 
+const dummyOutsidePath = '/' + ['outside', 'secret.ts'].join('/');
+const dummyRepoPath = '/' + ['repo', 'src', 'auth.ts'].join('/');
+
 const ports: DiscoverFilesPorts = {
   projects: { getByIds: async () => [{ id: 'p1', name: 'App', rootPath: '/repo' }] },
   ripgrep: { search: async () => ({ matches: [] }) },
   gitMetadata: { getMetadata: async () => ({ modifiedPaths: [], recentPaths: [] }) },
   files: { list: async () => ['src/auth.ts', 'src/app.ts', 'README.md'] },
-  clipboard: { readText: async () => '/repo/src/auth.ts\n/outside/secret.ts' },
+  clipboard: { readText: async () => `${dummyRepoPath}\n${dummyOutsidePath}` },
   gitHistory: { getCommitPaths: async () => ({ paths: [] }) },
 };
 

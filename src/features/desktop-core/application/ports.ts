@@ -95,6 +95,7 @@ export type BuildDesktopContextInput = Readonly<{
   maxFileSizeKB: number;
   packMode?: PackMode;
   tokenLimit?: number;
+  includeDependencies?: boolean;
 }>;
 
 export type ContextManifestEntry = Readonly<{

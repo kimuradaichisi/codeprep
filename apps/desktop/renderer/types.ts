@@ -49,9 +49,11 @@ export type OutputPanelProps = Readonly<{
   format: ContextOutputFormat;
   preview: string;
   outputNotice: WorkspaceNotice;
+  includeDependencies: boolean;
   setFormat(value: ContextOutputFormat): void;
   setPackMode(value: PackMode): void;
   setTokenLimit(value: number): void;
+  setIncludeDependencies(value: boolean): void;
   generateOutput(): Promise<void>;
   copyOutput(): Promise<void>;
 }>;
@@ -67,6 +69,7 @@ export type DesktopWorkspace = Readonly<{
   packMode: PackMode;
   tokenLimit: number;
   preview: string;
+  includeDependencies: boolean;
   tree: readonly CandidateTreeNode[];
   projectNotice: WorkspaceNotice;
   searchNotice: WorkspaceNotice;
@@ -81,6 +84,7 @@ export type DesktopWorkspace = Readonly<{
   setPackMode(value: PackMode): void;
   setTokenLimit(value: number): void;
   setContextLines(value: number): void;
+  setIncludeDependencies(value: boolean): void;
   addProject(rootPath: string): Promise<void>;
   chooseProjectFolder(): Promise<void>;
   removeProject(projectId: string): Promise<void>;

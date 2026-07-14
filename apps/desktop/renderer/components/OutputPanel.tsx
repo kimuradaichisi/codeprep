@@ -29,6 +29,18 @@ const OutputConfig = (props: OutputPanelProps) => (
     </select>
     <label className="field-label" htmlFor="token-limit">Token limit</label>
     <input id="token-limit" type="number" min="1" value={props.tokenLimit} onChange={event => props.setTokenLimit(Number(event.target.value))} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '18px 0 6px' }}>
+      <input
+        id="include-deps"
+        type="checkbox"
+        style={{ width: 'auto', margin: 0 }}
+        checked={props.includeDependencies}
+        onChange={event => props.setIncludeDependencies(event.target.checked)}
+      />
+      <label htmlFor="include-deps" style={{ color: '#9eafc8', fontSize: '12px', cursor: 'pointer' }}>
+        Include dependencies
+      </label>
+    </div>
   </>
 );
 

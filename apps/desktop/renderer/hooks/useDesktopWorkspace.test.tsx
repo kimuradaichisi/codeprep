@@ -64,6 +64,23 @@ describe('useDesktopWorkspace', () => {
     await act(async () => { result.current?.toggleTreeNode(root, root.id); });
     expect(result.current?.selectedKeys).toEqual([]);
   });
+
+  it('updates includeDependencies and passes it to generateOutput', async () => {
+    const { api, result } = await renderWorkspace();
+    
+    expect(result.current?.includeDependencies).toBe(false);
+    
+    await act(async () => { result.current?.setIncludeDependencies(true); });
+    expect(result.current?.includeDependencies).toBe(true);
+
+    await act(async () => { await result.current?.analyze('auth'); });
+
+    await act(async () => { await result.current?.generateOutput(); });
+
+    expect(api.generateOutput).toHaveBeenCalledWith(expect.objectContaining({
+      includeDependencies: true
+    }));
+  });
 });
 
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {

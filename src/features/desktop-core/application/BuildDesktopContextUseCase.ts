@@ -3,6 +3,8 @@ import { evaluateBudget } from '../domain/ContextBudget';
 import type { PackMode } from '../domain/PackMode';
 import type { Project } from '../domain/Project';
 import { DesktopOutputBuilder, type DesktopOutputSelection } from './DesktopOutputBuilder';
+import { SkeletonService } from '../../engine/domain/SkeletonService';
+import { DependencyScanner } from '../../engine/application/DependencyScanner';
 import type {
   AnalysisWarning,
   BuildDesktopContextInput,
@@ -38,8 +40,8 @@ const getOutput = async (
   mode: PackMode
 ): Promise<DesktopOutputSelection> => {
   if (mode === 'directoryTree') return { files: [], warnings: [] };
-  const builder = new DesktopOutputBuilder(fileContent);
-  return builder.build(input.candidates, projects, input.maxFileSizeKB, mode);
+  const builder = new DesktopOutputBuilder(fileContent, new SkeletonService(), new DependencyScanner());
+  return builder.build(input.candidates, projects, input.maxFileSizeKB, mode, input.includeDependencies);
 };
 
 const getPreview = (

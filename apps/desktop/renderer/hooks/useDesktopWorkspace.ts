@@ -20,6 +20,7 @@ type WorkspaceState = Readonly<{
   packMode: PackMode;
   tokenLimit: number;
   preview: string;
+  includeDependencies: boolean;
   projectNotice: string | undefined;
   searchNotice: string | undefined;
   outputNotice: string | undefined;
@@ -38,6 +39,7 @@ const initialState: WorkspaceState = {
   packMode: 'full',
   tokenLimit: 12000,
   preview: '',
+  includeDependencies: false,
   projectNotice: undefined,
   searchNotice: undefined,
   outputNotice: undefined,
@@ -57,12 +59,13 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const setPackMode = (packMode: PackMode): void => update(set, { packMode });
   const setTokenLimit = (tokenLimit: number): void => update(set, { tokenLimit });
   const setContextLines = (contextLines: number): void => update(set, { contextLines });
+  const setIncludeDependencies = (includeDependencies: boolean): void => update(set, { includeDependencies });
   const actions = actionsFor(api, state, set);
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
   const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, setRecipeKind, setQuery, setContextLines, analyze: actions.analyze };
-  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, setFormat, setPackMode, setTokenLimit, ...actions.output };
-  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode };
+  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, ...actions.output };
+  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
@@ -121,7 +124,7 @@ const analyze = async (
 const generate = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {
   const candidates = selectedCandidates(state.candidates, state.selectedKeys);
   if (!candidates.length) return update(set, { outputNotice: 'Select at least one file.' });
-  try { updateOutput(set, await generateOutput(api, { candidates, format: state.format, maxFileSizeKB: 500, packMode: state.packMode, tokenLimit: state.tokenLimit })); }
+  try { updateOutput(set, await generateOutput(api, { candidates, format: state.format, maxFileSizeKB: 500, packMode: state.packMode, tokenLimit: state.tokenLimit, includeDependencies: state.includeDependencies })); }
   catch (error) { update(set, { outputNotice: desktopErrorMessage(error) }); }
 };
 
