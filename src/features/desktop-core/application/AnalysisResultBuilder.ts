@@ -4,11 +4,13 @@ import {
 } from '../domain/CandidateFile';
 import { scoreCandidate } from '../domain/FileScorer';
 import type { Project } from '../domain/Project';
+import type { SourceExcerpt } from '../domain/SourceExcerpt';
 import type {
   AnalysisWarning,
   AnalyzeProjectsResult,
   AnalyzedCandidate,
   GitMetadata,
+  RipgrepMatch,
   RipgrepResult,
 } from './ports';
 
@@ -16,6 +18,7 @@ export type CandidateSignal = Readonly<{
   project: Project;
   relativePath: string;
   reason: CandidateReason;
+  excerpts?: readonly SourceExcerpt[];
 }>;
 
 export type ProjectAnalysis = Readonly<{
@@ -39,7 +42,7 @@ export const mergeProjectAnalysis = (
   git: GitMetadata,
 ): ProjectAnalysis => ({
   signals: [
-    ...ripgrep.matches.map(match => rgSignal(project, match.relativePath)),
+    ...ripgrep.matches.map(match => rgSignal(project, match)),
     ...git.modifiedPaths.map(path => gitSignal(project, path, 'gitModified')),
     ...git.recentPaths.map(path => gitSignal(project, path, 'recentCommit')),
   ],
@@ -64,7 +67,13 @@ const toAnalyzedCandidate = (
 ): AnalyzedCandidate => {
   const [first] = signals;
   const reasons = uniqueReasons(signals.map(signal => signal.reason));
-  const candidate = createCandidateFile(first.project.id, first.relativePath, reasons);
+  const excerpts = signals.flatMap(signal => signal.excerpts ?? []);
+  const candidate = createCandidateFile(
+    first.project.id,
+    first.relativePath,
+    reasons,
+    excerpts.length > 0 ? excerpts : undefined
+  );
   const scored = scoreCandidate({ reasons, manualPin: false });
 
   return { ...candidate, score: scored.score, reasons: scored.reasons };
@@ -79,8 +88,12 @@ const sortCandidates = (
 ): readonly AnalyzedCandidate[] =>
   [...candidates].sort((left, right) => right.score - left.score);
 
-const rgSignal = (project: Project, relativePath: string): CandidateSignal =>
-  gitSignal(project, relativePath, 'rgMatch');
+const rgSignal = (project: Project, match: RipgrepMatch): CandidateSignal => ({
+  project,
+  relativePath: match.relativePath,
+  reason: 'rgMatch',
+  excerpts: match.excerpts,
+});
 
 const gitSignal = (
   project: Project,
@@ -90,4 +103,4 @@ const gitSignal = (
 
 const isWarning = (
   warning: AnalysisWarning | undefined,
-): warning is AnalysisWarning => warning !== undefined;
+): warning is AnalysisWarning => warning !== undefined;

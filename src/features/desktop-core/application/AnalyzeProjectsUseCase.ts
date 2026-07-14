@@ -23,7 +23,7 @@ export class AnalyzeProjectsUseCase {
   async analyze(input: AnalyzeProjectsInput): Promise<AnalyzeProjectsResult> {
     const projects = await this.ports.projects.getByIds(input.projectIds);
     const analyses = await Promise.all(
-      projects.map(project => this.analyzeProject(project, input.query)),
+      projects.map(project => this.analyzeProject(project, input.query, input.contextLines)),
     );
 
     return buildResult(analyses);
@@ -32,19 +32,21 @@ export class AnalyzeProjectsUseCase {
   private async analyzeProject(
     project: Project,
     query: string,
+    contextLines: number,
   ): Promise<ProjectAnalysis> {
     if (!isValidRoot(project)) {
       return { signals: [], warnings: [invalidRootWarning(project)] };
     }
 
     const [ripgrep, git] = await Promise.all([
-      this.ports.ripgrep.search(project, query),
+      this.ports.ripgrep.search(project, query, contextLines),
       this.ports.gitMetadata.getMetadata(project),
     ]);
     const analysis = mergeProjectAnalysis(project, ripgrep, git);
 
     return this.filterReadable(analysis);
   }
+
 
   private async filterReadable(
     analysis: ProjectAnalysis,
