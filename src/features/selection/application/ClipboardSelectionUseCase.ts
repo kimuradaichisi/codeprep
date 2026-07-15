@@ -16,17 +16,16 @@ export class ClipboardSelectionUseCase {
   public async selectFromClipboard(): Promise<void> {
     if (!this.isEnabled()) return;
     const text = await vscode.env.clipboard.readText();
-
-    const paths = this.extractPaths(text);
-
-    if (paths.length === 0) {
+    const clipPaths = this.extractPaths(text);
+    if (clipPaths.length === 0) {
       vscode.window.showWarningMessage(t('noProjectPathsInClipboard'));
       return;
     }
-
-    const allPaths = PathService.deriveAllPaths(paths);
+    const resolved = await this.resolvePaths(clipPaths);
+    if (resolved.length === 0) return;
+    const allPaths = PathService.deriveAllPaths(resolved);
     this.selection.addAll(allPaths);
-    this.notify(t('codeprepSelectedFiles', String(paths.length)));
+    this.notify(t('codeprepSelectedFiles', String(resolved.length)));
   }
 
   private isEnabled(): boolean {
@@ -39,23 +38,65 @@ export class ClipboardSelectionUseCase {
     vscode.window.showInformationMessage(message);
   }
 
+  private async resolvePaths(clipPaths: readonly string[]): Promise<string[]> {
+    const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**');
+    const projectFiles = files.map(uri => vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/'));
+    const resolved: string[] = [];
+    for (const clipPath of clipPaths) {
+      const match = this.matchFile(clipPath, projectFiles);
+      if (match) resolved.push(match);
+    }
+    return resolved;
+  }
+
+  private matchFile(clipPath: string, files: readonly string[]): string | undefined {
+    const normalized = clipPath.toLowerCase().replace(/^\/+/, '');
+    const exact = files.find(f => f.toLowerCase() === normalized);
+    if (exact) return exact;
+
+    const suffix = files.filter(f => f.toLowerCase().endsWith(normalized) || normalized.endsWith(f.toLowerCase()));
+    if (suffix.length === 1) return suffix[0];
+
+    const segments = normalized.split('/');
+    if (segments.length >= 2) return this.bestSegmentMatch(segments, files);
+    return undefined;
+  }
+
+  private bestSegmentMatch(segments: readonly string[], files: readonly string[]): string | undefined {
+    let best: string | undefined;
+    let max = 0;
+    for (const f of files) {
+      const matchCount = this.countMatchingSegments(segments, f.toLowerCase().split('/'));
+      if (matchCount >= 2 && matchCount > max) {
+        max = matchCount;
+        best = f;
+      } else if (matchCount >= 2 && matchCount === max) {
+        best = undefined;
+      }
+    }
+    return best;
+  }
+
+  private countMatchingSegments(clip: readonly string[], rel: readonly string[]): number {
+    let count = 0;
+    const min = Math.min(clip.length, rel.length);
+    for (let i = 1; i <= min; i++) {
+      if (clip[clip.length - i] === rel[rel.length - i]) count++;
+      else break;
+    }
+    return count;
+  }
+
   private extractPaths(text: string): string[] {
     const regex = /(([a-zA-Z]:\\|(?:\.\/|\/))?[a-z0-9_./\\-]+\.[a-z0-9]+)/gi;
     const matches = text.match(regex) || [];
-    const resolved = matches.map(p => this.normalizeToRelative(p));
-
-    return Array.from(new Set(resolved)).filter(p => PathValidator.isValidClipboardPath(p));
-  }
-
-  private normalizeToRelative(p: string): string {
-    const normPath = p.replace(/\\/g, '/');
-    const normRoot = this.root ? this.root.replace(/\\/g, '/') : '';
-
-    if (normRoot && normPath.toLowerCase().includes(normRoot.toLowerCase())) {
-      const index = normPath.toLowerCase().indexOf(normRoot.toLowerCase());
-      return normPath.substring(index + normRoot.length).replace(/^\//, '');
+    const paths = new Set<string>();
+    for (const match of matches) {
+      const cleaned = match.replace(/^['"`]+|['"`]+$/g, '').replace(/:\d+(:\d+)?$/, '').replace(/\\/g, '/').trim();
+      if (cleaned && cleaned.includes('.') && PathValidator.isValidClipboardPath(cleaned)) {
+        paths.add(cleaned);
+      }
     }
-
-    return normPath.replace(/^[a-zA-Z]:\//, '');
+    return Array.from(paths);
   }
 }

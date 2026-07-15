@@ -34,4 +34,17 @@ describe('DiscoverFilesUseCase', () => {
     expect(result.candidates.map(file => file.relativePath)).toEqual(['src/auth.ts']);
     expect(result.warnings.map(item => item.kind)).toContain('outsideProject');
   });
+
+  it('resolves clipboard paths with suffixes and multi-segments', async () => {
+    const customPorts = {
+      ...ports,
+      clipboard: { readText: async () => 'auth.ts\nsrc/app.ts\n"C:\\Project\\README.md:12"\nunknown.ts' }
+    };
+    const result = await new DiscoverFilesUseCase(customPorts).discover({
+      recipe: { kind: 'clipboardPaths' }, projectIds: ['p1'],
+    });
+
+    expect(result.candidates.map(file => file.relativePath)).toEqual(['src/auth.ts', 'src/app.ts', 'README.md']);
+    expect(result.warnings[0].message).toContain('Unresolved: unknown.ts');
+  });
 });

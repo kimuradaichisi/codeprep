@@ -9,7 +9,24 @@ import { Selection } from '../../domain/Selection';
 vi.mock('vscode', () => ({
   env: { clipboard: { readText: vi.fn() } },
   window: { showInformationMessage: vi.fn(), showWarningMessage: vi.fn() },
-  workspace: { getConfiguration: vi.fn().mockImplementation(() => ({ get: (k: string, d: any) => d })) }
+  workspace: {
+    getConfiguration: vi.fn().mockImplementation(() => ({ get: (k: string, d: any) => d })),
+    findFiles: vi.fn().mockResolvedValue([
+      { path: 'C:/workspace/project/src/commands/__tests__/OutputCommands.test.ts' },
+      { path: 'C:/workspace/project/src/features/engine/__tests__/OutputEngine.test.ts' },
+      { path: 'C:/workspace/project/src/commands/OutputCommands.ts' },
+      { path: 'C:/workspace/project/src/components/App.css' },
+      { path: 'C:/workspace/project/src/app.ts' },
+      { path: 'C:/workspace/project/README.md' },
+      { path: 'C:/workspace/project/src/App.vue' },
+      { path: 'C:/workspace/project/src/theme.sass' },
+      { path: 'c:/project/src/index.ts' },
+    ]),
+    asRelativePath: vi.fn().mockImplementation((uri: any) => {
+      const p = uri.path || uri;
+      return p.replace('C:/workspace/project/', '').replace('c:/project/', '');
+    })
+  }
 }));
 
 describe('ClipboardSelectionUseCase', () => {
@@ -122,5 +139,23 @@ describe('ClipboardSelectionUseCase', () => {
     await sut.selectFromClipboard();
 
     expect(selection.getPaths()).toContain('src/index.ts');
+  });
+
+  it('完全一致しない場合でも、実在する一意なファイル名から後方一致で解決できること', async () => {
+    // クリップボードにはファイル名 "theme.sass" しかないが、一意にマッチするため解決される
+    vi.mocked(vscode.env.clipboard.readText).mockResolvedValue('theme.sass');
+
+    await useCase.selectFromClipboard();
+
+    expect(selection.getPaths()).toContain('src/theme.sass');
+  });
+
+  it('複数セグメントを含む後方一致で解決できること', async () => {
+    // クリップボードには "commands/OutputCommands.ts"
+    vi.mocked(vscode.env.clipboard.readText).mockResolvedValue('commands/OutputCommands.ts');
+
+    await useCase.selectFromClipboard();
+
+    expect(selection.getPaths()).toContain('src/commands/OutputCommands.ts');
   });
 });

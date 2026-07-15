@@ -36,14 +36,81 @@ export class DiscoverFilesUseCase {
   }
 
   private async clipboard(projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
-    const paths = (await this.ports.clipboard.readText()).split(/\r?\n/).filter(Boolean);
-    const rawCandidates = paths.flatMap(path => projectPath(path, projects));
-    const candidates = await Promise.all(rawCandidates.map(async c => {
-      const project = projects.find(p => p.id === c.projectId);
-      const size = project ? await this.ports.fileSize.getSize(project, c.relativePath) : undefined;
-      return { ...c, size };
-    }));
-    return { candidates, warnings: outsideWarnings(paths, candidates, projects) };
+    const text = await this.ports.clipboard.readText();
+    const paths = this.extractPaths(text);
+    const candidates: AnalyzedCandidate[] = [];
+    const unmatched: string[] = [];
+    for (const path of paths) {
+      const resolved = await this.resolvePath(path, projects);
+      if (resolved) candidates.push(resolved);
+      else unmatched.push(path);
+    }
+    return { candidates, warnings: unmatched.length > 0 ? [this.outsideWarning(projects[0], unmatched)] : [] };
+  }
+
+  private outsideWarning(project: Project | undefined, unmatched: readonly string[]): AnalysisWarning {
+    return { kind: 'outsideProject', projectId: project?.id ?? 'workspace', message: `Unresolved: ${unmatched.join(', ')}` };
+  }
+
+  private async resolvePath(path: string, projects: readonly Project[]): Promise<AnalyzedCandidate | undefined> {
+    for (const project of projects) {
+      const projectFiles = await this.ports.files.list(project);
+      const resolvedRelPath = this.matchFile(path, projectFiles);
+      if (resolvedRelPath) {
+        const fileInfo = projectFiles.find(f => f.relativePath === resolvedRelPath);
+        return { ...createCandidateFile(project.id, resolvedRelPath, ['clipboardPath'], undefined, fileInfo?.size), score: 0 };
+      }
+    }
+    return undefined;
+  }
+
+  private extractPaths(text: string): readonly string[] {
+    const regex = /(([a-zA-Z]:\\|(?:\.\/|\/))?[a-z0-9_./\\-]+\.[a-z0-9]+)/gi;
+    const matches = text.match(regex) || [];
+    const paths = new Set<string>();
+    for (const match of matches) {
+      const cleaned = match.replace(/^['"`]+|['"`]+$/g, '').replace(/:\d+(:\d+)?$/, '').replace(/\\/g, '/').trim();
+      if (cleaned && cleaned.includes('.')) paths.add(cleaned);
+    }
+    return Array.from(paths);
+  }
+
+  private matchFile(clipPath: string, files: readonly Readonly<{ relativePath: string; size: number }>[]): string | undefined {
+    const normalized = clipPath.toLowerCase().replace(/^\/+/, '');
+    const exact = files.find(f => f.relativePath.toLowerCase() === normalized);
+    if (exact) return exact.relativePath;
+
+    const suffix = files.filter(f => f.relativePath.toLowerCase().endsWith(normalized) || normalized.endsWith(f.relativePath.toLowerCase()));
+    if (suffix.length === 1) return suffix[0].relativePath;
+
+    const segments = normalized.split('/');
+    if (segments.length >= 2) return this.bestSegmentMatch(segments, files);
+    return undefined;
+  }
+
+  private bestSegmentMatch(segments: readonly string[], files: readonly Readonly<{ relativePath: string; size: number }>[]): string | undefined {
+    let best: string | undefined;
+    let max = 0;
+    for (const f of files) {
+      const matchCount = this.countMatchingSegments(segments, f.relativePath.toLowerCase().split('/'));
+      if (matchCount >= 2 && matchCount > max) {
+        max = matchCount;
+        best = f.relativePath;
+      } else if (matchCount >= 2 && matchCount === max) {
+        best = undefined;
+      }
+    }
+    return best;
+  }
+
+  private countMatchingSegments(clip: readonly string[], rel: readonly string[]): number {
+    let count = 0;
+    const min = Math.min(clip.length, rel.length);
+    for (let i = 1; i <= min; i++) {
+      if (clip[clip.length - i] === rel[rel.length - i]) count++;
+      else break;
+    }
+    return count;
   }
 
   private async gitDiff(projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
@@ -75,15 +142,6 @@ const reason = (recipe: Exclude<SearchRecipe, { kind: 'clipboardPaths' | 'gitDif
 
 const candidate = (projectId: string, relativePath: string, candidateReason: CandidateReason): AnalyzedCandidate =>
   ({ ...createCandidateFile(projectId, relativePath, [candidateReason]), score: 0 });
-
-const projectPath = (path: string, projects: readonly Project[]): readonly AnalyzedCandidate[] => {
-  const source = normalize(path);
-  const project = projects.find(item => source.startsWith(`${normalize(item.rootPath)}/`));
-  return project ? [candidate(project.id, source.slice(normalize(project.rootPath).length + 1), 'clipboardPath')] : [];
-};
-
-const outsideWarnings = (paths: readonly string[], candidates: readonly AnalyzedCandidate[], projects: readonly Project[]): readonly AnalysisWarning[] =>
-  paths.length === candidates.length ? [] : [{ kind: 'outsideProject', projectId: projects[0]?.id ?? 'workspace', message: 'Clipboard paths outside registered projects were excluded.' }];
 
 const normalize = (path: string): string => path.trim().replace(/\\/g, '/').replace(/\/$/, '');
 
