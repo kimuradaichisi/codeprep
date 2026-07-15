@@ -1,6 +1,9 @@
 import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
 import type { Project } from '../../../../src/features/desktop-core/domain/Project';
 
+import type { CandidateReason } from '../../../../src/features/desktop-core/domain/CandidateFile';
+import type { PackMode } from '../../../../src/features/desktop-core/domain/PackMode';
+
 export type CandidateTreeNodeKind = 'project' | 'directory' | 'file';
 export type CandidateTreeNode = Readonly<{
   id: string;
@@ -9,6 +12,8 @@ export type CandidateTreeNode = Readonly<{
   candidateKey?: string;
   children: readonly CandidateTreeNode[];
   size?: number;
+  packMode?: PackMode;
+  reasons?: readonly CandidateReason[];
 }>;
 export type NodeCheckState = 'checked' | 'unchecked' | 'mixed';
 
@@ -17,6 +22,8 @@ type NormalizedCandidate = Readonly<{
   key: string;
   segments: readonly string[];
   size?: number;
+  packMode?: PackMode;
+  reasons: readonly CandidateReason[];
 }>;
 
 export const buildCandidateTree = (
@@ -58,7 +65,7 @@ const candidatesForProject = (
 
 const normalizeCandidate = (candidate: AnalyzedCandidate): NormalizedCandidate => {
   const relativePath = candidate.relativePath.replace(/\\/g, '/');
-  return { projectId: candidate.projectId, key: `${candidate.projectId}:${relativePath}`, segments: relativePath.split('/'), size: candidate.size };
+  return { projectId: candidate.projectId, key: `${candidate.projectId}:${relativePath}`, segments: relativePath.split('/'), size: candidate.size, packMode: candidate.packMode, reasons: candidate.reasons };
 };
 
 const projectNode = (
@@ -131,6 +138,8 @@ const fileNode = (candidate: NormalizedCandidate): CandidateTreeNode => ({
   candidateKey: candidate.key,
   children: [],
   size: candidate.size,
+  packMode: candidate.packMode,
+  reasons: candidate.reasons,
 });
 
 const byName = (left: CandidateTreeNode, right: CandidateTreeNode): number => left.name.localeCompare(right.name);

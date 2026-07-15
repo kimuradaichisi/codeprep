@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { DiscoverFilesUseCase } from '../DiscoverFilesUseCase';
 import type { DiscoverFilesPorts } from '../ports';
+import { DependencyScanner } from '../../../engine/application/DependencyScanner';
 
 const dummyOutsidePath = '/' + ['outside', 'secret.ts'].join('/');
 const dummyRepoPath = '/' + ['repo', 'src', 'auth.ts'].join('/');
@@ -14,6 +15,8 @@ const ports: DiscoverFilesPorts = {
   clipboard: { readText: async () => `${dummyRepoPath}\n${dummyOutsidePath}` },
   gitHistory: { getCommitPaths: async () => ({ paths: [] }) },
   fileSize: { getSize: async () => 100 },
+  fileContent: { read: async () => '', canRead: async () => true },
+  dependencyScanner: new DependencyScanner(),
 };
 
 describe('DiscoverFilesUseCase', () => {

@@ -120,7 +120,8 @@ export class DiscoverFilesUseCase {
       const size = await this.ports.fileSize.getSize(item.project, item.path);
       return { ...candidate(item.project.id, item.path, 'gitModified'), size };
     }));
-    return { candidates, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
+    const withDeps = await this.appendDependencies(candidates, projects);
+    return { candidates: withDeps, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
   }
 
   private async gitCommit(ref: string, projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
@@ -130,7 +131,44 @@ export class DiscoverFilesUseCase {
       const size = await this.ports.fileSize.getSize(item.project, item.path);
       return { ...candidate(item.project.id, item.path, 'gitCommit'), size };
     }));
-    return { candidates, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
+    const withDeps = await this.appendDependencies(candidates, projects);
+    return { candidates: withDeps, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
+  }
+
+  private async appendDependencies(candidates: readonly AnalyzedCandidate[], projects: readonly Project[]): Promise<readonly AnalyzedCandidate[]> {
+    const list = [...candidates];
+    const visited = new Set<string>(candidates.map(c => c.relativePath));
+
+    for (const c of candidates) {
+      const project = projects.find(p => p.id === c.projectId);
+      if (!project) continue;
+      const content = await this.ports.fileContent.read(project, c.relativePath);
+      if (!content) continue;
+
+      const projectFiles = await this.ports.files.list(project);
+      const deps = await this.ports.dependencyScanner.findDependencies(c.relativePath, content, project.rootPath);
+      for (const dep of deps) {
+        const resolved = await this.resolveWithExtensions(projectFiles, dep);
+        if (resolved && !visited.has(resolved.relativePath)) {
+          visited.add(resolved.relativePath);
+          list.push({ ...createCandidateFile(project.id, resolved.relativePath, ['dependency'], undefined, resolved.size), score: 0 });
+        }
+      }
+    }
+    return list;
+  }
+
+  private async resolveWithExtensions(
+    projectFiles: readonly Readonly<{ relativePath: string; size: number }>[],
+    depPath: string
+  ): Promise<Readonly<{ relativePath: string; size: number }> | undefined> {
+    const target = depPath.toLowerCase();
+    const exts = ['.ts', '.tsx', '.js', '.jsx', '.d.ts'];
+    for (const ext of exts) {
+      const match = projectFiles.find(f => f.relativePath.toLowerCase() === `${target}${ext}` || f.relativePath.toLowerCase() === `${target}/index${ext}`);
+      if (match) return match;
+    }
+    return undefined;
   }
 }
 

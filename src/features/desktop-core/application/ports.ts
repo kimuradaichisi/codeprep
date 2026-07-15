@@ -1,6 +1,7 @@
 import type { CandidateFile } from '../domain/CandidateFile';
 import type { Project, ProjectId } from '../domain/Project';
 import type { SearchRecipe } from '../domain/SearchRecipe';
+import { DependencyScanner } from '../../engine/application/DependencyScanner';
 import type { PackMode } from '../domain/PackMode';
 import type { ContextBudget } from '../domain/ContextBudget';
 import type { SourceExcerpt } from '../domain/SourceExcerpt';
@@ -145,6 +146,8 @@ export type DiscoverFilesPorts = Readonly<{
   clipboard: ClipboardPathPort;
   gitHistory: GitHistoryPort;
   fileSize: FileSizePort;
+  fileContent: FileContentPort;
+  dependencyScanner: DependencyScanner;
 }>;
 
 export type FileSizePort = Readonly<{

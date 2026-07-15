@@ -1,7 +1,7 @@
 import type { CandidateTreeProps } from '../types';
 import { CandidateTreeNode } from './CandidateTreeNode';
 
-export const CandidateTree = ({ tree, candidates = [], selectedKeys, toggleTreeNode, selectAll, clearAll, viewFile }: CandidateTreeProps) => <section className="candidate-tree">
+export const CandidateTree = ({ tree, candidates = [], selectedKeys, toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode }: CandidateTreeProps) => <section className="candidate-tree">
   <div className="pane-heading">
     <div><p className="eyebrow">REVIEW</p><h2>Candidates</h2></div>
     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -16,23 +16,33 @@ export const CandidateTree = ({ tree, candidates = [], selectedKeys, toggleTreeN
       <span className="tree-header-name">Name</span>
       <span className="tree-header-size">Size</span>
       <span className="tree-header-tokens">Tokens</span>
+      <span className="tree-header-mode">Mode</span>
     </div>
   )}
   <div className="tree-scroll">
     {tree.length ? (
-      <ul className="tree-root">{tree.map(node => <CandidateTreeNode key={node.id} node={node} selectedKeys={selectedKeys} toggleTreeNode={toggleTreeNode} viewFile={viewFile} />)}</ul>
+      <ul className="tree-root">{tree.map(node => <CandidateTreeNode key={node.id} node={node} selectedKeys={selectedKeys} toggleTreeNode={toggleTreeNode} viewFile={viewFile} setFilePackMode={setFilePackMode} />)}</ul>
     ) : candidates.length ? (
       <ul className="tree-root">{candidates.map(candidate => {
         const sizeLabel = candidate.size !== undefined ? (candidate.size < 1024 ? `${candidate.size} B` : `${(candidate.size / 1024).toFixed(1)} KB`) : '-';
         const tokensLabel = candidate.size !== undefined ? `${Math.ceil(candidate.size / 4)}` : '-';
+        const isDep = candidate.reasons.includes('dependency');
         return <li key={candidate.relativePath}>
-          <div className="tree-row">
+          <div className={`tree-row${isDep ? ' suggested-dep' : ''}`}>
             <div className="tree-node-info">
               <input type="checkbox" aria-label={`Include ${candidate.relativePath}`} checked={selectedKeys.includes(`${candidate.projectId}:${candidate.relativePath}`)} onChange={() => undefined} />
               <span className="tree-name" onDoubleClick={() => viewFile(candidate.projectId, candidate.relativePath)} style={{ cursor: 'pointer', userSelect: 'none' }}>{candidate.relativePath}</span>
+              {isDep && <span className="dep-badge">Suggested</span>}
             </div>
             <span className="tree-node-size">{sizeLabel}</span>
             <span className="tree-node-tokens">{tokensLabel}</span>
+            <div className="tree-node-mode">
+              <select value={candidate.packMode ?? ''} onChange={e => setFilePackMode(candidate.projectId, candidate.relativePath, e.target.value ? e.target.value as any : undefined)}>
+                <option value="">Global</option>
+                <option value="full">Full</option>
+                <option value="skeleton">Skeleton</option>
+              </select>
+            </div>
           </div>
         </li>;
       })}</ul>

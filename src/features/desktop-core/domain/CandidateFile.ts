@@ -1,6 +1,8 @@
 import type { ProjectId } from './Project';
 import type { SourceExcerpt } from './SourceExcerpt';
 
+import type { PackMode } from './PackMode';
+
 export type CandidateReason =
   | 'rgMatch'
   | 'gitModified'
@@ -12,6 +14,7 @@ export type CandidateReason =
   | 'extensionMatch'
   | 'directoryMatch'
   | 'gitCommit'
+  | 'dependency'
   | 'excluded';
 
 export type CandidateFile = Readonly<{
@@ -21,6 +24,7 @@ export type CandidateFile = Readonly<{
   excluded: boolean;
   excerpts?: readonly SourceExcerpt[];
   size?: number;
+  packMode?: PackMode;
 }>;
 
 export const createCandidateFile = (

@@ -48,7 +48,7 @@ export class DesktopOutputBuilder {
     projects: readonly Project[],
     includeDependencies?: boolean
   ): Promise<Array<{ candidate: CandidateFile; forcedMode?: PackMode }>> {
-    const resolved = candidates.map(c => ({ candidate: c, forcedMode: undefined as PackMode | undefined }));
+    const resolved = candidates.map(c => ({ candidate: c, forcedMode: c.packMode }));
     if (!includeDependencies) return resolved;
     await this.traverseDependencies(candidates, projects, resolved);
     return resolved;

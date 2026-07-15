@@ -44,6 +44,7 @@ export type CandidateTreeProps = Readonly<{
   selectAll(): void;
   clearAll(): void;
   viewFile(projectId: string, relativePath: string): void;
+  setFilePackMode(projectId: string, relativePath: string, mode: PackMode | undefined): void;
 }>;
 
 export type OutputPanelProps = Readonly<{
@@ -102,5 +103,6 @@ export type DesktopWorkspace = Readonly<{
   toggleTreeNode(root: CandidateTreeNode, nodeId: string): void;
   generateOutput(): Promise<void>;
   copyOutput(): Promise<void>;
+  setFilePackMode(projectId: string, relativePath: string, mode: PackMode | undefined): void;
 }>;
 

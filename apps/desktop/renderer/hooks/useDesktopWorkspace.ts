@@ -67,14 +67,21 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const setAutoOptimize = (autoOptimize: boolean): void => update(set, { autoOptimize });
   const viewFile = (projectId: string, relativePath: string): void => update(set, { activePreviewFile: { projectId, relativePath } });
   const closeFile = (): void => update(set, { activePreviewFile: undefined });
+  const setFilePackMode = (projectId: string, relativePath: string, mode: PackMode | undefined): void => {
+    update(set, {
+      candidates: state.candidates.map(c =>
+        c.projectId === projectId && c.relativePath === relativePath ? { ...c, packMode: mode } : c
+      )
+    });
+  };
   const actions = actionsFor(api, state, set);
   const selectAll = (): void => update(set, { selectedKeys: state.candidates.map(c => `${c.projectId}:${c.relativePath.replace(/\\/g, '/')}`) });
   const clearAll = (): void => update(set, { selectedKeys: [] });
-  const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile };
+  const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
   const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, setRecipeKind, setQuery, setContextLines, analyze: actions.analyze };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, autoOptimize: state.autoOptimize, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setAutoOptimize, ...actions.output };
-  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile };
+  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
