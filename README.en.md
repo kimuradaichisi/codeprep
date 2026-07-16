@@ -13,9 +13,18 @@ Beyond intuitive file selection, it features **Autonomous Patch & Heal** for saf
 - 📊 **Real-time Token Counting**: View estimated token counts in the status bar with over-limit warnings.
 - 📝 **Flexible Output Formats**: Supports `Markdown` (default), `XML`, and `JSON`.
 - 🤖 **Custom Prompts & Auto-Injection**: Manage instructions like "Code Review" or "Refactor". Automatically append patch-formatting instructions to your prompts.
+- 🌐 **DocGraph Relation Suggestion (Desktop Only)**: When selecting documentation files (like Markdown), automatically suggests related documents with a **`Related`** badge (green) based on the DocGraph knowledge graph (`.docgraph/graph.db`).
 - 🌍 **Full Localization (i18n)**: UI fully localized for both English and Japanese.
 
 ## 🚀 Usage
+
+### 🌐 DocGraph Integration (Desktop Only)
+
+Enabling `Include related docs (DocGraph)` in the output config panel triggers automatic search for related documents when checking Markdown files.
+The `docgraph` executable is resolved in the following priority:
+1. Environment variable `CODEPREP_DOCGRAPH_PATH`
+2. App relative folder (`docgraph.exe` / `docgraph` in the same directory as the executable)
+3. System `PATH`
 
 **Prompt Generation Flow:**
 1. Click the **CodePrep** icon in the Activity Bar.

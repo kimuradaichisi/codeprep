@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.6] - 2026-07-16
+- feat: DocGraph によるドキュメント関連度分析と Suggested 提案機能を追加
+- feat: 設定に `Include related docs (DocGraph)` チェックボックスを追加し、手動チェックの連動に対応
+- feat: docgraph 実行バイナリのパス解決（環境変数 `CODEPREP_DOCGRAPH_PATH`、アプリ同席 `docgraph.exe`、システム PATH）に対応
+- fix: `CandidateTree.tsx` のアロー関数の閉じ忘れ括弧による構文エラーを修正
+- chore: TypeScript の型定義（`WorkspaceState`, `CandidateTreeNode`, `FileScorer`）のエラーをすべて解消
+
 ## [0.8.5] - 2026-05-26
 - feat: クリップボード監視の停止（クリップボード監視OFF機能）を追加 — UseCase 側で通知をガードし、完全に通知を停止できる設定に対応
 - fix: ファイル件数表示のズレを修正 — 実処理結果を基に表示件数を算出するように変更

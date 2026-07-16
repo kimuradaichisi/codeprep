@@ -13,6 +13,7 @@
 - 📊 **トークン数リアルタイム計算**: 選択ファイルの推定トークン数をステータスバーに表示し、上限超過を警告。
 - 📝 **選べる出力フォーマット**: `Markdown` (デフォルト), `XML`, `JSON` に対応。
 - 🤖 **カスタムプロンプト & 自動注入**: 「Code Review」「Refactor」などの指示を管理。また、パッチを当てやすい形式で回答させる指示をプロンプトに自動付与できます。
+- 🌐 **DocGraph 関連提案 (Desktop 限定)**: 設計書（Markdown）等を選択した際、プロジェクト内の DocGraph ナレッジグラフ（`.docgraph/graph.db`）を元に、関連ドキュメントを `Related` バッジ（緑色）とともに自動的に Suggested 候補として提案します。
 - 🌍 **多言語対応 (i18n)**: UI は日本語と英語の両方に完全対応。
 
 ## 🚀 Usage (使い方)
@@ -20,6 +21,14 @@
 ### Desktop MVP
 
 Electron desktop MVP requires [ripgrep (`rg`)](https://github.com/BurntSushi/ripgrep) to be installed and available on `PATH`. Run `npm run desktop:dev` to build and start the desktop application.
+
+#### 🌐 DocGraph 連携 (Desktop 限定)
+
+Desktop アプリで右ペインの `Include related docs (DocGraph)` を有効にすると、設計書ファイル（`.md`）を選択した際に関連ドキュメントが自動的に Suggested としてツリーに追加されます。
+`docgraph` 実行ファイルのパスは、以下の順序で自動解決されます：
+1. 環境変数 `CODEPREP_DOCGRAPH_PATH`
+2. アプリの実行バイナリと同ディレクトリの `docgraph.exe`（または `docgraph`）
+3. システム環境変数 `PATH` の `docgraph`
 
 **プロンプト生成フロー:**
 1. アクティビティバーから **CodePrep** アイコンをクリックします。
