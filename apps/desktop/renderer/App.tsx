@@ -22,7 +22,12 @@ export const App = ({ api = defaultApi() }: AppProps) => {
   const workspace = useDesktopWorkspace(api);
   return (
     <>
-      <AppShell projects={<ProjectPanel {...workspace.projectPanel} />} explorer={<><SearchPanel {...workspace.searchPanel} /><CandidateTree {...workspace.treePanel} /></>} output={<OutputPanel {...workspace.outputPanel} />} />
+      <AppShell
+        projects={<ProjectPanel {...workspace.projectPanel} />}
+        search={<SearchPanel {...workspace.searchPanel} />}
+        tree={<CandidateTree {...workspace.treePanel} />}
+        output={<OutputPanel {...workspace.outputPanel} />}
+      />
       {workspace.activePreviewFile && (
         <FileViewerModal
           projectId={workspace.activePreviewFile.projectId}
