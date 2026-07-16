@@ -67,16 +67,11 @@ describe('useDesktopWorkspace', () => {
 
   it('updates includeDependencies and passes it to generateOutput', async () => {
     const { api, result } = await renderWorkspace();
-    
     expect(result.current?.includeDependencies).toBe(false);
-    
     await act(async () => { result.current?.setIncludeDependencies(true); });
     expect(result.current?.includeDependencies).toBe(true);
-
     await act(async () => { await result.current?.analyze('auth'); });
-
     await act(async () => { await result.current?.generateOutput(); });
-
     expect(api.generateOutput).toHaveBeenCalledWith(expect.objectContaining({
       includeDependencies: true
     }));
@@ -85,12 +80,8 @@ describe('useDesktopWorkspace', () => {
   it('performs selectAll and clearAll selection management', async () => {
     const { result } = await renderWorkspace();
     await act(async () => { await result.current?.analyze('auth'); });
-    
-    // すべて選択
     await act(async () => { result.current?.treePanel.selectAll(); });
     expect(result.current?.selectedKeys).toEqual(['p1:src/app.ts']);
-
-    // 選択クリア
     await act(async () => { result.current?.treePanel.clearAll(); });
     expect(result.current?.selectedKeys).toEqual([]);
   });
@@ -98,14 +89,28 @@ describe('useDesktopWorkspace', () => {
   it('manages activePreviewFile state via viewFile and closeFile', async () => {
     const { result } = await renderWorkspace();
     expect(result.current?.activePreviewFile).toBeUndefined();
-
-    // ファイルプレビューを開く
     await act(async () => { result.current?.viewFile('p1', 'src/app.ts'); });
     expect(result.current?.activePreviewFile).toEqual({ projectId: 'p1', relativePath: 'src/app.ts' });
-
-    // ファイルプレビューを閉じる
     await act(async () => { result.current?.closeFile(); });
     expect(result.current?.activePreviewFile).toBeUndefined();
+  });
+
+  it('clears query and restores all candidates on clearSearch', async () => {
+    const listProjectFiles = vi.fn().mockResolvedValue([
+      { relativePath: 'src/app.ts', size: 100 }
+    ]);
+    const analyzeProjects = vi.fn().mockResolvedValue({
+      candidates: [{ projectId: 'p1', relativePath: 'src/app.ts', reasons: ['rgMatch'] as const, excluded: false, score: 35 }],
+      warnings: []
+    });
+    const { result } = await renderWorkspace({ listProjectFiles, analyzeProjects });
+    await act(async () => { result.current?.setQuery('auth'); });
+    await act(async () => { await result.current?.analyze('auth'); });
+    expect(result.current?.query).toBe('auth');
+    expect(result.current?.candidates.length).toBe(1);
+    await act(async () => { await result.current?.searchPanel.clearSearch(); });
+    expect(result.current?.query).toBe('');
+    expect(result.current?.candidates[0].relativePath).toBe('src/app.ts');
   });
 });
 

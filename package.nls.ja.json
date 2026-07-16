@@ -46,6 +46,7 @@
   "config.customPrompts.description": "カスタムプロンプトをキーと値のペア（ラベル：プロンプト内容）で定義します。",
   "config.visibleButtons.description": "ビューのタイトルバーに表示するボタンを選択します（最大6個推奨）。",
   "config.outputFormat.description": "生成されるコンテンツの出力形式を選択します。",
+  "config.tokenLimit.description": "トークン予算の上限値。生成されたトークン数がこの上限を超えると警告が表示されるか、または自動最適化（機能3）が実行されます。",
   "config.maxFileSizeKB.description": "巨大ファイル・ガードの閾値 (KB)。このサイズを超えるファイルは、内容が省略されます。",
   "config.autoRefreshTree.description": "ファイルが作成、変更、削除されたときにファイルツリーを自動的に更新します。",
   "config.openAfterGenerate.description": "生成完了後に、内容を新しいエディタタブで開きます。",

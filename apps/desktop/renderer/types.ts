@@ -34,6 +34,7 @@ export type SearchPanelProps = Readonly<{
   setQuery(value: string): void;
   setContextLines(value: number): void;
   analyze(query?: string): Promise<void>;
+  clearSearch(): Promise<void>;
 }>;
 
 export type CandidateTreeProps = Readonly<{
@@ -100,6 +101,7 @@ export type DesktopWorkspace = Readonly<{
   chooseProjectFolder(): Promise<void>;
   removeProject(projectId: string): Promise<void>;
   analyze(query?: string): Promise<void>;
+  clearSearch(): Promise<void>;
   toggleTreeNode(root: CandidateTreeNode, nodeId: string): void;
   generateOutput(): Promise<void>;
   copyOutput(): Promise<void>;

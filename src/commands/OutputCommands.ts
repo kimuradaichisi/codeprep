@@ -89,7 +89,7 @@ export class OutputCommands {
 
   private optimizeFiles(files: FileContent[]): FileContent[] {
     const c = vscode.workspace.getConfiguration('codeprep');
-    const limit = c.get<number>('tokenLimit', 100000);
+    const limit = c.get<number>('tokenLimit', 50000);
     const active = vscode.window.activeTextEditor
       ? path.relative(this.deps.root || '', vscode.window.activeTextEditor.document.fileName).replace(/\\/g, '/')
       : undefined;

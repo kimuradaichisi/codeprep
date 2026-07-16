@@ -41,6 +41,7 @@
   "command.previewSmartPatch": "Preview Smart Patch",
   "command.prepareGitForPatch": "Prepare Git for Patch",
   "command.finalizePatchCommit": "Prepare Commit After Patch",
+  "config.tokenLimit.description": "The token budget limit. When generated tokens exceed this limit, a warning is shown, or automatic optimization (Feature 3) occurs.",
   "config.maxFileSizeKB.description": "Threshold for giant file guard (KB). Files exceeding this size will have their content omitted.",
   "command.selectPrompt": "Select Prompt...",
   "criticalChangeDetected": "Critical change detected ({0}%). Check clipboard.",

@@ -21,7 +21,8 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .field-label { display: block; color: #9eafc8; font-size: 12px; margin: 18px 0 6px; }
 .field-row, .search-row, .button-row { display: flex; gap: 8px; }
 .field-row button { flex: 0 0 auto; }
-.project-list, .tree-root, .tree-root ul { list-style: none; margin: 14px 0 0; padding: 0; }
+.project-list { list-style: none; margin: 14px 0 0; padding: 0; }
+.tree-root, .tree-root ul { list-style: none; margin: 14px 0 0; padding: 0; min-width: max-content; }
 .project-list li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid #273141; }
 .project-list span, .tree-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .project-list button { padding: 4px 6px; font-size: 11px; }
@@ -29,13 +30,13 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .search-pane { display: flex; flex-direction: column; min-height: 0; }
 .candidate-tree { display: flex; flex: 1; flex-direction: column; min-height: 0; }
 .tree-scroll { flex: 1; min-height: 0; overflow: auto; }
-.tree-row { min-height: 32px; display: grid; grid-template-columns: 1fr 80px 80px 100px; align-items: center; gap: 8px; width: 100%; padding: 0 4px; }
+.tree-row { min-height: 32px; display: grid; grid-template-columns: 1fr 80px 80px 100px; align-items: center; gap: 8px; width: 100%; padding: 0 4px; min-width: 440px; }
 .tree-node-info { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1; }
 .tree-node-size { text-align: right; color: #8998ad; font-size: 11px; font-family: monospace; white-space: nowrap; }
 .tree-node-tokens { text-align: right; color: #76a9ff; font-size: 11px; font-family: monospace; white-space: nowrap; }
 .tree-node-mode { display: flex; align-items: center; justify-content: flex-end; }
 .tree-node-mode select { background: #1c2533; border: 1px solid #354255; color: inherit; padding: 2px 4px; border-radius: 4px; font-size: 11px; width: 90px; }
-.tree-header-row { display: grid; grid-template-columns: 1fr 80px 80px 100px; align-items: center; gap: 8px; width: 100%; padding: 4px 4px; border-bottom: 1px solid #2c3747; font-size: 11px; color: #8998ad; font-weight: bold; margin-bottom: 6px; user-select: none; }
+.tree-header-row { display: grid; grid-template-columns: 1fr 80px 80px 100px; align-items: center; gap: 8px; width: 100%; padding: 4px 4px; border-bottom: 1px solid #2c3747; font-size: 11px; color: #8998ad; font-weight: bold; margin-bottom: 6px; user-select: none; min-width: 440px; }
 .tree-header-name { padding-left: 32px; }
 .tree-header-size { text-align: right; }
 .tree-header-tokens { text-align: right; }

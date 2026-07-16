@@ -362,6 +362,11 @@
           "default": true,
           "description": "Use the built-in engine for faster processing."
         },
+        "codeprep.tokenLimit": {
+          "type": "integer",
+          "default": 50000,
+          "description": "%config.tokenLimit.description%"
+        },
         "codeprep.maxFileSizeKB": {
           "type": "integer",
           "default": 500,

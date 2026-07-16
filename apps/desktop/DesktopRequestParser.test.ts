@@ -37,7 +37,7 @@ describe('DesktopRequestParser', () => {
         format: 'markdown',
         maxFileSizeKB: 500,
         packMode: 'matchedSnippets',
-        tokenLimit: 12000,
+        tokenLimit: 50000,
         includeDependencies: false,
         autoOptimize: false
       };

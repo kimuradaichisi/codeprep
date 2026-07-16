@@ -44,7 +44,7 @@ export class UIController {
 
   private finalizeBatchUpdate(symbol: symbol) {
     if (symbol !== this.currentRequestSymbol) return;
-    const limit = vscode.workspace.getConfiguration('codeprep').get('tokenLimit', 100000);
+    const limit = vscode.workspace.getConfiguration('codeprep').get('tokenLimit', 50000);
     this.deps.tokenUseCase.commitBatch(limit);
   }
 

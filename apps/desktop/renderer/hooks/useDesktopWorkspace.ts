@@ -39,7 +39,7 @@ const initialState: WorkspaceState = {
   selectedKeys: [],
   format: 'markdown',
   packMode: 'full',
-  tokenLimit: 12000,
+  tokenLimit: 50000,
   preview: '',
   includeDependencies: false,
   autoOptimize: false,
@@ -79,14 +79,15 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const clearAll = (): void => update(set, { selectedKeys: [] });
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
-  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, setRecipeKind, setQuery, setContextLines, analyze: actions.analyze };
+  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, setRecipeKind, setQuery, setContextLines, analyze: actions.analyze, clearSearch: actions.clearSearch };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, autoOptimize: state.autoOptimize, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setAutoOptimize, ...actions.output };
-  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
+  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
   project: { addProject: (path: string) => saveProject(api, set, path), chooseProjectFolder: () => chooseFolder(api, set), removeProject: (id: string) => deleteProject(api, set, id) },
   analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.contextLines, state.projects),
+  clearSearch: () => clearSearch(api, set, state.projects),
   toggleTreeNode: (root: CandidateTreeNode, id: string) => update(set, { selectedKeys: toggleNode(root, id, state.selectedKeys) }),
   output: { generateOutput: () => generate(api, set, state), copyOutput: () => copy(api, set, state.preview) },
 });
@@ -155,4 +156,17 @@ const update = (set: SetWorkspace, value: Partial<WorkspaceState>): void => set(
 
 const updateOutput = (set: SetWorkspace, output: DesktopOutput): void =>
   update(set, { preview: output.preview, outputNotice: output.warning });
+
+const clearSearch = async (
+  api: DesktopApi,
+  set: SetWorkspace,
+  projects: DesktopWorkspace['projects']
+): Promise<void> => {
+  try {
+    const candidates = await fileCandidates(api, projects);
+    update(set, { query: '', candidates, searchNotice: undefined });
+  } catch (error) {
+    update(set, { searchNotice: desktopErrorMessage(error) });
+  }
+};
 

@@ -24,13 +24,19 @@ const RecipeSelect = ({ recipeKind, setRecipeKind }: Pick<SearchPanelProps, 'rec
 
 const SearchInputArea = (props: SearchPanelProps) => {
   if (!needsInput(props.recipeKind)) {
-    return <div className="button-row"><button className="primary-button" onClick={() => void props.analyze()}>Analyze</button></div>;
+    return (
+      <div className="button-row">
+        <button className="primary-button" onClick={() => void props.analyze()}>Analyze</button>
+        <button onClick={() => void props.clearSearch()} style={{ marginLeft: '8px' }}>Clear</button>
+      </div>
+    );
   }
   return (
     <div className="search-row">
       <input aria-label="Query" value={props.query} placeholder={placeholder(props.recipeKind)} onChange={event => props.setQuery(event.target.value)} />
       {props.recipeKind === 'text' && <ContextLinesInput value={props.contextLines} onChange={props.setContextLines} />}
       <button className="primary-button" disabled={!props.query.trim()} onClick={() => void props.analyze()}>Analyze</button>
+      <button onClick={() => void props.clearSearch()} style={{ whiteSpace: 'nowrap' }}>Clear</button>
     </div>
   );
 };
