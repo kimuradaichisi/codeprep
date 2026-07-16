@@ -17,6 +17,7 @@ const ports: DiscoverFilesPorts = {
   fileSize: { getSize: async () => 100 },
   fileContent: { read: async () => '', canRead: async () => true },
   dependencyScanner: new DependencyScanner(),
+  docGraph: { findRelated: async () => [] },
 };
 
 describe('DiscoverFilesUseCase', () => {
@@ -49,5 +50,26 @@ describe('DiscoverFilesUseCase', () => {
 
     expect(result.candidates.map(file => file.relativePath)).toEqual(['src/auth.ts', 'src/app.ts', 'README.md']);
     expect(result.warnings[0].message).toContain('Unresolved: unknown.ts');
+  });
+
+  it('finds related documents using DocGraph', async () => {
+    const customPorts: DiscoverFilesPorts = {
+      ...ports,
+      docGraph: {
+        findRelated: async (project, relativePath) => {
+          if (relativePath === 'README.md') {
+            return [{ path: 'src/app.ts', reason: 'docgraph', confidence: 0.85 }];
+          }
+          return [];
+        }
+      }
+    };
+    const result = await new DiscoverFilesUseCase(customPorts).discover({
+      recipe: { kind: 'docGraph', path: 'README.md' }, projectIds: ['p1']
+    });
+
+    expect(result.candidates.map(file => file.relativePath)).toEqual(['src/app.ts']);
+    expect(result.candidates[0].reasons).toEqual(['docgraph']);
+    expect(result.candidates[0].score).toEqual(0.85);
   });
 });

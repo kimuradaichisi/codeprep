@@ -15,6 +15,7 @@ export type CandidateReason =
   | 'directoryMatch'
   | 'gitCommit'
   | 'dependency'
+  | 'docgraph'
   | 'excluded';
 
 export type CandidateFile = Readonly<{

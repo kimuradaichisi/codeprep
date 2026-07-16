@@ -14,6 +14,7 @@ export type CandidateTreeNode = Readonly<{
   size?: number;
   packMode?: PackMode;
   reasons?: readonly CandidateReason[];
+  score?: number;
 }>;
 export type NodeCheckState = 'checked' | 'unchecked' | 'mixed';
 
@@ -24,6 +25,7 @@ type NormalizedCandidate = Readonly<{
   size?: number;
   packMode?: PackMode;
   reasons: readonly CandidateReason[];
+  score?: number;
 }>;
 
 export const buildCandidateTree = (
@@ -65,7 +67,7 @@ const candidatesForProject = (
 
 const normalizeCandidate = (candidate: AnalyzedCandidate): NormalizedCandidate => {
   const relativePath = candidate.relativePath.replace(/\\/g, '/');
-  return { projectId: candidate.projectId, key: `${candidate.projectId}:${relativePath}`, segments: relativePath.split('/'), size: candidate.size, packMode: candidate.packMode, reasons: candidate.reasons };
+  return { projectId: candidate.projectId, key: `${candidate.projectId}:${relativePath}`, segments: relativePath.split('/'), size: candidate.size, packMode: candidate.packMode, reasons: candidate.reasons, score: candidate.score };
 };
 
 const projectNode = (
@@ -140,6 +142,7 @@ const fileNode = (candidate: NormalizedCandidate): CandidateTreeNode => ({
   size: candidate.size,
   packMode: candidate.packMode,
   reasons: candidate.reasons,
+  score: candidate.score,
 });
 
 const byName = (left: CandidateTreeNode, right: CandidateTreeNode): number => left.name.localeCompare(right.name);

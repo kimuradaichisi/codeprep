@@ -13,6 +13,7 @@ import { RipgrepClient } from '../../src/features/desktop-node/RipgrepClient';
 import { DesktopContextFormatter } from '../../src/features/desktop-node/DesktopContextFormatter';
 import { canReadProjectFile, readProjectFile, getProjectFileSize } from '../../src/features/desktop-node/ProjectFileContentReader';
 import { DependencyScanner } from '../../src/features/engine/application/DependencyScanner';
+import { DocGraphClient } from '../../src/features/desktop-node/DocGraphClient';
 
 export const registerDesktopHandlers = (registryPath: string): void => {
   const registry = new ProjectRegistryStore(registryPath);
@@ -115,6 +116,7 @@ const discoverFiles = async (registry: ProjectRegistryStore, value: unknown) => 
     fileSize: { getSize: getProjectFileSize },
     fileContent: { read: readProjectFile, canRead: canReadProjectFile },
     dependencyScanner: new DependencyScanner(),
+    docGraph: new DocGraphClient(),
   });
   return useCase.discover(toDiscoverInput(value));
 };

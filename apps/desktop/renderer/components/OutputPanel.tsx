@@ -91,6 +91,18 @@ const OutputConfig = (props: OutputPanelProps) => (
     </div>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0 6px' }}>
       <input
+        id="include-related-docs"
+        type="checkbox"
+        style={{ width: 'auto', margin: 0 }}
+        checked={props.includeRelatedDocs}
+        onChange={event => props.setIncludeRelatedDocs(event.target.checked)}
+      />
+      <label htmlFor="include-related-docs" style={{ color: '#9eafc8', fontSize: '12px', cursor: 'pointer' }}>
+        Include related docs (DocGraph)
+      </label>
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0 6px' }}>
+      <input
         id="auto-optimize"
         type="checkbox"
         style={{ width: 'auto', margin: 0 }}

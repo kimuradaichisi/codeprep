@@ -26,6 +26,8 @@ export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTr
   const sizeLabel = node.size !== undefined ? formatSize(node.size) : '-';
   const tokensLabel = node.size !== undefined ? `${Math.ceil(node.size / 4)}` : '-';
   const isDep = node.reasons?.includes('dependency');
+  const isDocGraph = node.reasons?.includes('docgraph');
+  const tooltipText = isDocGraph && node.score !== undefined ? `DocGraph 関連度: ${Math.round(node.score * 100)}%` : undefined;
 
   const handleModeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     if (node.candidateKey) {
@@ -37,7 +39,7 @@ export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTr
   const isFav = node.candidateKey ? favorites.includes(node.candidateKey) : false;
 
   return <li className={`tree-node tree-${node.kind}`} style={{ paddingLeft: depth * 14 }}>
-    <div className={`tree-row${isDep ? ' suggested-dep' : ''}`}>
+    <div className={`tree-row${isDep ? ' suggested-dep' : ''}${isDocGraph ? ' suggested-docgraph' : ''}`}>
       <div className="tree-node-info">
         {node.children.length > 0 && <button className="icon-button" aria-label={`${expanded ? 'Collapse' : 'Expand'} ${node.name}`} onClick={() => setExpanded(value => !value)}>{expanded ? '⌄' : '›'}</button>}
         <input ref={checkbox} type="checkbox" aria-label={`Include ${node.candidateKey?.split(':').slice(1).join(':') ?? node.name}`} checked={state === 'checked'} onChange={() => toggleTreeNode(node, node.id)} />
@@ -59,6 +61,7 @@ export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTr
           </button>
         )}
         {isDep && <span className="dep-badge">Suggested</span>}
+        {isDocGraph && <span className="dep-badge docgraph-badge" title={tooltipText}>Related</span>}
       </div>
       <span className="tree-node-size">{sizeLabel}</span>
       <span className="tree-node-tokens">{tokensLabel}</span>

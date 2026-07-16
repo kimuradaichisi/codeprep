@@ -21,6 +21,7 @@ type WorkspaceState = Readonly<{
   tokenLimit: number;
   preview: string;
   includeDependencies: boolean;
+  includeRelatedDocs: boolean;
   autoOptimize: boolean;
   presetKind: ScenarioPresetKind;
   activeTab: OutputTab;
@@ -45,6 +46,7 @@ const initialState: WorkspaceState = {
   tokenLimit: 50000,
   preview: '',
   includeDependencies: false,
+  includeRelatedDocs: false,
   autoOptimize: false,
   presetKind: 'custom',
   activeTab: 'preview',
@@ -126,6 +128,7 @@ const workspace = (
   const setTokenLimit = (tokenLimit: number): void => update(set, { tokenLimit });
   const setContextLines = (contextLines: number): void => update(set, { contextLines });
   const setIncludeDependencies = (includeDependencies: boolean): void => update(set, { includeDependencies });
+  const setIncludeRelatedDocs = (includeRelatedDocs: boolean): void => update(set, { includeRelatedDocs });
   const setAutoOptimize = (autoOptimize: boolean): void => update(set, { autoOptimize });
   const setUseGitignore = (useGitignore: boolean): void => update(set, { useGitignore });
   const viewFile = (projectId: string, relativePath: string): void => update(set, { activePreviewFile: { projectId, relativePath } });
@@ -141,6 +144,7 @@ const workspace = (
         packMode: 'skeleton',
         autoOptimize: true,
         includeDependencies: false,
+        includeRelatedDocs: false,
         recipeKind: 'text',
         useGitignore: true,
       };
@@ -157,6 +161,7 @@ const workspace = (
         packMode: 'full',
         autoOptimize: false,
         includeDependencies: true,
+        includeRelatedDocs: true,
       };
     }
     update(set, patchModeUpdates);
@@ -176,15 +181,22 @@ const workspace = (
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, favorites, favoritesOnly, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly, toggleFavorite };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
   const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, analyze: actions.analyze, clearSearch: actions.clearSearch };
-  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, autoOptimize: state.autoOptimize, activeTab: state.activeTab, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setAutoOptimize, setActiveTab, ...actions.output };
-  return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, toggleProjects, toggleFavorite, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
+  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, includeRelatedDocs: state.includeRelatedDocs, autoOptimize: state.autoOptimize, activeTab: state.activeTab, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setActiveTab, ...actions.output };
+  return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, toggleProjects, toggleFavorite, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
   project: { addProject: (path: string) => saveProject(api, set, path, state.useGitignore), chooseProjectFolder: () => chooseFolder(api, set), removeProject: (id: string) => deleteProject(api, set, id, state.useGitignore) },
   analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.contextLines, state.projects),
   clearSearch: () => clearSearch(api, set, state.projects, state.useGitignore),
-  toggleTreeNode: (root: CandidateTreeNode, id: string) => update(set, { selectedKeys: toggleNode(root, id, state.selectedKeys) }),
+  toggleTreeNode: (root: CandidateTreeNode, id: string) => {
+    const nextKeys = toggleNode(root, id, state.selectedKeys);
+    update(set, { selectedKeys: nextKeys });
+    const addedKeys = nextKeys.filter(k => !state.selectedKeys.includes(k));
+    if (addedKeys.length > 0 && state.includeRelatedDocs) {
+      void handleDocGraphRelations(api, set, addedKeys, state);
+    }
+  },
   output: { generateOutput: () => generate(api, set, state), copyOutput: () => copy(api, set, state.preview) },
 });
 
@@ -264,6 +276,53 @@ const clearSearch = async (
     update(set, { query: '', candidates, searchNotice: undefined });
   } catch (error) {
     update(set, { searchNotice: desktopErrorMessage(error) });
+  }
+};
+
+const handleDocGraphRelations = async (
+  api: DesktopApi,
+  set: SetWorkspace,
+  addedKeys: readonly string[],
+  state: WorkspaceState
+): Promise<void> => {
+  for (const key of addedKeys) {
+    const [projectId, ...pathParts] = key.split(':');
+    const relativePath = pathParts.join(':');
+    if (relativePath.toLowerCase().endsWith('.md')) {
+      await fetchRelatedDocs(api, set, projectId, relativePath);
+    }
+  }
+};
+
+const fetchRelatedDocs = async (
+  api: DesktopApi,
+  set: SetWorkspace,
+  projectId: string,
+  relativePath: string
+): Promise<void> => {
+  try {
+    const result = await api.discoverFiles({
+      projectIds: [projectId],
+      recipe: { kind: 'docGraph', path: relativePath }
+    });
+    set(current => {
+      const existing = new Map(current.candidates.map(c => [`${c.projectId}:${c.relativePath}`, c]));
+      const newKeys: string[] = [];
+      for (const c of result.candidates) {
+        const key = `${c.projectId}:${c.relativePath}`;
+        if (!existing.has(key)) {
+          existing.set(key, c);
+          newKeys.push(key);
+        }
+      }
+      return {
+        ...current,
+        candidates: Array.from(existing.values()),
+        selectedKeys: [...current.selectedKeys, ...newKeys]
+      };
+    });
+  } catch (error) {
+    update(set, { outputNotice: `DocGraph 関連の読み込みに失敗しました: ${desktopErrorMessage(error)}` });
   }
 };
 

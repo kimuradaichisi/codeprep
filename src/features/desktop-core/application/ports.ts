@@ -133,6 +133,16 @@ export type GitHistoryPort = Readonly<{
   getCommitPaths(project: Project, ref: string): Promise<Readonly<{ paths: readonly string[]; warning?: AnalysisWarning }>>;
 }>;
 
+export type DocGraphRelation = Readonly<{
+  path: string;
+  reason: string;
+  confidence: number;
+}>;
+
+export type DocGraphPort = Readonly<{
+  findRelated(project: Project, relativePath: string): Promise<readonly DocGraphRelation[]>;
+}>;
+
 export type DiscoverFilesInput = Readonly<{
   recipe: SearchRecipe;
   projectIds: readonly ProjectId[];
@@ -148,6 +158,7 @@ export type DiscoverFilesPorts = Readonly<{
   fileSize: FileSizePort;
   fileContent: FileContentPort;
   dependencyScanner: DependencyScanner;
+  docGraph: DocGraphPort;
 }>;
 
 export type FileSizePort = Readonly<{

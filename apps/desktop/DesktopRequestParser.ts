@@ -35,7 +35,8 @@ const recipeFields = (value: Record<string, unknown>): boolean =>
   (value.kind === 'text' && typeof value.query === 'string') ||
   (value.kind === 'gitCommit' && typeof value.ref === 'string') ||
   (value.kind === 'directory' && typeof value.path === 'string') ||
-  (value.kind === 'extension' && isStringArray(value.extensions));
+  (value.kind === 'extension' && isStringArray(value.extensions)) ||
+  (value.kind === 'docGraph' && typeof value.path === 'string');
 
 export const toDiscoverInput = (value: unknown): DiscoverFilesInput => {
   if (!isRecord(value) || !isStringArray(value.projectIds) || !isRecipe(value.recipe)) {

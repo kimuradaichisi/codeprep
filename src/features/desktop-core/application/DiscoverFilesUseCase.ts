@@ -7,6 +7,7 @@ import type {
   DiscoverFilesInput,
   DiscoverFilesPorts,
   AnalyzeProjectsResult,
+  DocGraphRelation,
 } from './ports';
 
 export class DiscoverFilesUseCase {
@@ -21,15 +22,16 @@ export class DiscoverFilesUseCase {
     if (recipe.kind === 'clipboardPaths') return this.clipboard(projects);
     if (recipe.kind === 'gitDiff') return this.gitDiff(projects);
     if (recipe.kind === 'gitCommit') return this.gitCommit(recipe.ref, projects);
+    if (recipe.kind === 'docGraph') return this.docGraph(recipe, projects);
     return this.projectFiles(recipe, projects);
   }
 
-  private async projectFiles(recipe: Exclude<SearchRecipe, { kind: 'clipboardPaths' | 'gitDiff' | 'gitCommit' }>, projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
+  private async projectFiles(recipe: Exclude<SearchRecipe, { kind: 'clipboardPaths' | 'gitDiff' | 'gitCommit' | 'docGraph' }>, projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
     const paths = await Promise.all(projects.map(project => this.eligible(project, recipe)));
     return { candidates: sortCandidates(paths.flat()), warnings: [] };
   }
 
-  private async eligible(project: Project, recipe: Exclude<SearchRecipe, { kind: 'clipboardPaths' | 'gitDiff' | 'gitCommit' }>): Promise<readonly AnalyzedCandidate[]> {
+  private async eligible(project: Project, recipe: Exclude<SearchRecipe, { kind: 'clipboardPaths' | 'gitDiff' | 'gitCommit' | 'docGraph' }>): Promise<readonly AnalyzedCandidate[]> {
     const files = await this.ports.files.list(project);
     const matched = files.filter(f => matches(recipe, f.relativePath));
     return matched.map(f => ({ ...createCandidateFile(project.id, f.relativePath, [reason(recipe)], undefined, f.size), score: 0 }));
@@ -169,6 +171,36 @@ export class DiscoverFilesUseCase {
       if (match) return match;
     }
     return undefined;
+  }
+
+  private async docGraph(
+    recipe: Extract<SearchRecipe, { kind: 'docGraph' }>,
+    projects: readonly Project[]
+  ): Promise<AnalyzeProjectsResult> {
+    const candidates: AnalyzedCandidate[] = [];
+    for (const project of projects) {
+      const relations = await this.ports.docGraph.findRelated(project, recipe.path);
+      const projectFiles = await this.ports.files.list(project);
+      this.collectDocGraphCandidates(project, relations, projectFiles, candidates);
+    }
+    return { candidates: sortCandidates(candidates), warnings: [] };
+  }
+
+  private collectDocGraphCandidates(
+    project: Project,
+    relations: readonly DocGraphRelation[],
+    projectFiles: readonly Readonly<{ relativePath: string; size: number }>[],
+    candidates: AnalyzedCandidate[]
+  ): void {
+    for (const rel of relations) {
+      const fileInfo = projectFiles.find(f => f.relativePath === rel.path);
+      if (fileInfo) {
+        candidates.push({
+          ...createCandidateFile(project.id, rel.path, ['docgraph'], undefined, fileInfo.size),
+          score: rel.confidence
+        });
+      }
+    }
   }
 }
 

@@ -37,13 +37,13 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .search-pane { display: flex; flex-direction: column; min-height: 0; }
 .candidate-tree { display: flex; flex: 1; flex-direction: column; min-height: 0; }
 .tree-scroll { flex: 1; min-height: 0; overflow: auto; }
-.tree-row { min-height: 32px; display: grid; grid-template-columns: 1fr 80px 80px 100px; align-items: center; gap: 8px; width: 100%; padding: 0 4px; min-width: 440px; }
+.tree-row { min-height: 32px; display: grid; grid-template-columns: minmax(160px, 1fr) 80px 80px 100px; align-items: center; gap: 8px; width: 100%; padding: 0 4px; min-width: 440px; }
 .tree-node-info { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1; }
 .tree-node-size { text-align: right; color: #8998ad; font-size: 11px; font-family: monospace; white-space: nowrap; }
 .tree-node-tokens { text-align: right; color: #76a9ff; font-size: 11px; font-family: monospace; white-space: nowrap; }
 .tree-node-mode { display: flex; align-items: center; justify-content: flex-end; }
 .tree-node-mode select { background: #1c2533; border: 1px solid #354255; color: inherit; padding: 2px 4px; border-radius: 4px; font-size: 11px; width: 90px; }
-.tree-header-row { display: grid; grid-template-columns: 1fr 80px 80px 100px; align-items: center; gap: 8px; width: 100%; padding: 4px 4px; border-bottom: 1px solid #2c3747; font-size: 11px; color: #8998ad; font-weight: bold; margin-bottom: 6px; user-select: none; min-width: 440px; }
+.tree-header-row { display: grid; grid-template-columns: minmax(160px, 1fr) 80px 80px 100px; align-items: center; gap: 8px; width: 100%; padding: 4px 4px; border-bottom: 1px solid #2c3747; font-size: 11px; color: #8998ad; font-weight: bold; margin-bottom: 6px; user-select: none; min-width: 440px; }
 .tree-header-name { padding-left: 32px; }
 .tree-header-size { text-align: right; }
 .tree-header-tokens { text-align: right; }
@@ -79,3 +79,5 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .fav-btn { color: #4a5c75; transition: color 0.15s ease, transform 0.1s ease; }
 .fav-btn:hover { color: #a4b3c6; transform: scale(1.15); }
 .fav-btn.active { color: #ffb700; }
+.dep-badge.docgraph-badge { background: #1c3d2e; color: #52c41a; border-left: 0; }
+.tree-row.suggested-docgraph { background: #11281e; border-radius: 4px; border-left: 3px solid #52c41a; }

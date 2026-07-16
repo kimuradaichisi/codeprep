@@ -22,6 +22,7 @@ const reasonWeights: Readonly<Record<CandidateReason, number>> = {
   directoryMatch: 15,
   gitCommit: 30,
   dependency: 5,
+  docgraph: 5,
   excluded: -1000,
 };
 

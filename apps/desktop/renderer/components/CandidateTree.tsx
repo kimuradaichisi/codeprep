@@ -36,9 +36,11 @@ export const CandidateTree = ({ tree, candidates = [], selectedKeys, favorites =
         const sizeLabel = candidate.size !== undefined ? (candidate.size < 1024 ? `${candidate.size} B` : `${(candidate.size / 1024).toFixed(1)} KB`) : '-';
         const tokensLabel = candidate.size !== undefined ? `${Math.ceil(candidate.size / 4)}` : '-';
         const isDep = candidate.reasons.includes('dependency');
+        const isDocGraph = candidate.reasons.includes('docgraph');
         const isFav = favorites.includes(`${candidate.projectId}:${candidate.relativePath}`);
+        const tooltipText = isDocGraph ? `DocGraph 関連度: ${Math.round(candidate.score * 100)}%` : undefined;
         return <li key={candidate.relativePath}>
-          <div className={`tree-row${isDep ? ' suggested-dep' : ''}`}>
+          <div className={`tree-row${isDep ? ' suggested-dep' : ''}${isDocGraph ? ' suggested-docgraph' : ''}`}>
             <div className="tree-node-info">
               <input type="checkbox" aria-label={`Include ${candidate.relativePath}`} checked={selectedKeys.includes(`${candidate.projectId}:${candidate.relativePath}`)} onChange={() => undefined} />
               <span className="tree-name" onDoubleClick={() => viewFile(candidate.projectId, candidate.relativePath)} style={{ cursor: 'pointer', userSelect: 'none' }}>{candidate.relativePath}</span>
@@ -51,6 +53,7 @@ export const CandidateTree = ({ tree, candidates = [], selectedKeys, favorites =
                 {isFav ? '★' : '☆'}
               </button>
               {isDep && <span className="dep-badge">Suggested</span>}
+              {isDocGraph && <span className="dep-badge docgraph-badge" title={tooltipText}>Related</span>}
             </div>
             <span className="tree-node-size">{sizeLabel}</span>
             <span className="tree-node-tokens">{tokensLabel}</span>

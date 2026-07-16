@@ -76,12 +76,14 @@ export type OutputPanelProps = Readonly<{
   preview: string;
   outputNotice: WorkspaceNotice;
   includeDependencies: boolean;
+  includeRelatedDocs: boolean;
   autoOptimize: boolean;
   activeTab: OutputTab;
   setFormat(value: ContextOutputFormat): void;
   setPackMode(value: PackMode): void;
   setTokenLimit(value: number): void;
   setIncludeDependencies(value: boolean): void;
+  setIncludeRelatedDocs(value: boolean): void;
   setAutoOptimize(value: boolean): void;
   setActiveTab(value: OutputTab): void;
   generateOutput(): Promise<void>;
@@ -100,6 +102,7 @@ export type DesktopWorkspace = Readonly<{
   tokenLimit: number;
   preview: string;
   includeDependencies: boolean;
+  includeRelatedDocs: boolean;
   autoOptimize: boolean;
   presetKind: ScenarioPresetKind;
   activeTab: OutputTab;
@@ -123,6 +126,7 @@ export type DesktopWorkspace = Readonly<{
   setTokenLimit(value: number): void;
   setContextLines(value: number): void;
   setIncludeDependencies(value: boolean): void;
+  setIncludeRelatedDocs(value: boolean): void;
   setAutoOptimize(value: boolean): void;
   setPresetKind(value: ScenarioPresetKind): void;
   setActiveTab(value: OutputTab): void;

@@ -4,7 +4,8 @@ export type SearchRecipeKind =
   | 'gitCommit'
   | 'clipboardPaths'
   | 'extension'
-  | 'directory';
+  | 'directory'
+  | 'docGraph';
 
 export type SearchRecipe =
   | Readonly<{ kind: 'text'; query: string }>
@@ -12,13 +13,15 @@ export type SearchRecipe =
   | Readonly<{ kind: 'clipboardPaths' }>
   | Readonly<{ kind: 'gitCommit'; ref: string }>
   | Readonly<{ kind: 'extension'; extensions: readonly string[] }>
-  | Readonly<{ kind: 'directory'; path: string }>;
+  | Readonly<{ kind: 'directory'; path: string }>
+  | Readonly<{ kind: 'docGraph'; path: string }>;
 
 export const createSearchRecipe = (kind: SearchRecipeKind, input: string): SearchRecipe => {
   if (kind === 'gitDiff' || kind === 'clipboardPaths') return { kind };
   if (kind === 'extension') return { kind, extensions: extensions(input) };
   if (kind === 'text') return { kind, query: requiredInput(input, 'Query') };
   if (kind === 'gitCommit') return { kind, ref: requiredInput(input, 'Commit ref') };
+  if (kind === 'docGraph') return { kind, path: requiredInput(input, 'File path') };
   return { kind, path: requiredInput(input, 'Directory') };
 };
 
