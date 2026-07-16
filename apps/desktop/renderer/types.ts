@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { DesktopApi } from '../DesktopApi';
 import type { AnalyzedCandidate, ContextOutputFormat } from '../../../src/features/desktop-core/application/ports';
 import type { Project } from '../../../src/features/desktop-core/domain/Project';
@@ -13,6 +14,15 @@ declare global {
 
 export type AppProps = Readonly<{
   api?: DesktopApi;
+}>;
+
+export type AppShellProps = Readonly<{
+  projects: ReactNode;
+  search: ReactNode;
+  tree: ReactNode;
+  output: ReactNode;
+  isProjectsOpen: boolean;
+  toggleProjects(): void;
 }>;
 
 export type WorkspaceNotice = string | undefined;
@@ -87,6 +97,7 @@ export type DesktopWorkspace = Readonly<{
   autoOptimize: boolean;
   presetKind: ScenarioPresetKind;
   activeTab: OutputTab;
+  isProjectsOpen: boolean;
   tree: readonly CandidateTreeNode[];
   projectNotice: WorkspaceNotice;
   searchNotice: WorkspaceNotice;
@@ -106,6 +117,7 @@ export type DesktopWorkspace = Readonly<{
   setAutoOptimize(value: boolean): void;
   setPresetKind(value: ScenarioPresetKind): void;
   setActiveTab(value: OutputTab): void;
+  toggleProjects(): void;
   viewFile(projectId: string, relativePath: string): void;
   closeFile(): void;
   addProject(rootPath: string): Promise<void>;

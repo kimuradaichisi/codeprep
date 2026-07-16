@@ -129,8 +129,14 @@ describe('useDesktopWorkspace', () => {
     expect(result.current?.packMode).toBe('full');
     expect(result.current?.recipeKind).toBe('gitDiff');
   });
-});
 
+  it('toggles projects drawer visibility state', async () => {
+    const { result } = await renderWorkspace();
+    expect(result.current?.isProjectsOpen).toBe(false);
+    await act(async () => { result.current?.toggleProjects(); });
+    expect(result.current?.isProjectsOpen).toBe(true);
+  });
+});
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
   const result: { current?: DesktopWorkspace } = {};
   const api = createApi(overrides);
@@ -139,11 +145,9 @@ const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
   await act(async () => { root.render(<Probe />); await flush(); });
   return { api, result };
 };
-
 const createApi = (overrides: Partial<DesktopApi>): DesktopApi => ({
   addProject: vi.fn(async () => projects), analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
   chooseProjectFolder: vi.fn(async () => undefined), copyOutput: vi.fn(async () => undefined), discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
   generateOutput: vi.fn(async () => ({ preview: 'context' })), listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []), readFileContent: vi.fn(async () => 'file content'), ...overrides,
 });
-
 const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));

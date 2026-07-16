@@ -55,12 +55,31 @@ const initialState: WorkspaceState = {
 
 export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
   const [state, setState] = useState<WorkspaceState>(initialState);
+  const [isProjectsOpen, setIsProjectsOpen] = useState(true);
+  const [hasCheckedProjects, setHasCheckedProjects] = useState(false);
   const tree = useMemo(() => buildCandidateTree(state.candidates, state.projects), [state.candidates, state.projects]);
+  
   useEffect(() => { void refreshProjects(api, setState); }, [api]);
-  return workspace(api, state, tree, setState);
+  useEffect(() => {
+    if (state.projects.length > 0 && !hasCheckedProjects) {
+      setIsProjectsOpen(false);
+      setHasCheckedProjects(true);
+    }
+  }, [state.projects, hasCheckedProjects]);
+
+  const toggleProjects = (): void => setIsProjectsOpen(prev => !prev);
+
+  return workspace(api, state, tree, setState, isProjectsOpen, toggleProjects);
 };
 
-const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly CandidateTreeNode[], set: SetWorkspace): DesktopWorkspace => {
+const workspace = (
+  api: DesktopApi,
+  state: WorkspaceState,
+  tree: readonly CandidateTreeNode[],
+  set: SetWorkspace,
+  isProjectsOpen: boolean,
+  toggleProjects: () => void
+): DesktopWorkspace => {
   const setQuery = (query: string): void => update(set, { query });
   const setRecipeKind = (recipeKind: SearchRecipeKind): void => update(set, { recipeKind, query: '' });
   const setFormat = (format: ContextOutputFormat): void => update(set, { format });
@@ -117,7 +136,7 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
   const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, setRecipeKind, setQuery, setContextLines, setPresetKind, analyze: actions.analyze, clearSearch: actions.clearSearch };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, autoOptimize: state.autoOptimize, activeTab: state.activeTab, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setAutoOptimize, setActiveTab, ...actions.output };
-  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, setPresetKind, setActiveTab, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
+  return { ...state, tree, isProjectsOpen, toggleProjects, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, setPresetKind, setActiveTab, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({

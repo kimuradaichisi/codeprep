@@ -27,6 +27,8 @@ export const App = ({ api = defaultApi() }: AppProps) => {
         search={<SearchPanel {...workspace.searchPanel} />}
         tree={<CandidateTree {...workspace.treePanel} />}
         output={<OutputPanel {...workspace.outputPanel} />}
+        isProjectsOpen={workspace.isProjectsOpen}
+        toggleProjects={workspace.toggleProjects}
       />
       {workspace.activePreviewFile && (
         <FileViewerModal

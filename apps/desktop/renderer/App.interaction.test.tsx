@@ -52,7 +52,7 @@ const render = async (root: ReturnType<typeof createRoot>, element: ReactElement
 
 const addProject = async (container: Element): Promise<void> => {
   setInput(container, 'Project path', 'C:/new');
-  await click(container, 'Add project');
+  await click(container, 'Add');
 };
 
 const removeProject = async (container: Element): Promise<void> =>

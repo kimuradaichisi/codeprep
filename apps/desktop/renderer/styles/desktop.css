@@ -1,11 +1,11 @@
 :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #e8edf5; background: #10141b; }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 960px; background: #10141b; }
-button, input, select { font: inherit; }
-button { cursor: pointer; color: inherit; background: #202938; border: 1px solid #354255; border-radius: 6px; padding: 7px 10px; }
+button, input, select { font-family: inherit; font-size: 11px; }
+button { cursor: pointer; color: inherit; background: #202938; border: 1px solid #354255; border-radius: 6px; padding: 5px 8px; }
 button:hover:not(:disabled) { border-color: #76a9ff; background: #26354b; }
 button:disabled { opacity: .45; cursor: not-allowed; }
-input, select { width: 100%; color: inherit; background: #151c27; border: 1px solid #354255; border-radius: 6px; padding: 8px 10px; }
+input, select { width: 100%; color: inherit; background: #151c27; border: 1px solid #354255; border-radius: 6px; padding: 5px 8px; }
 input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid #76a9ff; outline-offset: 2px; }
 .desktop-workspace { min-height: 100vh; padding: 28px; }
 .workspace-header { margin-bottom: 20px; }
@@ -63,9 +63,17 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tab-buttons button { transition: all 0.2s ease-in-out; font-weight: 500; cursor: pointer; }
 .tab-buttons button:hover { opacity: 0.9; }
 .help-scroll code { background: #1c2533; border: 1px solid #354255; border-radius: 4px; padding: 2px 4px; font-family: monospace; color: #ffad9f; font-size: 11px; }
+.vertical-toolbar { width: 42px; background: #171e29; border: 1px solid #2c3747; border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding: 8px 0; gap: 8px; height: 100%; flex-shrink: 0; }
+.toolbar-btn { background: transparent; border: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: #8ea2bd; cursor: pointer; transition: all 0.15s ease; }
+.toolbar-btn:hover { color: #e8edf5; background: #202938; }
+.toolbar-btn.active { color: #76a9ff; background: #1f2d44; border: 1px solid #2d4469; }
+.projects-drawer { background: #171e29; border: 1px solid #2c3747; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0; overflow: hidden; }
+.projects-drawer.open { width: 260px; opacity: 1; }
+.projects-drawer.closed { width: 0px; padding: 14px 0; border: 0; opacity: 0; }
 @media (max-width: 850px) {
   body { min-width: 0; }
   .desktop-workspace { padding: 16px; }
-  .workspace-grid { grid-template-columns: 1fr; height: auto; max-height: none; }
-  .left-pane, .output-pane { grid-column: 1; height: auto; max-height: none; }
+  .workspace-grid { display: flex; flex-direction: column; height: auto; max-height: none; }
+  .left-pane, .output-pane, .projects-drawer, .vertical-toolbar { width: 100% !important; height: auto; max-height: none; opacity: 1 !important; border: 1px solid #2c3747; }
+  .vertical-toolbar { display: none; }
 }
