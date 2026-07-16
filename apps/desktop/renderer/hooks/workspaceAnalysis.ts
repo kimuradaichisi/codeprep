@@ -20,9 +20,10 @@ export const selectedCandidates = (
 export const fileCandidates = async (
   api: DesktopApi,
   projects: readonly Project[],
+  useGitignore?: boolean,
 ): Promise<readonly AnalyzedCandidate[]> => {
   const entries = await Promise.all(projects.map(async project => {
-    const files = await api.listProjectFiles(project.id);
+    const files = await api.listProjectFiles(project.id, { useGitignore });
     return files.map(f => ({
       projectId: project.id,
       relativePath: f.relativePath,

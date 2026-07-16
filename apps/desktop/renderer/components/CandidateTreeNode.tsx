@@ -3,8 +3,8 @@ import { nodeCheckState } from '../model/candidateTree';
 import type { CandidateTreeNode as TreeNode } from '../model/candidateTree';
 import type { CandidateTreeProps } from '../types';
 
-export const CandidateTreeNode = ({ node, selectedKeys, toggleTreeNode, viewFile, setFilePackMode, depth = 0 }: Readonly<{
-  node: TreeNode; selectedKeys: readonly string[]; toggleTreeNode: CandidateTreeProps['toggleTreeNode']; viewFile: CandidateTreeProps['viewFile']; setFilePackMode: CandidateTreeProps['setFilePackMode']; depth?: number;
+export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTreeNode, viewFile, setFilePackMode, toggleFavorite, depth = 0 }: Readonly<{
+  node: TreeNode; selectedKeys: readonly string[]; favorites?: readonly string[]; toggleTreeNode: CandidateTreeProps['toggleTreeNode']; viewFile: CandidateTreeProps['viewFile']; setFilePackMode: CandidateTreeProps['setFilePackMode']; toggleFavorite: CandidateTreeProps['toggleFavorite']; depth?: number;
 }>) => {
   const [expanded, setExpanded] = useState(depth < 1);
   const checkbox = useRef<HTMLInputElement>(null);
@@ -34,6 +34,8 @@ export const CandidateTreeNode = ({ node, selectedKeys, toggleTreeNode, viewFile
     }
   };
 
+  const isFav = node.candidateKey ? favorites.includes(node.candidateKey) : false;
+
   return <li className={`tree-node tree-${node.kind}`} style={{ paddingLeft: depth * 14 }}>
     <div className={`tree-row${isDep ? ' suggested-dep' : ''}`}>
       <div className="tree-node-info">
@@ -41,6 +43,21 @@ export const CandidateTreeNode = ({ node, selectedKeys, toggleTreeNode, viewFile
         <input ref={checkbox} type="checkbox" aria-label={`Include ${node.candidateKey?.split(':').slice(1).join(':') ?? node.name}`} checked={state === 'checked'} onChange={() => toggleTreeNode(node, node.id)} />
         <span className="tree-icon">{node.kind === 'file' ? '·' : '▾'}</span>
         <span className="tree-name" onDoubleClick={handleDoubleClick} style={{ cursor: node.kind === 'file' ? 'pointer' : 'default', userSelect: 'none' }}>{node.name}</span>
+        {node.kind === 'file' && node.candidateKey && (
+          <button
+            className={`fav-btn ${isFav ? 'active' : ''}`}
+            onClick={() => {
+              if (node.candidateKey) {
+                const [pId, ...rest] = node.candidateKey.split(':');
+                toggleFavorite(pId, rest.join(':'));
+              }
+            }}
+            title="Favorite"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontSize: '11px', lineHeight: 1 }}
+          >
+            {isFav ? '★' : '☆'}
+          </button>
+        )}
         {isDep && <span className="dep-badge">Suggested</span>}
       </div>
       <span className="tree-node-size">{sizeLabel}</span>
@@ -55,6 +72,6 @@ export const CandidateTreeNode = ({ node, selectedKeys, toggleTreeNode, viewFile
         )}
       </div>
     </div>
-    {expanded && node.children.length > 0 && <ul>{node.children.map(child => <CandidateTreeNode key={child.id} node={child} selectedKeys={selectedKeys} toggleTreeNode={toggleTreeNode} viewFile={viewFile} setFilePackMode={setFilePackMode} depth={depth + 1} />)}</ul>}
+    {expanded && node.children.length > 0 && <ul>{node.children.map(child => <CandidateTreeNode key={child.id} node={child} selectedKeys={selectedKeys} favorites={favorites} toggleTreeNode={toggleTreeNode} viewFile={viewFile} setFilePackMode={setFilePackMode} toggleFavorite={toggleFavorite} depth={depth + 1} />)}</ul>}
   </li>;
 };

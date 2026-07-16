@@ -44,10 +44,12 @@ export type SearchPanelProps = Readonly<{
   contextLines: number;
   searchNotice: WorkspaceNotice;
   presetKind: ScenarioPresetKind;
+  useGitignore: boolean;
   setRecipeKind(value: SearchRecipeKind): void;
   setQuery(value: string): void;
   setContextLines(value: number): void;
   setPresetKind(value: ScenarioPresetKind): void;
+  setUseGitignore(value: boolean): void;
   analyze(query?: string): Promise<void>;
   clearSearch(): Promise<void>;
 }>;
@@ -56,11 +58,15 @@ export type CandidateTreeProps = Readonly<{
   tree: readonly CandidateTreeNode[];
   candidates?: readonly AnalyzedCandidate[];
   selectedKeys: readonly string[];
+  favorites: readonly string[];
+  favoritesOnly: boolean;
   toggleTreeNode(root: CandidateTreeNode, nodeId: string): void;
   selectAll(): void;
   clearAll(): void;
   viewFile(projectId: string, relativePath: string): void;
   setFilePackMode(projectId: string, relativePath: string, mode: PackMode | undefined): void;
+  setFavoritesOnly(value: boolean): void;
+  toggleFavorite(projectId: string, relativePath: string): void;
 }>;
 
 export type OutputPanelProps = Readonly<{
@@ -98,6 +104,9 @@ export type DesktopWorkspace = Readonly<{
   presetKind: ScenarioPresetKind;
   activeTab: OutputTab;
   isProjectsOpen: boolean;
+  useGitignore: boolean;
+  favorites: readonly string[];
+  favoritesOnly: boolean;
   tree: readonly CandidateTreeNode[];
   projectNotice: WorkspaceNotice;
   searchNotice: WorkspaceNotice;
@@ -117,7 +126,10 @@ export type DesktopWorkspace = Readonly<{
   setAutoOptimize(value: boolean): void;
   setPresetKind(value: ScenarioPresetKind): void;
   setActiveTab(value: OutputTab): void;
+  setUseGitignore(value: boolean): void;
+  setFavoritesOnly(value: boolean): void;
   toggleProjects(): void;
+  toggleFavorite(projectId: string, relativePath: string): void;
   viewFile(projectId: string, relativePath: string): void;
   closeFile(): void;
   addProject(rootPath: string): Promise<void>;

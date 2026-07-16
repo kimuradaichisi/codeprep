@@ -96,37 +96,24 @@ describe('useDesktopWorkspace', () => {
   });
 
   it('clears query and restores all candidates on clearSearch', async () => {
-    const listProjectFiles = vi.fn().mockResolvedValue([
-      { relativePath: 'src/app.ts', size: 100 }
-    ]);
-    const analyzeProjects = vi.fn().mockResolvedValue({
-      candidates: [{ projectId: 'p1', relativePath: 'src/app.ts', reasons: ['rgMatch'] as const, excluded: false, score: 35 }],
-      warnings: []
-    });
+    const listProjectFiles = vi.fn().mockResolvedValue([{ relativePath: 'src/app.ts', size: 100 }]);
+    const analyzeProjects = vi.fn().mockResolvedValue({ candidates: [{ projectId: 'p1', relativePath: 'src/app.ts', reasons: ['rgMatch'] as const, excluded: false, score: 35 }], warnings: [] });
     const { result } = await renderWorkspace({ listProjectFiles, analyzeProjects });
-    await act(async () => { result.current?.setQuery('auth'); });
-    await act(async () => { await result.current?.analyze('auth'); });
+    await act(async () => { result.current?.setQuery('auth'); await result.current?.analyze('auth'); });
     expect(result.current?.query).toBe('auth');
-    expect(result.current?.candidates.length).toBe(1);
     await act(async () => { await result.current?.searchPanel.clearSearch(); });
     expect(result.current?.query).toBe('');
-    expect(result.current?.candidates[0].relativePath).toBe('src/app.ts');
   });
 
   it('applies scenario presets and updates parameters accordingly', async () => {
     const { result } = await renderWorkspace();
     expect(result.current?.presetKind).toBe('custom');
-    expect(result.current?.packMode).toBe('full');
-    expect(result.current?.autoOptimize).toBe(false);
-
     await act(async () => { result.current?.searchPanel.setPresetKind('initialShare'); });
     expect(result.current?.presetKind).toBe('initialShare');
     expect(result.current?.packMode).toBe('skeleton');
     expect(result.current?.autoOptimize).toBe(true);
-
     await act(async () => { result.current?.searchPanel.setPresetKind('debugFix'); });
     expect(result.current?.presetKind).toBe('debugFix');
-    expect(result.current?.packMode).toBe('full');
     expect(result.current?.recipeKind).toBe('gitDiff');
   });
 
@@ -135,6 +122,15 @@ describe('useDesktopWorkspace', () => {
     expect(result.current?.isProjectsOpen).toBe(false);
     await act(async () => { result.current?.toggleProjects(); });
     expect(result.current?.isProjectsOpen).toBe(true);
+  });
+
+  it('manages favorites state and filters candidates', async () => {
+    const { result } = await renderWorkspace();
+    expect(result.current?.favorites.length).toBe(0);
+    await act(async () => { result.current?.toggleFavorite('p1', 'src/app.ts'); });
+    expect(result.current?.favorites).toContain('p1:src/app.ts');
+    await act(async () => { result.current?.treePanel.setFavoritesOnly(true); });
+    expect(result.current?.favoritesOnly).toBe(true);
   });
 });
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {

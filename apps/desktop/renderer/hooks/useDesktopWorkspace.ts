@@ -24,6 +24,7 @@ type WorkspaceState = Readonly<{
   autoOptimize: boolean;
   presetKind: ScenarioPresetKind;
   activeTab: OutputTab;
+  useGitignore: boolean;
   projectNotice: string | undefined;
   searchNotice: string | undefined;
   outputNotice: string | undefined;
@@ -47,6 +48,7 @@ const initialState: WorkspaceState = {
   autoOptimize: false,
   presetKind: 'custom',
   activeTab: 'preview',
+  useGitignore: true,
   projectNotice: undefined,
   searchNotice: undefined,
   outputNotice: undefined,
@@ -57,9 +59,23 @@ export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
   const [state, setState] = useState<WorkspaceState>(initialState);
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [hasCheckedProjects, setHasCheckedProjects] = useState(false);
-  const tree = useMemo(() => buildCandidateTree(state.candidates, state.projects), [state.candidates, state.projects]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState<readonly string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('codeprep:favorites') || '[]') as string[];
+    } catch {
+      return [];
+    }
+  });
+
+  const filteredCandidates = useMemo(() => {
+    if (!favoritesOnly) return state.candidates;
+    return state.candidates.filter(c => favorites.includes(`${c.projectId}:${c.relativePath}`));
+  }, [state.candidates, favorites, favoritesOnly]);
+
+  const tree = useMemo(() => buildCandidateTree(filteredCandidates, state.projects), [filteredCandidates, state.projects]);
   
-  useEffect(() => { void refreshProjects(api, setState); }, [api]);
+  useEffect(() => { void refreshProjects(api, setState, state.useGitignore); }, [api, state.useGitignore]);
   useEffect(() => {
     if (state.projects.length > 0 && !hasCheckedProjects) {
       setIsProjectsOpen(false);
@@ -68,8 +84,27 @@ export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
   }, [state.projects, hasCheckedProjects]);
 
   const toggleProjects = (): void => setIsProjectsOpen(prev => !prev);
+  const toggleFavorite = (projectId: string, relativePath: string): void => {
+    const key = `${projectId}:${relativePath}`;
+    setFavorites(prev => {
+      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
+      localStorage.setItem('codeprep:favorites', JSON.stringify(next));
+      return next;
+    });
+  };
 
-  return workspace(api, state, tree, setState, isProjectsOpen, toggleProjects);
+  return workspace(
+    api,
+    state,
+    tree,
+    setState,
+    isProjectsOpen,
+    toggleProjects,
+    favorites,
+    favoritesOnly,
+    setFavoritesOnly,
+    toggleFavorite
+  );
 };
 
 const workspace = (
@@ -78,7 +113,11 @@ const workspace = (
   tree: readonly CandidateTreeNode[],
   set: SetWorkspace,
   isProjectsOpen: boolean,
-  toggleProjects: () => void
+  toggleProjects: () => void,
+  favorites: readonly string[],
+  favoritesOnly: boolean,
+  setFavoritesOnly: (v: boolean) => void,
+  toggleFavorite: (projectId: string, relativePath: string) => void
 ): DesktopWorkspace => {
   const setQuery = (query: string): void => update(set, { query });
   const setRecipeKind = (recipeKind: SearchRecipeKind): void => update(set, { recipeKind, query: '' });
@@ -88,6 +127,7 @@ const workspace = (
   const setContextLines = (contextLines: number): void => update(set, { contextLines });
   const setIncludeDependencies = (includeDependencies: boolean): void => update(set, { includeDependencies });
   const setAutoOptimize = (autoOptimize: boolean): void => update(set, { autoOptimize });
+  const setUseGitignore = (useGitignore: boolean): void => update(set, { useGitignore });
   const viewFile = (projectId: string, relativePath: string): void => update(set, { activePreviewFile: { projectId, relativePath } });
   const closeFile = (): void => update(set, { activePreviewFile: undefined });
   
@@ -102,6 +142,7 @@ const workspace = (
         autoOptimize: true,
         includeDependencies: false,
         recipeKind: 'text',
+        useGitignore: true,
       };
     } else if (preset === 'debugFix') {
       patchModeUpdates = {
@@ -132,51 +173,51 @@ const workspace = (
   const selectAll = (): void => update(set, { selectedKeys: state.candidates.map(c => `${c.projectId}:${c.relativePath.replace(/\\/g, '/')}`) });
   const clearAll = (): void => update(set, { selectedKeys: [] });
   
-  const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode };
+  const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, favorites, favoritesOnly, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly, toggleFavorite };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
-  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, setRecipeKind, setQuery, setContextLines, setPresetKind, analyze: actions.analyze, clearSearch: actions.clearSearch };
+  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, analyze: actions.analyze, clearSearch: actions.clearSearch };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, autoOptimize: state.autoOptimize, activeTab: state.activeTab, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setAutoOptimize, setActiveTab, ...actions.output };
-  return { ...state, tree, isProjectsOpen, toggleProjects, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, setPresetKind, setActiveTab, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
+  return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, toggleProjects, toggleFavorite, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
-  project: { addProject: (path: string) => saveProject(api, set, path), chooseProjectFolder: () => chooseFolder(api, set), removeProject: (id: string) => deleteProject(api, set, id) },
+  project: { addProject: (path: string) => saveProject(api, set, path, state.useGitignore), chooseProjectFolder: () => chooseFolder(api, set), removeProject: (id: string) => deleteProject(api, set, id, state.useGitignore) },
   analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.contextLines, state.projects),
-  clearSearch: () => clearSearch(api, set, state.projects),
+  clearSearch: () => clearSearch(api, set, state.projects, state.useGitignore),
   toggleTreeNode: (root: CandidateTreeNode, id: string) => update(set, { selectedKeys: toggleNode(root, id, state.selectedKeys) }),
   output: { generateOutput: () => generate(api, set, state), copyOutput: () => copy(api, set, state.preview) },
 });
 
-const refreshProjects = async (api: DesktopApi, set: SetWorkspace): Promise<void> => {
+const refreshProjects = async (api: DesktopApi, set: SetWorkspace, useGitignore?: boolean): Promise<void> => {
   try {
     const projects = await loadProjects(api);
-    const candidates = await fileCandidates(api, projects);
+    const candidates = await fileCandidates(api, projects, useGitignore);
     set(current => ({ ...current, projects, candidates: current.candidates.length ? current.candidates : candidates, projectNotice: undefined }));
   }
   catch (error) { update(set, { projectNotice: desktopErrorMessage(error) }); }
 };
 
-const saveProject = async (api: DesktopApi, set: SetWorkspace, value: string): Promise<void> => {
+const saveProject = async (api: DesktopApi, set: SetWorkspace, value: string, useGitignore?: boolean): Promise<void> => {
   const rootPath = value.trim();
   if (!rootPath) return update(set, { projectNotice: 'Enter a project path.' });
   try {
     const projects = await addProject(api, rootPath);
-    update(set, { projects, candidates: await fileCandidates(api, projects), projectNotice: undefined });
+    update(set, { projects, candidates: await fileCandidates(api, projects, useGitignore), projectNotice: undefined });
   }
   catch (error) { update(set, { projectNotice: desktopErrorMessage(error) }); }
 };
 
-const chooseFolder = async (api: DesktopApi, set: SetWorkspace): Promise<void> => {
-  try { const path = await api.chooseProjectFolder(); if (path) await saveProject(api, set, path); }
+const chooseFolder = async (api: DesktopApi, set: SetWorkspace, useGitignore?: boolean): Promise<void> => {
+  try { const path = await api.chooseProjectFolder(); if (path) await saveProject(api, set, path, useGitignore); }
   catch (error) { update(set, { projectNotice: desktopErrorMessage(error) }); }
 };
 
-const deleteProject = async (api: DesktopApi, set: SetWorkspace, value: string): Promise<void> => {
+const deleteProject = async (api: DesktopApi, set: SetWorkspace, value: string, useGitignore?: boolean): Promise<void> => {
   const projectId = value.trim();
   if (!projectId) return update(set, { projectNotice: 'Select a project to remove.' });
   try {
     const projects = await removeProject(api, projectId);
-    update(set, { projects, candidates: await fileCandidates(api, projects), selectedKeys: [], projectNotice: undefined });
+    update(set, { projects, candidates: await fileCandidates(api, projects, useGitignore), selectedKeys: [], projectNotice: undefined });
   }
   catch (error) { update(set, { projectNotice: desktopErrorMessage(error) }); }
 };
@@ -215,10 +256,11 @@ const updateOutput = (set: SetWorkspace, output: DesktopOutput): void =>
 const clearSearch = async (
   api: DesktopApi,
   set: SetWorkspace,
-  projects: DesktopWorkspace['projects']
+  projects: DesktopWorkspace['projects'],
+  useGitignore?: boolean
 ): Promise<void> => {
   try {
-    const candidates = await fileCandidates(api, projects);
+    const candidates = await fileCandidates(api, projects, useGitignore);
     update(set, { query: '', candidates, searchNotice: undefined });
   } catch (error) {
     update(set, { searchNotice: desktopErrorMessage(error) });

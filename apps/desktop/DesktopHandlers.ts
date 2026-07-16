@@ -1,4 +1,4 @@
-import { basename, resolve } from 'node:path';
+import { basename, resolve, dirname } from 'node:path';
 import { listProjectFiles } from '../../src/features/desktop-node/ProjectFileTree';
 import { randomUUID } from 'node:crypto';
 import { clipboard, dialog, ipcMain } from 'electron';
@@ -17,7 +17,7 @@ import { DependencyScanner } from '../../src/features/engine/application/Depende
 export const registerDesktopHandlers = (registryPath: string): void => {
   const registry = new ProjectRegistryStore(registryPath);
   ipcMain.handle('chooseProjectFolder', createChooseProjectFolderHandler(openFolderDialog));
-  ipcMain.handle('listProjectFiles', (_event, value: unknown) => listFiles(registry, value));
+  ipcMain.handle('listProjectFiles', (_event, projectId: unknown, options: unknown) => listFiles(registry, projectId, options));
   ipcMain.handle('listProjects', () => listProjects(registry));
   ipcMain.handle('addProject', (_event, value: unknown) => addProject(registry, value));
   ipcMain.handle('removeProject', (_event, value: unknown) => removeProject(registry, value));
@@ -28,7 +28,9 @@ export const registerDesktopHandlers = (registryPath: string): void => {
   ipcMain.handle('readFileContent', (_event, projectId: unknown, relativePath: unknown) => readFileContent(registry, projectId, relativePath));
 };
 
-export type OpenFolderDialog = () => Promise<Readonly<{
+let lastChosenPath: string | undefined = undefined;
+
+export type OpenFolderDialog = (defaultPath?: string) => Promise<Readonly<{
   canceled: boolean;
   filePaths: readonly string[];
 }>>;
@@ -36,26 +38,36 @@ export type OpenFolderDialog = () => Promise<Readonly<{
 export const createChooseProjectFolderHandler = (openDialog: OpenFolderDialog) =>
   async (): Promise<string | undefined> => {
     try {
-      return selectedFolder(await openDialog());
+      const res = await openDialog(lastChosenPath);
+      const chosen = res.canceled ? undefined : res.filePaths[0];
+      if (chosen) lastChosenPath = chosen;
+      return chosen;
     } catch {
       throw new Error('Unable to choose a project folder.');
     }
   };
 
-const openFolderDialog = (): ReturnType<typeof dialog.showOpenDialog> =>
-  dialog.showOpenDialog({ properties: ['openDirectory'] });
-
-const selectedFolder = (result: Readonly<{ canceled: boolean; filePaths: readonly string[] }>): string | undefined =>
-  result.canceled ? undefined : result.filePaths[0];
+const openFolderDialog = (defaultPath?: string): ReturnType<typeof dialog.showOpenDialog> =>
+  dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    defaultPath: defaultPath ? dirname(defaultPath) : undefined
+  });
 
 const listProjects = async (registry: ProjectRegistryStore): Promise<readonly Project[]> =>
   (await registry.readAll()).projects;
 
-const listFiles = async (registry: ProjectRegistryStore, value: unknown): Promise<readonly Readonly<{ relativePath: string; size: number }>[]> => {
-  const projectId = requiredString(value, 'Project id');
+const listFiles = async (
+  registry: ProjectRegistryStore,
+  projectIdVal: unknown,
+  optionsVal: unknown
+): Promise<readonly Readonly<{ relativePath: string; size: number }>[]> => {
+  const projectId = requiredString(projectIdVal, 'Project id');
+  const useGitignore = optionsVal && typeof optionsVal === 'object' && typeof (optionsVal as any).useGitignore === 'boolean'
+    ? (optionsVal as any).useGitignore
+    : undefined;
   const project = (await listProjects(registry)).find(item => item.id === projectId);
   if (!project) throw new Error('Project was not found.');
-  const relativePaths = await listProjectFiles(project.rootPath);
+  const relativePaths = await listProjectFiles(project.rootPath, useGitignore);
   return Promise.all(relativePaths.map(async relativePath => {
     const size = await getProjectFileSize(project, relativePath);
     return { relativePath, size };

@@ -76,3 +76,6 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
   .left-pane, .output-pane, .projects-drawer, .vertical-toolbar { width: 100% !important; height: auto; max-height: none; opacity: 1 !important; border: 1px solid #2c3747; }
   .vertical-toolbar { display: none; }
 }
+.fav-btn { color: #4a5c75; transition: color 0.15s ease, transform 0.1s ease; }
+.fav-btn:hover { color: #a4b3c6; transform: scale(1.15); }
+.fav-btn.active { color: #ffb700; }

@@ -19,7 +19,7 @@ export const createSafeIpcInvoker = (invoke: IpcInvoker): IpcInvoker =>
 
 export const createDesktopApi = (invoke: IpcInvoker): DesktopApi => ({
   chooseProjectFolder: () => invokeAs(invoke, 'chooseProjectFolder'),
-  listProjectFiles: projectId => invokeAs(invoke, 'listProjectFiles', projectId),
+  listProjectFiles: (projectId, options) => invokeAs(invoke, 'listProjectFiles', projectId, options),
   listProjects: () => invokeAs(invoke, 'listProjects'),
   addProject: rootPath => invokeAs(invoke, 'addProject', rootPath),
   removeProject: projectId => invokeAs(invoke, 'removeProject', projectId),
