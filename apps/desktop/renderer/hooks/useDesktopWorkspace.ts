@@ -6,6 +6,7 @@ import { buildCandidateTree, toggleTreeNode as toggleNode } from '../model/candi
 import type { CandidateTreeNode } from '../model/candidateTree';
 import type { DesktopWorkspace, ScenarioPresetKind, OutputTab } from '../types';
 import type { SearchRecipeKind } from '../../../../src/features/desktop-core/domain/SearchRecipe';
+import type { CandidateReason } from '../../../../src/features/desktop-core/domain/CandidateFile';
 import type { PackMode } from '../../../../src/features/desktop-core/domain/PackMode';
 import { selectedCandidates, fileCandidates, analyzeWorkspace } from './workspaceAnalysis';
 
@@ -76,7 +77,7 @@ export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
   }, [state.candidates, favorites, favoritesOnly]);
 
   const tree = useMemo(() => buildCandidateTree(filteredCandidates, state.projects), [filteredCandidates, state.projects]);
-  
+
   useEffect(() => { void refreshProjects(api, setState, state.useGitignore); }, [api, state.useGitignore]);
   useEffect(() => {
     if (state.projects.length > 0 && !hasCheckedProjects) {
@@ -128,14 +129,19 @@ const workspace = (
   const setTokenLimit = (tokenLimit: number): void => update(set, { tokenLimit });
   const setContextLines = (contextLines: number): void => update(set, { contextLines });
   const setIncludeDependencies = (includeDependencies: boolean): void => update(set, { includeDependencies });
-  const setIncludeRelatedDocs = (includeRelatedDocs: boolean): void => update(set, { includeRelatedDocs });
+  const setIncludeRelatedDocs = (includeRelatedDocs: boolean): void => {
+    update(set, { includeRelatedDocs });
+    if (includeRelatedDocs) {
+      void handleDocGraphRelations(api, set, state.selectedKeys, state);
+    }
+  };
   const setAutoOptimize = (autoOptimize: boolean): void => update(set, { autoOptimize });
   const setUseGitignore = (useGitignore: boolean): void => update(set, { useGitignore });
   const viewFile = (projectId: string, relativePath: string): void => update(set, { activePreviewFile: { projectId, relativePath } });
   const closeFile = (): void => update(set, { activePreviewFile: undefined });
-  
+
   const setActiveTab = (activeTab: OutputTab): void => update(set, { activeTab });
-  
+
   const setPresetKind = (preset: ScenarioPresetKind): void => {
     let patchModeUpdates: Partial<WorkspaceState> = { presetKind: preset };
     if (preset === 'initialShare') {
@@ -177,7 +183,7 @@ const workspace = (
   const actions = actionsFor(api, state, set);
   const selectAll = (): void => update(set, { selectedKeys: state.candidates.map(c => `${c.projectId}:${c.relativePath.replace(/\\/g, '/')}`) });
   const clearAll = (): void => update(set, { selectedKeys: [] });
-  
+
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, favorites, favoritesOnly, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly, toggleFavorite };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
   const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, analyze: actions.analyze, clearSearch: actions.clearSearch };
@@ -306,18 +312,32 @@ const fetchRelatedDocs = async (
       recipe: { kind: 'docGraph', path: relativePath }
     });
     set(current => {
-      const existing = new Map(current.candidates.map(c => [`${c.projectId}:${c.relativePath}`, c]));
+      const nextCandidates = [...current.candidates];
       const newKeys: string[] = [];
       for (const c of result.candidates) {
         const key = `${c.projectId}:${c.relativePath}`;
-        if (!existing.has(key)) {
-          existing.set(key, c);
+        const existingIdx = nextCandidates.findIndex(item => `${item.projectId}:${item.relativePath}` === key);
+        if (existingIdx !== -1) {
+          const existingItem = nextCandidates[existingIdx];
+          const reasons: readonly CandidateReason[] = existingItem.reasons.includes('docgraph')
+            ? existingItem.reasons
+            : [...existingItem.reasons, 'docgraph'];
+          nextCandidates[existingIdx] = {
+            ...existingItem,
+            reasons,
+            score: c.score
+          };
+          if (!current.selectedKeys.includes(key)) {
+            newKeys.push(key);
+          }
+        } else {
+          nextCandidates.push(c);
           newKeys.push(key);
         }
       }
       return {
         ...current,
-        candidates: Array.from(existing.values()),
+        candidates: nextCandidates,
         selectedKeys: [...current.selectedKeys, ...newKeys]
       };
     });

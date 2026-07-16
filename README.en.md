@@ -18,6 +18,19 @@ Beyond intuitive file selection, it features **Autonomous Patch & Heal** for saf
 
 ## 🚀 Usage
 
+### Desktop distribution
+
+Windows Desktop executables are distributed through GitHub Releases. Use a `desktop-v*` tag for Desktop releases.
+
+```powershell
+git tag desktop-v0.8.7
+git push origin desktop-v0.8.7
+```
+
+To create the executable locally, run `npm run desktop:package`. `npm run desktop:build` only updates the application bundles and does not create an executable. The generated file is `dist-desktop/CodePrepDesktop.exe`.
+
+Existing VSIX releases used `v*` tags, but no further VSIX updates are planned.
+
 ### 🌐 DocGraph Integration (Desktop Only)
 
 Enabling `Include related docs (DocGraph)` in the output config panel triggers automatic search for related documents when checking Markdown files.

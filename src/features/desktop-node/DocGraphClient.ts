@@ -1,56 +1,64 @@
-/*
- * Copyright 2026 CodePrep Contributors
- */
-import { existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import * as fs from 'fs';
+import * as path from 'path';
+import { nodeProcessRunner, type ProcessRunner } from './RipgrepClient';
 import type { DocGraphPort, DocGraphRelation } from '../desktop-core/application/ports';
 import type { Project } from '../desktop-core/domain/Project';
-import { nodeProcessRunner, type ProcessRunner } from './RipgrepClient';
 
 export class DocGraphClient implements DocGraphPort {
-  public constructor(private readonly runner: ProcessRunner = nodeProcessRunner) {}
+  public constructor(
+    private readonly runner: ProcessRunner = nodeProcessRunner,
+  ) {}
 
   public async findRelated(project: Project, relativePath: string): Promise<readonly DocGraphRelation[]> {
-    const dbPath = join(project.rootPath, '.docgraph', 'graph.db');
-    if (!existsSync(dbPath)) return [];
+    const dbPath = path.join(project.rootPath, '.docgraph', 'graph.db');
+    if (!fs.existsSync(dbPath)) {
+      return [];
+    }
 
     try {
-      const command = this.resolveCommandPath();
-      const output = await this.runner.run(command, ['related', relativePath, '--format', 'json'], project.rootPath);
-      if (output.exitCode !== 0) return [];
-      return this.parseResult(output.stdout);
+      const command = this.resolveCommand(project.rootPath);
+      const output = await this.runner.run(
+        command,
+        ['related', relativePath, '--format', 'json'],
+        project.rootPath
+      );
+
+      if (output.exitCode !== 0) {
+        return [];
+      }
+
+      const data = JSON.parse(output.stdout);
+      if (data && Array.isArray(data.related)) {
+        return data.related.map((item: any) => ({
+          path: String(item.path),
+          reason: String(item.reason),
+          confidence: Number(item.confidence),
+        }));
+      }
+      return [];
     } catch {
       return [];
     }
   }
 
-  private resolveCommandPath(): string {
-    const customPath = process.env.CODEPREP_DOCGRAPH_PATH;
-    if (customPath) return customPath;
-
-    const isWin = process.platform === 'win32';
-    const exeName = isWin ? 'docgraph.exe' : 'docgraph';
-    const localExe = join(dirname(process.execPath), exeName);
-    return existsSync(localExe) ? localExe : 'docgraph';
-  }
-
-  private parseResult(stdout: string): readonly DocGraphRelation[] {
-    try {
-      const parsed = JSON.parse(stdout) as unknown;
-      if (this.isValidPayload(parsed)) {
-        return parsed.related.map(item => ({
-          path: String(item.path ?? ''),
-          reason: String(item.reason ?? ''),
-          confidence: Number(item.confidence ?? 0)
-        }));
-      }
-    } catch {
-      // Ignored
+  private resolveCommand(rootPath: string): string {
+    const envPath = process.env.CODEPREP_DOCGRAPH_PATH;
+    if (envPath) {
+      return envPath;
     }
-    return [];
-  }
 
-  private isValidPayload(value: unknown): value is { related: readonly Record<string, unknown>[] } {
-    return typeof value === 'object' && value !== null && 'related' in value && Array.isArray((value as any).related);
+    // ローカルのバイナリチェック（例: .docgraph/bin/docgraph または .docgraph/bin/docgraph.exe）
+    const localDir = path.join(rootPath, '.docgraph', 'bin');
+    const exe = path.join(localDir, 'docgraph.exe');
+    const bin = path.join(localDir, 'docgraph');
+
+    if (fs.existsSync(exe)) {
+      return exe;
+    }
+    if (fs.existsSync(bin)) {
+      return bin;
+    }
+
+    return 'docgraph';
   }
 }

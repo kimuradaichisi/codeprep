@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.7] - 2026-07-16
+- docs: Desktop Windows executable releases now use `desktop-v*` tags and are uploaded from `dist-desktop/`
+- docs: VSIX releases remain in the existing `v*` tag history; no further VSIX updates are planned
+
 ## [0.8.6] - 2026-07-16
 - feat: DocGraph によるドキュメント関連度分析と Suggested 提案機能を追加
 - feat: 設定に `Include related docs (DocGraph)` チェックボックスを追加し、手動チェックの連動に対応

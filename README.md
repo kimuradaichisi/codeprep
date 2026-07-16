@@ -22,6 +22,19 @@
 
 Electron desktop MVP requires [ripgrep (`rg`)](https://github.com/BurntSushi/ripgrep) to be installed and available on `PATH`. Run `npm run desktop:dev` to build and start the desktop application.
 
+#### Desktop 版の配布
+
+Windows 用の Desktop exe は GitHub Releases から配布します。Desktop 版のリリースには `desktop-v*` タグを使用します。
+
+```powershell
+git tag desktop-v0.8.7
+git push origin desktop-v0.8.7
+```
+
+ローカルで exe を作成する場合は `npm run desktop:package` を実行してください。`npm run desktop:build` はアプリのバンドルのみを更新し、exe は作成しません。生成物は `dist-desktop/CodePrepDesktop.exe` です。
+
+VSIX の既存リリースには `v*` タグを使用していましたが、今後の VSIX 更新は予定していません。
+
 #### 🌐 DocGraph 連携 (Desktop 限定)
 
 Desktop アプリで右ペインの `Include related docs (DocGraph)` を有効にすると、設計書ファイル（`.md`）を選択した際に関連ドキュメントが自動的に Suggested としてツリーに追加されます。

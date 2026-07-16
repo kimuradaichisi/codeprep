@@ -123,7 +123,8 @@ export class DiscoverFilesUseCase {
       return { ...candidate(item.project.id, item.path, 'gitModified'), size };
     }));
     const withDeps = await this.appendDependencies(candidates, projects);
-    return { candidates: withDeps, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
+    const withDocGraph = await this.appendDocGraphRelations(withDeps, projects);
+    return { candidates: withDocGraph, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
   }
 
   private async gitCommit(ref: string, projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
@@ -134,7 +135,8 @@ export class DiscoverFilesUseCase {
       return { ...candidate(item.project.id, item.path, 'gitCommit'), size };
     }));
     const withDeps = await this.appendDependencies(candidates, projects);
-    return { candidates: withDeps, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
+    const withDocGraph = await this.appendDocGraphRelations(withDeps, projects);
+    return { candidates: withDocGraph, warnings: results.flatMap(result => result.warning ? [result.warning] : []) };
   }
 
   private async appendDependencies(candidates: readonly AnalyzedCandidate[], projects: readonly Project[]): Promise<readonly AnalyzedCandidate[]> {
@@ -171,6 +173,34 @@ export class DiscoverFilesUseCase {
       if (match) return match;
     }
     return undefined;
+  }
+
+  private async appendDocGraphRelations(
+    candidates: readonly AnalyzedCandidate[],
+    projects: readonly Project[]
+  ): Promise<readonly AnalyzedCandidate[]> {
+    const list = [...candidates];
+    const visited = new Set<string>(candidates.map(c => c.relativePath));
+
+    for (const c of candidates) {
+      const project = projects.find(p => p.id === c.projectId);
+      if (!project) continue;
+      if (!c.relativePath.toLowerCase().endsWith('.md')) continue;
+
+      const projectFiles = await this.ports.files.list(project);
+      const relations = await this.ports.docGraph.findRelated(project, c.relativePath);
+      for (const rel of relations) {
+        const fileInfo = projectFiles.find(f => f.relativePath.toLowerCase() === rel.path.toLowerCase());
+        if (fileInfo && !visited.has(fileInfo.relativePath)) {
+          visited.add(fileInfo.relativePath);
+          list.push({
+            ...createCandidateFile(project.id, fileInfo.relativePath, ['docgraph'], undefined, fileInfo.size),
+            score: rel.confidence,
+          });
+        }
+      }
+    }
+    return list;
   }
 
   private async docGraph(

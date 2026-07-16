@@ -132,6 +132,85 @@ describe('useDesktopWorkspace', () => {
     await act(async () => { result.current?.treePanel.setFavoritesOnly(true); });
     expect(result.current?.favoritesOnly).toBe(true);
   });
+
+  it('triggers discoverFiles and suggests related documents when selecting markdown file with includeRelatedDocs enabled', async () => {
+    const mockDiscover = vi.fn().mockResolvedValue({
+      candidates: [{ projectId: 'p1', relativePath: 'docs/related.md', reasons: ['docgraph'], score: 0.9 }],
+      warnings: []
+    });
+    const { result } = await renderWorkspace({
+      discoverFiles: mockDiscover,
+    });
+
+    // includeRelatedDocsをONにする
+    await act(async () => {
+      result.current?.setIncludeRelatedDocs(true);
+    });
+
+    // markdown ファイルのキーを追加してトグル
+    const mdNode = {
+      id: 'p1:docs/design.md',
+      kind: 'file' as const,
+      name: 'design.md',
+      candidateKey: 'p1:docs/design.md',
+      children: [],
+      reasons: [],
+    };
+
+    await act(async () => {
+      result.current?.toggleTreeNode(mdNode, mdNode.id);
+    });
+
+    expect(mockDiscover).toHaveBeenCalledWith({
+      projectIds: ['p1'],
+      recipe: { kind: 'docGraph', path: 'docs/design.md' }
+    });
+
+    // 関連ドキュメントが candidates にマージされ、かつ selectedKeys に入ってチェック状態になること
+    expect(result.current?.selectedKeys).toContain('p1:docs/related.md');
+    const relatedCandidate = result.current?.candidates.find(c => c.relativePath === 'docs/related.md');
+    expect(relatedCandidate).toBeDefined();
+    expect(relatedCandidate?.reasons).toContain('docgraph');
+    expect(relatedCandidate?.score).toBe(0.9);
+  });
+
+  it('triggers discoverFiles for already selected markdown files when includeRelatedDocs is toggled ON', async () => {
+    const mockDiscover = vi.fn().mockResolvedValue({
+      candidates: [{ projectId: 'p1', relativePath: 'docs/related.md', reasons: ['docgraph'], score: 0.8 }],
+      warnings: []
+    });
+    const { result } = await renderWorkspace({
+      discoverFiles: mockDiscover,
+    });
+
+    // markdownを選択状態にする (最初は includeRelatedDocs は false)
+    const mdNode = {
+      id: 'p1:docs/design.md',
+      kind: 'file' as const,
+      name: 'design.md',
+      candidateKey: 'p1:docs/design.md',
+      children: [],
+      reasons: [],
+    };
+
+    await act(async () => {
+      result.current?.toggleTreeNode(mdNode, mdNode.id);
+    });
+
+    // includeRelatedDocs が false の時は discoverFiles は呼ばれていないはず
+    expect(mockDiscover).not.toHaveBeenCalled();
+
+    // includeRelatedDocsをONにトグルする。これにより、すでに選択されている docs/design.md に対する discoverFiles が走るはず
+    await act(async () => {
+      result.current?.setIncludeRelatedDocs(true);
+    });
+
+    expect(mockDiscover).toHaveBeenCalledWith({
+      projectIds: ['p1'],
+      recipe: { kind: 'docGraph', path: 'docs/design.md' }
+    });
+    expect(result.current?.selectedKeys).toContain('p1:docs/related.md');
+  });
 });
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
   const result: { current?: DesktopWorkspace } = {};
