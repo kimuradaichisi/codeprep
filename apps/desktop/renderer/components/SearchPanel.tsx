@@ -4,11 +4,22 @@ import { InlineNotice } from './InlineNotice';
 export const SearchPanel = (props: SearchPanelProps) => (
   <div className="search-panel">
     <div><p className="eyebrow">DISCOVERY</p><h2>Search files</h2></div>
+    <label className="field-label" htmlFor="scenario-preset">Scenario Preset</label>
+    <PresetSelect presetKind={props.presetKind} setPresetKind={props.setPresetKind} />
     <label className="field-label" htmlFor="search-recipe">Search recipe</label>
     <RecipeSelect recipeKind={props.recipeKind} setRecipeKind={props.setRecipeKind} />
     <SearchInputArea {...props} />
     <InlineNotice message={props.searchNotice} />
   </div>
+);
+
+const PresetSelect = ({ presetKind, setPresetKind }: Pick<SearchPanelProps, 'presetKind' | 'setPresetKind'>) => (
+  <select id="scenario-preset" aria-label="Scenario Preset" value={presetKind} onChange={event => setPresetKind(event.target.value as SearchPanelProps['presetKind'])}>
+    <option value="custom">Custom (カスタム)</option>
+    <option value="initialShare">🌐 1. 0ベースの初回共有 (Initial Share)</option>
+    <option value="debugFix">🐛 2. デバッグ・不具合解析 (Debug & Fix)</option>
+    <option value="newFeature">🛠️ 3. 新機能の実装 (Implement Feature)</option>
+  </select>
 );
 
 const RecipeSelect = ({ recipeKind, setRecipeKind }: Pick<SearchPanelProps, 'recipeKind' | 'setRecipeKind'>) => (

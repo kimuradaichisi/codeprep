@@ -17,6 +17,9 @@ export type AppProps = Readonly<{
 
 export type WorkspaceNotice = string | undefined;
 
+export type ScenarioPresetKind = 'custom' | 'initialShare' | 'debugFix' | 'newFeature';
+export type OutputTab = 'preview' | 'help';
+
 export type ProjectPanelProps = Readonly<{
   projects: readonly Project[];
   projectNotice: WorkspaceNotice;
@@ -30,9 +33,11 @@ export type SearchPanelProps = Readonly<{
   query: string;
   contextLines: number;
   searchNotice: WorkspaceNotice;
+  presetKind: ScenarioPresetKind;
   setRecipeKind(value: SearchRecipeKind): void;
   setQuery(value: string): void;
   setContextLines(value: number): void;
+  setPresetKind(value: ScenarioPresetKind): void;
   analyze(query?: string): Promise<void>;
   clearSearch(): Promise<void>;
 }>;
@@ -56,11 +61,13 @@ export type OutputPanelProps = Readonly<{
   outputNotice: WorkspaceNotice;
   includeDependencies: boolean;
   autoOptimize: boolean;
+  activeTab: OutputTab;
   setFormat(value: ContextOutputFormat): void;
   setPackMode(value: PackMode): void;
   setTokenLimit(value: number): void;
   setIncludeDependencies(value: boolean): void;
   setAutoOptimize(value: boolean): void;
+  setActiveTab(value: OutputTab): void;
   generateOutput(): Promise<void>;
   copyOutput(): Promise<void>;
 }>;
@@ -78,6 +85,8 @@ export type DesktopWorkspace = Readonly<{
   preview: string;
   includeDependencies: boolean;
   autoOptimize: boolean;
+  presetKind: ScenarioPresetKind;
+  activeTab: OutputTab;
   tree: readonly CandidateTreeNode[];
   projectNotice: WorkspaceNotice;
   searchNotice: WorkspaceNotice;
@@ -95,6 +104,8 @@ export type DesktopWorkspace = Readonly<{
   setContextLines(value: number): void;
   setIncludeDependencies(value: boolean): void;
   setAutoOptimize(value: boolean): void;
+  setPresetKind(value: ScenarioPresetKind): void;
+  setActiveTab(value: OutputTab): void;
   viewFile(projectId: string, relativePath: string): void;
   closeFile(): void;
   addProject(rootPath: string): Promise<void>;

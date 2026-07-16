@@ -112,6 +112,23 @@ describe('useDesktopWorkspace', () => {
     expect(result.current?.query).toBe('');
     expect(result.current?.candidates[0].relativePath).toBe('src/app.ts');
   });
+
+  it('applies scenario presets and updates parameters accordingly', async () => {
+    const { result } = await renderWorkspace();
+    expect(result.current?.presetKind).toBe('custom');
+    expect(result.current?.packMode).toBe('full');
+    expect(result.current?.autoOptimize).toBe(false);
+
+    await act(async () => { result.current?.searchPanel.setPresetKind('initialShare'); });
+    expect(result.current?.presetKind).toBe('initialShare');
+    expect(result.current?.packMode).toBe('skeleton');
+    expect(result.current?.autoOptimize).toBe(true);
+
+    await act(async () => { result.current?.searchPanel.setPresetKind('debugFix'); });
+    expect(result.current?.presetKind).toBe('debugFix');
+    expect(result.current?.packMode).toBe('full');
+    expect(result.current?.recipeKind).toBe('gitDiff');
+  });
 });
 
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
@@ -125,10 +142,8 @@ const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
 
 const createApi = (overrides: Partial<DesktopApi>): DesktopApi => ({
   addProject: vi.fn(async () => projects), analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
-  chooseProjectFolder: vi.fn(async () => undefined), copyOutput: vi.fn(async () => undefined),
-  discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
-  generateOutput: vi.fn(async () => ({ preview: 'context' })), listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects),
-  removeProject: vi.fn(async () => []), readFileContent: vi.fn(async () => 'file content'), ...overrides,
+  chooseProjectFolder: vi.fn(async () => undefined), copyOutput: vi.fn(async () => undefined), discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
+  generateOutput: vi.fn(async () => ({ preview: 'context' })), listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []), readFileContent: vi.fn(async () => 'file content'), ...overrides,
 });
 
 const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));

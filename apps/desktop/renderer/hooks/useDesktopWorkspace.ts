@@ -4,7 +4,7 @@ import type { DesktopApi, DesktopOutput } from '../../DesktopApi';
 import { addProject, copyOutput, desktopErrorMessage, generateOutput, loadProjects, removeProject } from '../DesktopWorkflow';
 import { buildCandidateTree, toggleTreeNode as toggleNode } from '../model/candidateTree';
 import type { CandidateTreeNode } from '../model/candidateTree';
-import type { DesktopWorkspace } from '../types';
+import type { DesktopWorkspace, ScenarioPresetKind, OutputTab } from '../types';
 import type { SearchRecipeKind } from '../../../../src/features/desktop-core/domain/SearchRecipe';
 import type { PackMode } from '../../../../src/features/desktop-core/domain/PackMode';
 import { selectedCandidates, fileCandidates, analyzeWorkspace } from './workspaceAnalysis';
@@ -22,6 +22,8 @@ type WorkspaceState = Readonly<{
   preview: string;
   includeDependencies: boolean;
   autoOptimize: boolean;
+  presetKind: ScenarioPresetKind;
+  activeTab: OutputTab;
   projectNotice: string | undefined;
   searchNotice: string | undefined;
   outputNotice: string | undefined;
@@ -43,6 +45,8 @@ const initialState: WorkspaceState = {
   preview: '',
   includeDependencies: false,
   autoOptimize: false,
+  presetKind: 'custom',
+  activeTab: 'preview',
   projectNotice: undefined,
   searchNotice: undefined,
   outputNotice: undefined,
@@ -67,6 +71,37 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const setAutoOptimize = (autoOptimize: boolean): void => update(set, { autoOptimize });
   const viewFile = (projectId: string, relativePath: string): void => update(set, { activePreviewFile: { projectId, relativePath } });
   const closeFile = (): void => update(set, { activePreviewFile: undefined });
+  
+  const setActiveTab = (activeTab: OutputTab): void => update(set, { activeTab });
+  
+  const setPresetKind = (preset: ScenarioPresetKind): void => {
+    let patchModeUpdates: Partial<WorkspaceState> = { presetKind: preset };
+    if (preset === 'initialShare') {
+      patchModeUpdates = {
+        presetKind: preset,
+        packMode: 'skeleton',
+        autoOptimize: true,
+        includeDependencies: false,
+        recipeKind: 'text',
+      };
+    } else if (preset === 'debugFix') {
+      patchModeUpdates = {
+        presetKind: preset,
+        packMode: 'full',
+        autoOptimize: false,
+        recipeKind: 'gitDiff',
+      };
+    } else if (preset === 'newFeature') {
+      patchModeUpdates = {
+        presetKind: preset,
+        packMode: 'full',
+        autoOptimize: false,
+        includeDependencies: true,
+      };
+    }
+    update(set, patchModeUpdates);
+  };
+
   const setFilePackMode = (projectId: string, relativePath: string, mode: PackMode | undefined): void => {
     update(set, {
       candidates: state.candidates.map(c =>
@@ -77,11 +112,12 @@ const workspace = (api: DesktopApi, state: WorkspaceState, tree: readonly Candid
   const actions = actionsFor(api, state, set);
   const selectAll = (): void => update(set, { selectedKeys: state.candidates.map(c => `${c.projectId}:${c.relativePath.replace(/\\/g, '/')}`) });
   const clearAll = (): void => update(set, { selectedKeys: [] });
+  
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
-  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, setRecipeKind, setQuery, setContextLines, analyze: actions.analyze, clearSearch: actions.clearSearch };
-  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, autoOptimize: state.autoOptimize, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setAutoOptimize, ...actions.output };
-  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
+  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, setRecipeKind, setQuery, setContextLines, setPresetKind, analyze: actions.analyze, clearSearch: actions.clearSearch };
+  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, autoOptimize: state.autoOptimize, activeTab: state.activeTab, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setAutoOptimize, setActiveTab, ...actions.output };
+  return { ...state, tree, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setAutoOptimize, setPresetKind, setActiveTab, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
