@@ -2,12 +2,20 @@ import type { SearchPanelProps } from '../types';
 import { InlineNotice } from './InlineNotice';
 
 export const SearchPanel = (props: SearchPanelProps) => (
-  <div className="search-panel">
-    <div><p className="eyebrow">DISCOVERY</p><h2>Search files</h2></div>
-    <label className="field-label" htmlFor="scenario-preset">Scenario Preset</label>
-    <PresetSelect presetKind={props.presetKind} setPresetKind={props.setPresetKind} />
-    <label className="field-label" htmlFor="search-recipe">Search recipe</label>
-    <RecipeSelect recipeKind={props.recipeKind} setRecipeKind={props.setRecipeKind} />
+  <div className="search-panel" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
+      <div><p className="eyebrow" style={{ margin: 0 }}>DISCOVERY</p><h2 style={{ fontSize: '18px', margin: 0 }}>Search files</h2></div>
+    </div>
+    <div className="search-controls-row" style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: '11px', color: '#9eafc8', whiteSpace: 'nowrap', fontWeight: 'bold' }}>Preset:</span>
+        <PresetSelect presetKind={props.presetKind} setPresetKind={props.setPresetKind} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: '11px', color: '#9eafc8', whiteSpace: 'nowrap', fontWeight: 'bold' }}>Recipe:</span>
+        <RecipeSelect recipeKind={props.recipeKind} setRecipeKind={props.setRecipeKind} />
+      </div>
+    </div>
     <SearchInputArea {...props} />
     <InlineNotice message={props.searchNotice} />
   </div>
