@@ -10,6 +10,27 @@ const projects = [{ id: 'p1', name: 'Demo', rootPath: 'C:/demo' }];
 const candidates = [{ projectId: 'p1', relativePath: 'src/app.ts', reasons: ['rgMatch'] as const, excluded: false, score: 35 }];
 
 describe('useDesktopWorkspace', () => {
+  it('exposes name sorting and the shared token limit on the initial workspace', async () => {
+    const { result } = await renderWorkspace();
+    expect(result.current?.sortKey).toBe('name');
+    expect(result.current?.treePanel.sortKey).toBe('name');
+    expect(result.current?.treePanel.tokenLimit).toBe(result.current?.tokenLimit);
+  });
+
+  it('updates workspace and tree panel sorting and orders files by descending size', async () => {
+    const listProjectFiles = vi.fn().mockResolvedValue([
+      { relativePath: 'small.ts', size: 10 },
+      { relativePath: 'large.ts', size: 100 },
+    ]);
+    const { result } = await renderWorkspace({ listProjectFiles });
+
+    await act(async () => { result.current?.treePanel.setSortKey('size'); });
+
+    expect(result.current?.sortKey).toBe('size');
+    expect(result.current?.treePanel.sortKey).toBe('size');
+    expect(result.current?.tree[0]?.children.map(node => node.name)).toEqual(['large.ts', 'small.ts']);
+  });
+
   it('does not invoke addProject for a blank path', async () => {
     const { api, result } = await renderWorkspace();
     await act(async () => { await result.current?.addProject('   '); });
@@ -131,6 +152,15 @@ describe('useDesktopWorkspace', () => {
     expect(result.current?.favorites).toContain('p1:src/app.ts');
     await act(async () => { result.current?.treePanel.setFavoritesOnly(true); });
     expect(result.current?.favoritesOnly).toBe(true);
+  });
+
+  it('normalizes Windows-style favorite keys loaded from localStorage', async () => {
+    localStorage.setItem('codeprep:favorites', JSON.stringify(['p1:src\\auth.ts']));
+    const { result } = await renderWorkspace();
+
+    expect(result.current?.favorites).toEqual(['p1:src/auth.ts']);
+    expect(JSON.parse(localStorage.getItem('codeprep:favorites') ?? '[]')).toEqual(['p1:src/auth.ts']);
+    localStorage.clear();
   });
 
   it('triggers discoverFiles and suggests related documents when selecting markdown file with includeRelatedDocs enabled', async () => {

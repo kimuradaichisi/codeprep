@@ -14,6 +14,9 @@ import { DesktopContextFormatter } from '../../src/features/desktop-node/Desktop
 import { canReadProjectFile, readProjectFile, getProjectFileSize } from '../../src/features/desktop-node/ProjectFileContentReader';
 import { DependencyScanner } from '../../src/features/engine/application/DependencyScanner';
 import { DocGraphClient } from '../../src/features/desktop-node/DocGraphClient';
+import { MarkdownRecommendationClient } from '../../src/features/desktop-node/MarkdownRecommendationClient';
+import { GitCoChangeClient } from '../../src/features/desktop-node/GitCoChangeClient';
+import { DirectoryProximityClient } from '../../src/features/desktop-node/DirectoryProximityClient';
 
 export const registerDesktopHandlers = (registryPath: string): void => {
   const registry = new ProjectRegistryStore(registryPath);
@@ -101,22 +104,28 @@ const analyzeProjects = async (registry: ProjectRegistryStore, value: unknown) =
 };
 
 const discoverFiles = async (registry: ProjectRegistryStore, value: unknown) => {
+  const filePort = {
+    list: async (project: Project) => {
+      const relativePaths = await listProjectFiles(project.rootPath);
+      return Promise.all(relativePaths.map(async relativePath => ({
+        relativePath, size: await getProjectFileSize(project, relativePath),
+      })));
+    },
+  };
   const useCase = new DiscoverFilesUseCase({
     projects: registry, ripgrep: new RipgrepClient(), gitMetadata: new GitMetadataClient(),
-    files: {
-      list: async project => {
-        const relativePaths = await listProjectFiles(project.rootPath);
-        return Promise.all(relativePaths.map(async relativePath => {
-          const size = await getProjectFileSize(project, relativePath);
-          return { relativePath, size };
-        }));
-      }
-    },
+    files: filePort,
     clipboard: { readText: () => Promise.resolve(clipboard.readText()) }, gitHistory: new GitHistoryReader(),
     fileSize: { getSize: getProjectFileSize },
     fileContent: { read: readProjectFile, canRead: canReadProjectFile },
     dependencyScanner: new DependencyScanner(),
     docGraph: new DocGraphClient(),
+    recommendations: {
+      markdownLink: new MarkdownRecommendationClient({ read: readProjectFile, canRead: canReadProjectFile }, filePort, 'markdownLink'),
+      nameHeading: new MarkdownRecommendationClient({ read: readProjectFile, canRead: canReadProjectFile }, filePort, 'nameHeading'),
+      gitCoChange: new GitCoChangeClient(),
+      directoryProximity: new DirectoryProximityClient(filePort),
+    },
   });
   return useCase.discover(toDiscoverInput(value));
 };

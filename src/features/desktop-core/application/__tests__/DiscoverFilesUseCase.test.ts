@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DiscoverFilesUseCase } from '../DiscoverFilesUseCase';
 import type { DiscoverFilesPorts } from '../ports';
 import { DependencyScanner } from '../../../engine/application/DependencyScanner';
+import { createRecommendation, defaultRecommendationSettings } from '../../domain/Recommendation';
 
 const dummyOutsidePath = '/' + ['outside', 'secret.ts'].join('/');
 const dummyRepoPath = '/' + ['repo', 'src', 'auth.ts'].join('/');
@@ -28,6 +29,48 @@ describe('DiscoverFilesUseCase', () => {
 
     expect(result.candidates.map(file => file.relativePath)).toEqual(['src/app.ts', 'src/auth.ts']);
     expect(result.candidates[0].reasons).toEqual(['extensionMatch']);
+  });
+
+  it('adds enabled recommendations without selecting them', async () => {
+    const recommendation = createRecommendation({
+      projectId: 'p1', relativePath: 'README.md', source: 'markdownLink', score: 0.8, detail: 'linked',
+    });
+    if (!recommendation) throw new Error('Invalid test recommendation');
+    const customPorts: DiscoverFilesPorts = {
+      ...ports,
+      recommendations: {
+        markdownLink: { recommend: async () => [recommendation] },
+        nameHeading: { recommend: async () => [] },
+        gitCoChange: { recommend: async () => [] },
+        directoryProximity: { recommend: async () => [] },
+      },
+    };
+    const result = await new DiscoverFilesUseCase(customPorts).discover({
+      recipe: { kind: 'extension', extensions: ['.ts'] }, projectIds: ['p1'],
+      recommendationSettings: defaultRecommendationSettings(),
+    });
+
+    expect(result.candidates.map(file => file.relativePath)).toContain('README.md');
+    expect(result.candidates.find(file => file.relativePath === 'README.md')?.excluded).toBe(false);
+  });
+
+  it('preserves base candidates when a recommendation source fails', async () => {
+    const customPorts: DiscoverFilesPorts = {
+      ...ports,
+      recommendations: {
+        markdownLink: { recommend: async () => { throw new Error('source failed'); } },
+        nameHeading: { recommend: async () => [] },
+        gitCoChange: { recommend: async () => [] },
+        directoryProximity: { recommend: async () => [] },
+      },
+    };
+    const result = await new DiscoverFilesUseCase(customPorts).discover({
+      recipe: { kind: 'extension', extensions: ['.ts'] }, projectIds: ['p1'],
+      recommendationSettings: defaultRecommendationSettings(),
+    });
+
+    expect(result.candidates.map(file => file.relativePath)).toEqual(['src/app.ts', 'src/auth.ts']);
+    expect(result.warnings.map(warning => warning.kind)).toContain('recommendationFailure');
   });
 
   it('keeps only clipboard paths inside registered projects', async () => {

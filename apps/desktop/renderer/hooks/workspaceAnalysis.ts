@@ -3,7 +3,9 @@ import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/ap
 import { createSearchRecipe, type SearchRecipeKind } from '../../../../src/features/desktop-core/domain/SearchRecipe';
 import { analyzeProjects, desktopErrorMessage } from '../DesktopWorkflow';
 import { buildCandidateTree, descendantCandidateKeys } from '../model/candidateTree';
+import { candidateKey } from '../model/tokenBudget';
 import type { Project } from '../../../../src/features/desktop-core/domain/Project';
+import { defaultRecommendationSettings, type RecommendationSettings } from '../../../../src/features/desktop-core/domain/Recommendation';
 
 export const candidateKeys = (
   candidates: readonly AnalyzedCandidate[],
@@ -15,7 +17,7 @@ export const selectedCandidates = (
   candidates: readonly AnalyzedCandidate[],
   selectedKeys: readonly string[],
 ): readonly AnalyzedCandidate[] =>
-  candidates.filter(c => selectedKeys.includes(`${c.projectId}:${c.relativePath.replace(/\\/g, '/')}`));
+  candidates.filter(c => selectedKeys.includes(candidateKey(c.projectId, c.relativePath)));
 
 export const fileCandidates = async (
   api: DesktopApi,
@@ -48,12 +50,13 @@ export const analyzeWorkspace = async (
   kind: SearchRecipeKind,
   contextLines: number,
   projects: readonly Project[],
+  recommendationSettings: RecommendationSettings = defaultRecommendationSettings(),
 ): Promise<AnalysisResultUpdate> => {
   try {
     const recipe = createSearchRecipe(kind, value);
     const result = recipe.kind === 'text'
       ? { candidates: await analyzeProjects(api, recipe.query, contextLines, projects), warnings: [] }
-      : await api.discoverFiles({ recipe, projectIds: projects.map(p => p.id) });
+      : await api.discoverFiles({ recipe, projectIds: projects.map(p => p.id), recommendationSettings });
     return {
       candidates: result.candidates,
       selectedKeys: candidateKeys(result.candidates, projects),

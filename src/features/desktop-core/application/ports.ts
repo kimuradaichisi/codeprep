@@ -5,6 +5,12 @@ import { DependencyScanner } from '../../engine/application/DependencyScanner';
 import type { PackMode } from '../domain/PackMode';
 import type { ContextBudget } from '../domain/ContextBudget';
 import type { SourceExcerpt } from '../domain/SourceExcerpt';
+import type {
+  RecommendationRecord,
+  RecommendationReason,
+  RecommendationSettings,
+  RecommendationSource,
+} from '../domain/Recommendation';
 
 export type AnalysisWarningKind =
   | 'missingRg'
@@ -14,7 +20,8 @@ export type AnalysisWarningKind =
   | 'oversizedFile'
   | 'invalidRoot'
   | 'outsideProject'
-  | 'missingExcerpt';
+  | 'missingExcerpt'
+  | 'recommendationFailure';
 
 export type AnalysisWarning = Readonly<{
   kind: AnalysisWarningKind;
@@ -42,6 +49,7 @@ export type GitMetadata = Readonly<{
 export type AnalyzedCandidate = CandidateFile &
   Readonly<{
     score: number;
+    recommendationReasons?: readonly RecommendationReason[];
   }>;
 
 export type AnalyzeProjectsInput = Readonly<{
@@ -143,9 +151,24 @@ export type DocGraphPort = Readonly<{
   findRelated(project: Project, relativePath: string): Promise<readonly DocGraphRelation[]>;
 }>;
 
+export type RecommendFilesInput = Readonly<{
+  projectIds: readonly ProjectId[];
+  relativePaths: readonly string[];
+  settings: RecommendationSettings;
+}>;
+
+export type RecommendationSourcePort = Readonly<{
+  recommend(project: Project, relativePath: string): Promise<readonly RecommendationRecord[]>;
+}>;
+
+export type RecommendationSourcePorts = Readonly<
+  Partial<Record<RecommendationSource, RecommendationSourcePort>>
+>;
+
 export type DiscoverFilesInput = Readonly<{
   recipe: SearchRecipe;
   projectIds: readonly ProjectId[];
+  recommendationSettings?: RecommendationSettings;
 }>;
 
 export type DiscoverFilesPorts = Readonly<{
@@ -159,6 +182,7 @@ export type DiscoverFilesPorts = Readonly<{
   fileContent: FileContentPort;
   dependencyScanner: DependencyScanner;
   docGraph: DocGraphPort;
+  recommendations?: RecommendationSourcePorts;
 }>;
 
 export type FileSizePort = Readonly<{

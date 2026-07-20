@@ -1,23 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
 import type { Project } from '../../../../src/features/desktop-core/domain/Project';
-import { buildCandidateTree, descendantCandidateKeys, nodeCheckState, toggleTreeNode } from './candidateTree';
+import type { RecommendationReason } from '../../../../src/features/desktop-core/domain/Recommendation';
+import { buildCandidateTree, descendantCandidateKeys, nodeCheckState, sortCandidateTree, toggleTreeNode, type CandidateTreeNode } from './candidateTree';
 
 const projects: readonly Project[] = [
   { id: 'a', name: 'Alpha', rootPath: 'C:/alpha' },
   { id: 'b', name: 'Beta', rootPath: 'C:/beta' },
 ];
-const candidate = (projectId: string, relativePath: string): AnalyzedCandidate =>
-  ({ projectId, relativePath, reasons: ['rgMatch'], excluded: false, score: 1 });
+const candidate = (projectId: string, relativePath: string, size?: number): AnalyzedCandidate =>
+  ({ projectId, relativePath, reasons: ['rgMatch'], excluded: false, score: 1, size });
 
 describe('candidate tree', () => {
   it('builds nested project directories and files using normalized candidate keys', () => {
     const tree = buildCandidateTree([candidate('a', 'src\\ui\\App.tsx'), candidate('a', 'README.md')], projects);
 
-    expect(tree[0]).toEqual({ id: 'project:a', kind: 'project', name: 'Alpha', size: 0, children: [
-      { id: 'a:src', kind: 'directory', name: 'src', size: 0, children: [{ id: 'a:src/ui', kind: 'directory', name: 'ui', size: 0, children: [{ id: 'a:src/ui/App.tsx', kind: 'file', name: 'App.tsx', candidateKey: 'a:src/ui/App.tsx', children: [], size: undefined, packMode: undefined, reasons: ['rgMatch'], score: 1 }] }] },
-      { id: 'a:README.md', kind: 'file', name: 'README.md', candidateKey: 'a:README.md', children: [], size: undefined, packMode: undefined, reasons: ['rgMatch'], score: 1 },
-    ] });
+    expect(tree[0]).toEqual({
+      id: 'project:a', kind: 'project', name: 'Alpha', size: 0, children: [
+        { id: 'a:src', kind: 'directory', name: 'src', size: 0, children: [{ id: 'a:src/ui', kind: 'directory', name: 'ui', size: 0, children: [{ id: 'a:src/ui/App.tsx', kind: 'file', name: 'App.tsx', candidateKey: 'a:src/ui/App.tsx', children: [], size: undefined, packMode: undefined, reasons: ['rgMatch'], score: 1 }] }] },
+        { id: 'a:README.md', kind: 'file', name: 'README.md', candidateKey: 'a:README.md', children: [], size: undefined, packMode: undefined, reasons: ['rgMatch'], score: 1 },
+      ]
+    });
+  });
+
+  it('preserves recommendation reasons on file nodes', () => {
+    const reasons: readonly RecommendationReason[] = [{ source: 'markdownLink', score: 0.8, detail: 'linked from README.md' }];
+    const tree = buildCandidateTree([{ ...candidate('a', 'docs/auth.md'), recommendationReasons: reasons }], projects);
+
+    expect(tree[0]?.children[0]?.children[0]?.recommendationReasons).toEqual(reasons);
   });
 
   it('uses registry project names and includes only projects with candidates', () => {
@@ -62,5 +72,61 @@ describe('candidate tree', () => {
     expect(toggleTreeNode(project, project.id, selected)).toEqual(['a:src/a.ts', 'a:src/b.ts']);
     expect(selected).toEqual(['a:src/a.ts']);
     expect(toggleTreeNode(project, project.id, ['a:src/a.ts', 'a:src/b.ts'])).toEqual([]);
+  });
+
+  it('sorts files by size descending within each directory', () => {
+    const [project] = buildCandidateTree([candidate('a', 'src/small.ts', 100), candidate('a', 'src/big.ts', 900)], projects);
+
+    const [src] = sortCandidateTree(project.children, 'size');
+
+    expect(src.children.map(node => node.name)).toEqual(['big.ts', 'small.ts']);
+  });
+
+  it('keeps directories before files when sorting by name', () => {
+    const [project] = buildCandidateTree([candidate('a', 'z.ts'), candidate('a', 'src/a.ts')], projects);
+
+    const sorted = sortCandidateTree(project.children, 'name');
+
+    expect(sorted.map(node => node.name)).toEqual(['src', 'z.ts']);
+  });
+
+  it('sorts every level without changing the input nodes or children', () => {
+    const [project] = buildCandidateTree([
+      candidate('a', 'z/b.ts', 1), candidate('a', 'z/a.ts', 2), candidate('a', 'a.ts', 3),
+    ], projects);
+    const originalChildren = project.children;
+    const originalNestedChildren = project.children.find(node => node.name === 'z')?.children;
+
+    const sorted = sortCandidateTree(project.children, 'name');
+
+    expect(sorted.map(node => node.name)).toEqual(['z', 'a.ts']);
+    expect(sorted[0]?.children.map(node => node.name)).toEqual(['a.ts', 'b.ts']);
+    expect(project.children).toBe(originalChildren);
+    expect(project.children.find(node => node.name === 'z')?.children).toBe(originalNestedChildren);
+  });
+
+  it('keeps directories before files when sorting by size', () => {
+    const [project] = buildCandidateTree([candidate('a', 'large.ts', 100), candidate('a', 'src/small.ts', 1)], projects);
+
+    expect(sortCandidateTree(project.children, 'size').map(node => node.kind)).toEqual(['directory', 'file']);
+  });
+
+  it('orders equal values deterministically by id', () => {
+    const nodes: readonly CandidateTreeNode[] = [
+      { id: 'file:b', kind: 'file', name: 'same.ts', size: 10, children: [] },
+      { id: 'file:a', kind: 'file', name: 'same.ts', size: 10, children: [] },
+    ];
+
+    expect(sortCandidateTree(nodes, 'size').map(node => node.id)).toEqual(['file:a', 'file:b']);
+    expect(sortCandidateTree(nodes, 'name').map(node => node.id)).toEqual(['file:a', 'file:b']);
+  });
+
+  it('treats undefined size as zero and orders equal sizes by id', () => {
+    const nodes: readonly CandidateTreeNode[] = [
+      { id: 'file:b', kind: 'file', name: 'same.ts', children: [] },
+      { id: 'file:a', kind: 'file', name: 'same.ts', size: 0, children: [] },
+    ];
+
+    expect(sortCandidateTree(nodes, 'size').map(node => node.id)).toEqual(['file:a', 'file:b']);
   });
 });

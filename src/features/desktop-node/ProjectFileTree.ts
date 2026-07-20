@@ -12,7 +12,7 @@ const loadGitignore = async (root: string): Promise<readonly RegExp[]> => {
   try {
     const content = await readFile(join(root, '.gitignore'), 'utf8');
     return content.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#') && !l.startsWith('!')).map(p => {
-      let escaped = p.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]');
+      const escaped = p.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]');
       return new RegExp(`(^|/)${escaped.endsWith('/') ? escaped.slice(0, -1) : escaped}(/|$)`);
     });
   } catch {

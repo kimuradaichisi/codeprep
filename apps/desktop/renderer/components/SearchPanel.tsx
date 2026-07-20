@@ -20,9 +20,29 @@ export const SearchPanel = (props: SearchPanelProps) => (
         Respect gitignore
       </label>
     </div>
+    <RecommendationSources recommendationSettings={props.recommendationSettings} setRecommendationSettings={props.setRecommendationSettings} />
     <SearchInputArea {...props} />
     <InlineNotice message={props.searchNotice} />
   </div>
+);
+
+const RecommendationSources = ({ recommendationSettings: settings, setRecommendationSettings: onChange }: Pick<SearchPanelProps, 'recommendationSettings' | 'setRecommendationSettings'>) => (
+  <fieldset style={{ border: '1px solid #2c3747', padding: '6px 8px', margin: 0 }}>
+    <legend style={{ color: '#9eafc8', fontSize: '11px', padding: '0 4px' }}>Related suggestions</legend>
+    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+      <SourceToggle label="Markdown links" checked={settings.markdownLink} onChange={value => onChange({ ...settings, markdownLink: value })} />
+      <SourceToggle label="Name / heading" checked={settings.nameHeading} onChange={value => onChange({ ...settings, nameHeading: value })} />
+      <SourceToggle label="Git co-change" checked={settings.gitCoChange} onChange={value => onChange({ ...settings, gitCoChange: value })} />
+      <SourceToggle label="Nearby directory" checked={settings.directoryProximity} onChange={value => onChange({ ...settings, directoryProximity: value })} />
+    </div>
+  </fieldset>
+);
+
+const SourceToggle = ({ label, checked, onChange }: { label: string; checked: boolean; onChange(value: boolean): void }) => (
+  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#b7c6da', cursor: 'pointer' }}>
+    <input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} style={{ width: 'auto', margin: 0 }} />
+    {label}
+  </label>
 );
 
 const PresetSelect = ({ presetKind, setPresetKind }: Pick<SearchPanelProps, 'presetKind' | 'setPresetKind'>) => (

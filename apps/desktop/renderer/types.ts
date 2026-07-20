@@ -2,9 +2,10 @@ import type { ReactNode } from 'react';
 import type { DesktopApi } from '../DesktopApi';
 import type { AnalyzedCandidate, ContextOutputFormat } from '../../../src/features/desktop-core/application/ports';
 import type { Project } from '../../../src/features/desktop-core/domain/Project';
-import type { CandidateTreeNode } from './model/candidateTree';
+import type { CandidateTreeNode, TreeSort } from './model/candidateTree';
 import type { SearchRecipeKind } from '../../../src/features/desktop-core/domain/SearchRecipe';
 import type { PackMode } from '../../../src/features/desktop-core/domain/PackMode';
+import type { RecommendationSettings } from '../../../src/features/desktop-core/domain/Recommendation';
 
 declare global {
   interface Window {
@@ -15,7 +16,6 @@ declare global {
 export type AppProps = Readonly<{
   api?: DesktopApi;
 }>;
-
 export type AppShellProps = Readonly<{
   projects: ReactNode;
   search: ReactNode;
@@ -26,7 +26,6 @@ export type AppShellProps = Readonly<{
 }>;
 
 export type WorkspaceNotice = string | undefined;
-
 export type ScenarioPresetKind = 'custom' | 'initialShare' | 'debugFix' | 'newFeature';
 export type OutputTab = 'preview' | 'help';
 
@@ -37,7 +36,6 @@ export type ProjectPanelProps = Readonly<{
   chooseProjectFolder(): Promise<void>;
   removeProject(projectId: string): Promise<void>;
 }>;
-
 export type SearchPanelProps = Readonly<{
   recipeKind: SearchRecipeKind;
   query: string;
@@ -45,11 +43,13 @@ export type SearchPanelProps = Readonly<{
   searchNotice: WorkspaceNotice;
   presetKind: ScenarioPresetKind;
   useGitignore: boolean;
+  recommendationSettings: RecommendationSettings;
   setRecipeKind(value: SearchRecipeKind): void;
   setQuery(value: string): void;
   setContextLines(value: number): void;
   setPresetKind(value: ScenarioPresetKind): void;
   setUseGitignore(value: boolean): void;
+  setRecommendationSettings(value: RecommendationSettings): void;
   analyze(query?: string): Promise<void>;
   clearSearch(): Promise<void>;
 }>;
@@ -58,6 +58,9 @@ export type CandidateTreeProps = Readonly<{
   tree: readonly CandidateTreeNode[];
   candidates?: readonly AnalyzedCandidate[];
   selectedKeys: readonly string[];
+  tokenLimit: number;
+  sortKey: TreeSort;
+  setSortKey(value: TreeSort): void;
   favorites: readonly string[];
   favoritesOnly: boolean;
   toggleTreeNode(root: CandidateTreeNode, nodeId: string): void;
@@ -68,7 +71,6 @@ export type CandidateTreeProps = Readonly<{
   setFavoritesOnly(value: boolean): void;
   toggleFavorite(projectId: string, relativePath: string): void;
 }>;
-
 export type OutputPanelProps = Readonly<{
   packMode: PackMode;
   tokenLimit: number;
@@ -108,8 +110,11 @@ export type DesktopWorkspace = Readonly<{
   activeTab: OutputTab;
   isProjectsOpen: boolean;
   useGitignore: boolean;
+  recommendationSettings: RecommendationSettings;
   favorites: readonly string[];
   favoritesOnly: boolean;
+  sortKey: TreeSort;
+  setSortKey(value: TreeSort): void;
   tree: readonly CandidateTreeNode[];
   projectNotice: WorkspaceNotice;
   searchNotice: WorkspaceNotice;
@@ -131,6 +136,7 @@ export type DesktopWorkspace = Readonly<{
   setPresetKind(value: ScenarioPresetKind): void;
   setActiveTab(value: OutputTab): void;
   setUseGitignore(value: boolean): void;
+  setRecommendationSettings(value: RecommendationSettings): void;
   setFavoritesOnly(value: boolean): void;
   toggleProjects(): void;
   toggleFavorite(projectId: string, relativePath: string): void;

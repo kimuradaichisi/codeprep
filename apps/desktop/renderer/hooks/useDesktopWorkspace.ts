@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import type { AnalyzedCandidate, ContextOutputFormat } from '../../../../src/features/desktop-core/application/ports';
 import type { DesktopApi, DesktopOutput } from '../../DesktopApi';
 import { addProject, copyOutput, desktopErrorMessage, generateOutput, loadProjects, removeProject } from '../DesktopWorkflow';
-import { buildCandidateTree, toggleTreeNode as toggleNode } from '../model/candidateTree';
-import type { CandidateTreeNode } from '../model/candidateTree';
+import { buildCandidateTree, sortCandidateTree, toggleTreeNode as toggleNode } from '../model/candidateTree';
+import type { CandidateTreeNode, TreeSort } from '../model/candidateTree';
+import { candidateKey } from '../model/tokenBudget';
 import type { DesktopWorkspace, ScenarioPresetKind, OutputTab } from '../types';
 import type { SearchRecipeKind } from '../../../../src/features/desktop-core/domain/SearchRecipe';
 import type { CandidateReason } from '../../../../src/features/desktop-core/domain/CandidateFile';
 import type { PackMode } from '../../../../src/features/desktop-core/domain/PackMode';
+import { defaultRecommendationSettings, type RecommendationSettings } from '../../../../src/features/desktop-core/domain/Recommendation';
 import { selectedCandidates, fileCandidates, analyzeWorkspace } from './workspaceAnalysis';
 
 type WorkspaceState = Readonly<{
@@ -27,6 +29,7 @@ type WorkspaceState = Readonly<{
   presetKind: ScenarioPresetKind;
   activeTab: OutputTab;
   useGitignore: boolean;
+  recommendationSettings: RecommendationSettings;
   projectNotice: string | undefined;
   searchNotice: string | undefined;
   outputNotice: string | undefined;
@@ -34,6 +37,25 @@ type WorkspaceState = Readonly<{
 }>;
 
 type SetWorkspace = Dispatch<SetStateAction<WorkspaceState>>;
+
+const normalizeFavoriteKey = (value: string): string | undefined => {
+  const separator = value.indexOf(':');
+  if (separator <= 0 || separator === value.length - 1) return undefined;
+  const projectId = value.slice(0, separator);
+  const relativePath = value.slice(separator + 1).replace(/\\/g, '/');
+  return relativePath ? `${projectId}:${relativePath}` : undefined;
+};
+
+const loadFavorites = (): readonly string[] => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(localStorage.getItem('codeprep:favorites') || '[]');
+  } catch { return []; }
+  if (!Array.isArray(parsed) || !parsed.every((value): value is string => typeof value === 'string')) return [];
+  const normalized = parsed.map(normalizeFavoriteKey).filter((key): key is string => key !== undefined);
+  try { localStorage.setItem('codeprep:favorites', JSON.stringify(normalized)); } catch { return normalized; }
+  return normalized;
+};
 
 const initialState: WorkspaceState = {
   projects: [],
@@ -52,6 +74,7 @@ const initialState: WorkspaceState = {
   presetKind: 'custom',
   activeTab: 'preview',
   useGitignore: true,
+  recommendationSettings: defaultRecommendationSettings(),
   projectNotice: undefined,
   searchNotice: undefined,
   outputNotice: undefined,
@@ -63,20 +86,18 @@ export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [hasCheckedProjects, setHasCheckedProjects] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [favorites, setFavorites] = useState<readonly string[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('codeprep:favorites') || '[]') as string[];
-    } catch {
-      return [];
-    }
-  });
+  const [sortKey, setSortKey] = useState<TreeSort>('name');
+  const [favorites, setFavorites] = useState<readonly string[]>(loadFavorites);
 
   const filteredCandidates = useMemo(() => {
     if (!favoritesOnly) return state.candidates;
-    return state.candidates.filter(c => favorites.includes(`${c.projectId}:${c.relativePath}`));
+    return state.candidates.filter(c => favorites.includes(candidateKey(c.projectId, c.relativePath)));
   }, [state.candidates, favorites, favoritesOnly]);
 
-  const tree = useMemo(() => buildCandidateTree(filteredCandidates, state.projects), [filteredCandidates, state.projects]);
+  const tree = useMemo(
+    () => sortCandidateTree(buildCandidateTree(filteredCandidates, state.projects), sortKey),
+    [filteredCandidates, state.projects, sortKey]
+  );
 
   useEffect(() => { void refreshProjects(api, setState, state.useGitignore); }, [api, state.useGitignore]);
   useEffect(() => {
@@ -88,7 +109,7 @@ export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
 
   const toggleProjects = (): void => setIsProjectsOpen(prev => !prev);
   const toggleFavorite = (projectId: string, relativePath: string): void => {
-    const key = `${projectId}:${relativePath}`;
+    const key = candidateKey(projectId, relativePath);
     setFavorites(prev => {
       const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
       localStorage.setItem('codeprep:favorites', JSON.stringify(next));
@@ -106,7 +127,9 @@ export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
     favorites,
     favoritesOnly,
     setFavoritesOnly,
-    toggleFavorite
+    toggleFavorite,
+    sortKey,
+    setSortKey
   );
 };
 
@@ -120,7 +143,9 @@ const workspace = (
   favorites: readonly string[],
   favoritesOnly: boolean,
   setFavoritesOnly: (v: boolean) => void,
-  toggleFavorite: (projectId: string, relativePath: string) => void
+  toggleFavorite: (projectId: string, relativePath: string) => void,
+  sortKey: TreeSort,
+  setSortKey: (value: TreeSort) => void
 ): DesktopWorkspace => {
   const setQuery = (query: string): void => update(set, { query });
   const setRecipeKind = (recipeKind: SearchRecipeKind): void => update(set, { recipeKind, query: '' });
@@ -132,11 +157,12 @@ const workspace = (
   const setIncludeRelatedDocs = (includeRelatedDocs: boolean): void => {
     update(set, { includeRelatedDocs });
     if (includeRelatedDocs) {
-      void handleDocGraphRelations(api, set, state.selectedKeys, state);
+      void handleDocGraphRelations(api, set, state.selectedKeys);
     }
   };
   const setAutoOptimize = (autoOptimize: boolean): void => update(set, { autoOptimize });
   const setUseGitignore = (useGitignore: boolean): void => update(set, { useGitignore });
+  const setRecommendationSettings = (recommendationSettings: RecommendationSettings): void => update(set, { recommendationSettings });
   const viewFile = (projectId: string, relativePath: string): void => update(set, { activePreviewFile: { projectId, relativePath } });
   const closeFile = (): void => update(set, { activePreviewFile: undefined });
 
@@ -176,31 +202,31 @@ const workspace = (
   const setFilePackMode = (projectId: string, relativePath: string, mode: PackMode | undefined): void => {
     update(set, {
       candidates: state.candidates.map(c =>
-        c.projectId === projectId && c.relativePath === relativePath ? { ...c, packMode: mode } : c
+        candidateKey(c.projectId, c.relativePath) === candidateKey(projectId, relativePath) ? { ...c, packMode: mode } : c
       )
     });
   };
   const actions = actionsFor(api, state, set);
-  const selectAll = (): void => update(set, { selectedKeys: state.candidates.map(c => `${c.projectId}:${c.relativePath.replace(/\\/g, '/')}`) });
+  const selectAll = (): void => update(set, { selectedKeys: state.candidates.map(c => candidateKey(c.projectId, c.relativePath)) });
   const clearAll = (): void => update(set, { selectedKeys: [] });
 
-  const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, favorites, favoritesOnly, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly, toggleFavorite };
+  const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, tokenLimit: state.tokenLimit, sortKey, setSortKey, favorites, favoritesOnly, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly, toggleFavorite };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
-  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, analyze: actions.analyze, clearSearch: actions.clearSearch };
+  const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, recommendationSettings: state.recommendationSettings, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, setRecommendationSettings, analyze: actions.analyze, clearSearch: actions.clearSearch };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, includeRelatedDocs: state.includeRelatedDocs, autoOptimize: state.autoOptimize, activeTab: state.activeTab, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setActiveTab, ...actions.output };
-  return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, toggleProjects, toggleFavorite, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
+  return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, sortKey, setSortKey, toggleProjects, toggleFavorite, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setRecommendationSettings, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
   project: { addProject: (path: string) => saveProject(api, set, path, state.useGitignore), chooseProjectFolder: () => chooseFolder(api, set), removeProject: (id: string) => deleteProject(api, set, id, state.useGitignore) },
-  analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.contextLines, state.projects),
+  analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.contextLines, state.projects, state.recommendationSettings),
   clearSearch: () => clearSearch(api, set, state.projects, state.useGitignore),
   toggleTreeNode: (root: CandidateTreeNode, id: string) => {
     const nextKeys = toggleNode(root, id, state.selectedKeys);
     update(set, { selectedKeys: nextKeys });
     const addedKeys = nextKeys.filter(k => !state.selectedKeys.includes(k));
     if (addedKeys.length > 0 && state.includeRelatedDocs) {
-      void handleDocGraphRelations(api, set, addedKeys, state);
+      void handleDocGraphRelations(api, set, addedKeys);
     }
   },
   output: { generateOutput: () => generate(api, set, state), copyOutput: () => copy(api, set, state.preview) },
@@ -246,9 +272,10 @@ const analyze = async (
   value: string,
   kind: SearchRecipeKind,
   contextLines: number,
-  projects: DesktopWorkspace['projects']
+  projects: DesktopWorkspace['projects'],
+  recommendationSettings: RecommendationSettings,
 ): Promise<void> => {
-  const result = await analyzeWorkspace(api, value, kind, contextLines, projects);
+  const result = await analyzeWorkspace(api, value, kind, contextLines, projects, recommendationSettings);
   update(set, result);
 };
 
@@ -288,8 +315,7 @@ const clearSearch = async (
 const handleDocGraphRelations = async (
   api: DesktopApi,
   set: SetWorkspace,
-  addedKeys: readonly string[],
-  state: WorkspaceState
+  addedKeys: readonly string[]
 ): Promise<void> => {
   for (const key of addedKeys) {
     const [projectId, ...pathParts] = key.split(':');
@@ -315,8 +341,8 @@ const fetchRelatedDocs = async (
       const nextCandidates = [...current.candidates];
       const newKeys: string[] = [];
       for (const c of result.candidates) {
-        const key = `${c.projectId}:${c.relativePath}`;
-        const existingIdx = nextCandidates.findIndex(item => `${item.projectId}:${item.relativePath}` === key);
+        const key = candidateKey(c.projectId, c.relativePath);
+        const existingIdx = nextCandidates.findIndex(item => candidateKey(item.projectId, item.relativePath) === key);
         if (existingIdx !== -1) {
           const existingItem = nextCandidates[existingIdx];
           const reasons: readonly CandidateReason[] = existingItem.reasons.includes('docgraph')

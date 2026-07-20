@@ -1,0 +1,177 @@
+.desktop-workspace {
+    min-height: 100vh;
+    padding: 28px;
+}
+
+.workspace-grid {
+    display: grid;
+    grid-template-columns: minmax(520px, 1.6fr) minmax(320px, 1fr);
+    gap: 14px;
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+}
+
+.workspace-pane {
+    background: #171e29;
+    border: 1px solid #2c3747;
+    border-radius: 10px;
+    padding: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.left-pane,
+.search-pane {
+    display: flex;
+    flex-direction: column;
+}
+
+.left-pane {
+    gap: 0;
+}
+
+.left-pane-header-row {
+    display: flex;
+    gap: 18px;
+    border-bottom: 1px solid #2c3747;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+}
+
+.search-section {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+.tree-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.search-pane {
+    min-height: 0;
+}
+
+.project-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    max-height: 80px;
+    overflow-y: auto;
+}
+
+.project-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 10px;
+    border: 1px solid #2c3747;
+    background: #1c2533;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    transition: border-color .15s ease;
+}
+
+.project-list li:hover {
+    border-color: #76a9ff;
+}
+
+.project-list span,
+.tree-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-list span {
+    font-size: 11px;
+    font-weight: bold;
+    color: #76a9ff;
+}
+
+.project-list button {
+    padding: 2px 6px;
+    font-size: 10px;
+    background: #26354b;
+    border-color: #354255;
+    color: #ffad9f;
+}
+
+.project-list button:hover {
+    background: #4d2b2b;
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+}
+
+.search-panel {
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.vertical-toolbar {
+    width: 42px;
+    background: #171e29;
+    border: 1px solid #2c3747;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 8px;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.toolbar-btn {
+    background: transparent;
+    border: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #8ea2bd;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.toolbar-btn:hover {
+    color: #e8edf5;
+    background: #202938;
+}
+
+.toolbar-btn.active {
+    color: #76a9ff;
+    background: #1f2d44;
+    border: 1px solid #2d4469;
+}
+
+.projects-drawer {
+    background: #171e29;
+    border: 1px solid #2c3747;
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    transition: all .25s cubic-bezier(.4, 0, .2, 1);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.projects-drawer.open {
+    width: 260px;
+    opacity: 1;
+}
+
+.projects-drawer.closed {
+    width: 0;
+    padding: 14px 0;
+    border: 0;
+    opacity: 0;
+}

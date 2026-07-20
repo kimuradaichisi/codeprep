@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toAnalyzeInput, toBuildInput } from './DesktopRequestParser';
+import { toAnalyzeInput, toBuildInput, toDiscoverInput } from './DesktopRequestParser';
 
 describe('DesktopRequestParser', () => {
   describe('toAnalyzeInput', () => {
@@ -60,6 +60,22 @@ describe('DesktopRequestParser', () => {
         packMode: 'matchedSnippets'
       };
       expect(() => toBuildInput(invalid)).toThrow();
+    });
+  });
+
+  describe('toDiscoverInput', () => {
+    it('uses enabled recommendation defaults when settings are absent', () => {
+      const result = toDiscoverInput({ projectIds: ['p1'], recipe: { kind: 'gitDiff' } });
+      expect(result.recommendationSettings).toEqual({
+        markdownLink: true, nameHeading: true, gitCoChange: true, directoryProximity: true,
+      });
+    });
+
+    it('rejects malformed recommendation settings', () => {
+      expect(() => toDiscoverInput({
+        projectIds: ['p1'], recipe: { kind: 'gitDiff' },
+        recommendationSettings: { markdownLink: 'yes' },
+      })).toThrow();
     });
   });
 });

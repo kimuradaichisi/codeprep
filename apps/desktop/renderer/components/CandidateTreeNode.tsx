@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { nodeCheckState } from '../model/candidateTree';
 import type { CandidateTreeNode as TreeNode } from '../model/candidateTree';
 import type { CandidateTreeProps } from '../types';
+import { isPackMode } from '../../../../src/features/desktop-core/domain/PackMode';
 
 export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTreeNode, viewFile, setFilePackMode, toggleFavorite, depth = 0 }: Readonly<{
   node: TreeNode; selectedKeys: readonly string[]; favorites?: readonly string[]; toggleTreeNode: CandidateTreeProps['toggleTreeNode']; viewFile: CandidateTreeProps['viewFile']; setFilePackMode: CandidateTreeProps['setFilePackMode']; toggleFavorite: CandidateTreeProps['toggleFavorite']; depth?: number;
@@ -27,12 +28,14 @@ export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTr
   const tokensLabel = node.size !== undefined ? `${Math.ceil(node.size / 4)}` : '-';
   const isDep = node.reasons?.includes('dependency');
   const isDocGraph = node.reasons?.includes('docgraph');
+  const recommendationText = node.recommendationReasons?.map(reason => `${reason.source} ${Math.round(reason.score * 100)}%`).join(', ');
   const tooltipText = isDocGraph && node.score !== undefined ? `DocGraph 関連度: ${Math.round(node.score * 100)}%` : undefined;
 
   const handleModeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     if (node.candidateKey) {
       const [pId, ...rest] = node.candidateKey.split(':');
-      setFilePackMode(pId, rest.join(':'), event.target.value ? event.target.value as any : undefined);
+      const value = event.target.value;
+      setFilePackMode(pId, rest.join(':'), isPackMode(value) ? value : undefined);
     }
   };
 
@@ -54,6 +57,7 @@ export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTr
                 toggleFavorite(pId, rest.join(':'));
               }
             }}
+            aria-label={`${isFav ? 'Remove' : 'Add'} favorite ${node.name}`}
             title="Favorite"
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontSize: '11px', lineHeight: 1 }}
           >
@@ -62,12 +66,13 @@ export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTr
         )}
         {isDep && <span className="dep-badge">Suggested</span>}
         {isDocGraph && <span className="dep-badge docgraph-badge" title={tooltipText}>Related</span>}
+        {recommendationText && <span className="dep-badge recommendation-badge" title={recommendationText}>Recommended</span>}
       </div>
       <span className="tree-node-size">{sizeLabel}</span>
       <span className="tree-node-tokens">{tokensLabel}</span>
       <div className="tree-node-mode">
         {node.kind === 'file' && (
-          <select value={node.packMode ?? ''} onChange={handleModeChange}>
+          <select value={node.packMode ?? ''} onChange={handleModeChange} aria-label={`Pack mode for ${node.name}`}>
             <option value="">Global</option>
             <option value="full">Full</option>
             <option value="skeleton">Skeleton</option>

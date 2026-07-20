@@ -1,0 +1,36 @@
+.tree-row.suggested-dep .tree-name,
+.tree-row.suggested-docgraph .tree-name {
+    color: #e8edf5;
+}
+
+@media (max-width: 850px) {
+    body {
+        min-width: 0;
+    }
+
+    .desktop-workspace {
+        padding: 16px;
+    }
+
+    .workspace-grid {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        max-height: none;
+    }
+
+    .left-pane,
+    .output-pane,
+    .projects-drawer,
+    .vertical-toolbar {
+        width: 100% !important;
+        height: auto;
+        max-height: none;
+        opacity: 1 !important;
+        border: 1px solid #2c3747;
+    }
+
+    .vertical-toolbar {
+        display: none;
+    }
+}

@@ -8,14 +8,30 @@ import type {
   DiscoverFilesPorts,
   AnalyzeProjectsResult,
   DocGraphRelation,
+  RecommendationSourcePorts,
 } from './ports';
+import { mergeRecommendations } from './MergeRecommendationsUseCase';
+import type { RecommendationRecord, RecommendationSettings, RecommendationSource } from '../domain/Recommendation';
 
 export class DiscoverFilesUseCase {
   constructor(private readonly ports: DiscoverFilesPorts) {}
 
   async discover(input: DiscoverFilesInput): Promise<AnalyzeProjectsResult> {
     const projects = await this.ports.projects.getByIds(input.projectIds);
-    return this.resolve(input.recipe, projects);
+    const result = await this.resolve(input.recipe, projects);
+    return this.appendRecommendations(result, input.recommendationSettings, projects);
+  }
+
+  private async appendRecommendations(
+    result: AnalyzeProjectsResult,
+    settings: RecommendationSettings | undefined,
+    projects: readonly Project[],
+  ): Promise<AnalyzeProjectsResult> {
+    const sources = this.ports.recommendations;
+    if (!settings || !sources || result.candidates.length === 0) return result;
+    const outcome = await collectRecommendations(result.candidates, projects, settings, sources);
+    const merged = mergeRecommendations(result.candidates, outcome.records);
+    return { candidates: merged.candidates, warnings: [...result.warnings, ...outcome.warnings] };
   }
 
   private async resolve(recipe: SearchRecipe, projects: readonly Project[]): Promise<AnalyzeProjectsResult> {
@@ -243,7 +259,48 @@ const reason = (recipe: Exclude<SearchRecipe, { kind: 'clipboardPaths' | 'gitDif
 const candidate = (projectId: string, relativePath: string, candidateReason: CandidateReason): AnalyzedCandidate =>
   ({ ...createCandidateFile(projectId, relativePath, [candidateReason]), score: 0 });
 
-const normalize = (path: string): string => path.trim().replace(/\\/g, '/').replace(/\/$/, '');
+type RecommendationOutcome = Readonly<{
+  records: readonly RecommendationRecord[];
+  warnings: readonly AnalysisWarning[];
+}>;
+
+const collectRecommendations = async (
+  candidates: readonly AnalyzedCandidate[],
+  projects: readonly Project[],
+  settings: RecommendationSettings,
+  sources: RecommendationSourcePorts,
+): Promise<RecommendationOutcome> => {
+  const projectById = new Map(projects.map(project => [project.id, project]));
+  const results = await Promise.all(candidates.flatMap(candidate => enabledSources(settings).map(async source => {
+    const project = projectById.get(candidate.projectId);
+    const sourcePort = sources[source];
+    if (!project || !sourcePort) return { records: [], warnings: [] };
+    try {
+      return { records: await sourcePort.recommend(project, candidate.relativePath), warnings: [] };
+    } catch (error) {
+      return { records: [], warnings: [recommendationWarning(candidate, source, error)] };
+    }
+  })));
+  return { records: results.flatMap(result => result.records), warnings: results.flatMap(result => result.warnings) };
+};
+
+const enabledSources = (settings: RecommendationSettings): readonly RecommendationSource[] => [
+  ...(settings.markdownLink ? ['markdownLink' as const] : []),
+  ...(settings.nameHeading ? ['nameHeading' as const] : []),
+  ...(settings.gitCoChange ? ['gitCoChange' as const] : []),
+  ...(settings.directoryProximity ? ['directoryProximity' as const] : []),
+];
+
+const recommendationWarning = (
+  candidate: AnalyzedCandidate,
+  source: RecommendationSource,
+  error: unknown,
+): AnalysisWarning => ({
+  kind: 'recommendationFailure',
+  projectId: candidate.projectId,
+  relativePath: candidate.relativePath,
+  message: `Recommendation source ${source} failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+});
 
 const sortCandidates = (candidates: readonly AnalyzedCandidate[]): readonly AnalyzedCandidate[] =>
   [...candidates].sort((left, right) => left.relativePath.localeCompare(right.relativePath));

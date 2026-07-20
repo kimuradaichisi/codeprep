@@ -1,14 +1,60 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "type": "npm",
-      "script": "compile",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "problemMatcher": "$tsc"
-    }
-  ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "compile",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": "$tsc"
+		},
+		{
+			"label": "verify desktop renderer tests",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"desktop:test"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "verify check types",
+			"type": "shell",
+			"command": "npm run check-types",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "verify desktop tests",
+			"type": "shell",
+			"command": "npm run desktop:test",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "verify desktop build",
+			"type": "shell",
+			"command": "npm run desktop:build",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "verify lint",
+			"type": "shell",
+			"command": "npm run lint",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "verify unit tests",
+			"type": "shell",
+			"command": "npm run test:unit",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
 }

@@ -63,6 +63,24 @@ describe('DocGraphClient', () => {
     expect(result).toEqual([]);
   });
 
+  it('should ignore malformed related entries', async () => {
+    vi.mocked(existsSync).mockImplementation((path) => String(path).endsWith('graph.db'));
+    runFn.mockResolvedValue({
+      stdout: JSON.stringify({ related: [
+        { path: 'docs/valid.md', reason: 'linked', confidence: 0.8 },
+        { path: '../outside.md', reason: 'escape', confidence: 0.9 },
+        { path: 'docs/no-score.md', reason: 'missing', confidence: Number.NaN },
+        { path: 123, reason: 'wrong path', confidence: 0.5 },
+      ] }),
+      stderr: '',
+      exitCode: 0,
+    });
+
+    const result = await new DocGraphClient(mockRunner).findRelated(project, 'src/main.md');
+
+    expect(result).toEqual([{ path: 'docs/valid.md', reason: 'linked', confidence: 0.8 }]);
+  });
+
   it('should use custom path if env var is set', async () => {
     vi.mocked(existsSync).mockImplementation((path) => String(path).endsWith('graph.db'));
     vi.stubEnv('CODEPREP_DOCGRAPH_PATH', '/custom/bin/docgraph');

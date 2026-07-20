@@ -27,15 +27,8 @@ export class DocGraphClient implements DocGraphPort {
         return [];
       }
 
-      const data = JSON.parse(output.stdout);
-      if (data && Array.isArray(data.related)) {
-        return data.related.map((item: any) => ({
-          path: String(item.path),
-          reason: String(item.reason),
-          confidence: Number(item.confidence),
-        }));
-      }
-      return [];
+      const data: unknown = JSON.parse(output.stdout);
+      return relatedEntries(data).flatMap(toRelation);
     } catch {
       return [];
     }
@@ -62,3 +55,28 @@ export class DocGraphClient implements DocGraphPort {
     return 'docgraph';
   }
 }
+
+type RelatedEntry = Readonly<{ path: string; reason: string; confidence: number }>;
+
+const relatedEntries = (value: unknown): readonly unknown[] => {
+  if (!isRecord(value) || !Array.isArray(value.related)) return [];
+  return value.related;
+};
+
+const toRelation = (value: unknown): readonly [DocGraphRelation] | readonly [] => {
+  if (!isRecord(value) || !isRelatedEntry(value)) return [];
+  return [{ path: value.path, reason: value.reason, confidence: value.confidence }];
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isRelatedEntry = (value: Record<string, unknown>): value is RelatedEntry =>
+  typeof value.path === 'string' && isRelativePath(value.path) &&
+  typeof value.reason === 'string' && value.reason.trim().length > 0 &&
+  typeof value.confidence === 'number' && Number.isFinite(value.confidence) &&
+  value.confidence >= 0 && value.confidence <= 1;
+
+const isRelativePath = (value: string): boolean =>
+  value.length > 0 && !value.startsWith('/') && !/^[a-zA-Z]:[\\/]/.test(value) &&
+  !value.split(/[\\/]/).includes('..');

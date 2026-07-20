@@ -1,6 +1,7 @@
 import type { AnalyzeProjectsInput, BuildDesktopContextInput, DiscoverFilesInput } from '../../src/features/desktop-core/application/ports';
 import { isPackMode, type PackMode } from '../../src/features/desktop-core/domain/PackMode';
 import type { SourceExcerpt } from '../../src/features/desktop-core/domain/SourceExcerpt';
+import { defaultRecommendationSettings, type RecommendationSettings } from '../../src/features/desktop-core/domain/Recommendation';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -42,7 +43,26 @@ export const toDiscoverInput = (value: unknown): DiscoverFilesInput => {
   if (!isRecord(value) || !isStringArray(value.projectIds) || !isRecipe(value.recipe)) {
     throw new Error('Invalid discovery request.');
   }
-  return { projectIds: value.projectIds, recipe: value.recipe };
+  return {
+    projectIds: value.projectIds,
+    recipe: value.recipe,
+    recommendationSettings: recommendationSettings(value.recommendationSettings),
+  };
+};
+
+const recommendationSettings = (value: unknown): RecommendationSettings => {
+  if (value === undefined) return defaultRecommendationSettings();
+  if (!isRecord(value)) throw new Error('Invalid recommendation settings.');
+  const keys = ['markdownLink', 'nameHeading', 'gitCoChange', 'directoryProximity'];
+  if (Object.keys(value).some(key => !keys.includes(key)) || keys.some(key => typeof value[key] !== 'boolean')) {
+    throw new Error('Invalid recommendation settings.');
+  }
+  return {
+    markdownLink: value.markdownLink as boolean,
+    nameHeading: value.nameHeading as boolean,
+    gitCoChange: value.gitCoChange as boolean,
+    directoryProximity: value.directoryProximity as boolean,
+  };
 };
 
 const isExcerpt = (value: unknown): value is SourceExcerpt =>
