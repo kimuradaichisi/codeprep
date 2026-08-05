@@ -2,6 +2,7 @@ import type {
   AnalyzeProjectsInput,
   AnalyzeProjectsResult,
   BuildDesktopContextInput,
+  ContextOutputFormat,
   DiscoverFilesInput,
 } from '../../src/features/desktop-core/application/ports';
 import type { Project } from '../../src/features/desktop-core/domain/Project';
@@ -11,6 +12,20 @@ export type DesktopOutput = Readonly<{
   warning?: string;
   manifest?: readonly Readonly<{ projectId: string; relativePath: string; included: boolean; reasons: readonly string[] }>[];
 }>;
+
+export type SaveOutputRequest = Readonly<{
+  content: string;
+  format: ContextOutputFormat;
+}>;
+
+export type SaveOutputResult =
+  | Readonly<{
+      status: 'saved';
+      filePath: string;
+    }>
+  | Readonly<{
+      status: 'cancelled';
+    }>;
 
 export type DesktopApi = Readonly<{
   chooseProjectFolder(): Promise<string | undefined>;
@@ -22,5 +37,6 @@ export type DesktopApi = Readonly<{
   discoverFiles(input: DiscoverFilesInput): Promise<AnalyzeProjectsResult>;
   generateOutput(input: BuildDesktopContextInput): Promise<DesktopOutput>;
   copyOutput(text: string): Promise<void>;
+  saveOutput(request: SaveOutputRequest): Promise<SaveOutputResult>;
   readFileContent(projectId: string, relativePath: string): Promise<string>;
 }>;

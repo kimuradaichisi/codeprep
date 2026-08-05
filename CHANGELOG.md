@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.8] - 2026-08-05
+- feat: CodePrep Desktop 版に「Save output」機能を追加 — 生成されたコンテキストをローカルファイル (Markdown / XML / JSON) として安全に保存可能に対応
+
 ## [0.8.7] - 2026-07-16
 - docs: Desktop Windows executable releases now use `desktop-v*` tags and are uploaded from `dist-desktop/`
 - docs: VSIX releases remain in the existing `v*` tag history; no further VSIX updates are planned

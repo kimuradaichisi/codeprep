@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toAnalyzeInput, toBuildInput, toDiscoverInput } from './DesktopRequestParser';
+import { toAnalyzeInput, toBuildInput, toDiscoverInput, toSaveOutputRequest } from './DesktopRequestParser';
 
 describe('DesktopRequestParser', () => {
   describe('toAnalyzeInput', () => {
@@ -76,6 +76,47 @@ describe('DesktopRequestParser', () => {
         projectIds: ['p1'], recipe: { kind: 'gitDiff' },
         recommendationSettings: { markdownLink: 'yes' },
       })).toThrow();
+    });
+  });
+
+  describe('toSaveOutputRequest', () => {
+    it('accepts valid markdown request', () => {
+      const input = { content: '# Hello', format: 'markdown' };
+      expect(toSaveOutputRequest(input)).toEqual(input);
+    });
+
+    it('accepts valid xml request', () => {
+      const input = { content: '<root></root>', format: 'xml' };
+      expect(toSaveOutputRequest(input)).toEqual(input);
+    });
+
+    it('accepts valid json request', () => {
+      const input = { content: '{}', format: 'json' };
+      expect(toSaveOutputRequest(input)).toEqual(input);
+    });
+
+    it('rejects empty content string', () => {
+      expect(() => toSaveOutputRequest({ content: '', format: 'markdown' })).toThrow('Invalid save output request.');
+    });
+
+    it('rejects whitespace-only content string', () => {
+      expect(() => toSaveOutputRequest({ content: '   \n  ', format: 'markdown' })).toThrow('Invalid save output request.');
+    });
+
+    it('rejects non-string content', () => {
+      expect(() => toSaveOutputRequest({ content: 123, format: 'markdown' })).toThrow('Invalid save output request.');
+    });
+
+    it('rejects invalid format', () => {
+      expect(() => toSaveOutputRequest({ content: 'test', format: 'yaml' })).toThrow('Invalid save output request.');
+    });
+
+    it('rejects null', () => {
+      expect(() => toSaveOutputRequest(null)).toThrow('Invalid save output request.');
+    });
+
+    it('rejects undefined', () => {
+      expect(() => toSaveOutputRequest(undefined)).toThrow('Invalid save output request.');
     });
   });
 });

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- メイングラデーション -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E1E38"/>
+    </linearGradient>
+    
+    <linearGradient id="cubeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#C084FC"/>
+    </linearGradient>
+
+    <linearGradient id="patchGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4ADE80"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </linearGradient>
+
+    <!-- ドロップシャドウ -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#818CF8" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- 背景ベース（角丸） -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGradient)"/>
+
+  <!-- パッケージ & コードツリー（中央モチーフ） -->
+  <g filter="url(#glow)" transform="translate(0, 0)">
+    <!-- 立体キューブ (Package) -->
+    <!-- 上面 -->
+    <path d="M256 96 L384 160 L256 224 L128 160 Z" fill="url(#cubeGradient)" opacity="0.9"/>
+    <!-- 左面 -->
+    <path d="M128 160 L256 224 L256 368 L128 304 Z" fill="url(#cubeGradient)" opacity="0.6"/>
+    <!-- 右面 -->
+    <path d="M256 224 L384 160 L384 304 L256 368 Z" fill="url(#cubeGradient)" opacity="0.8"/>
+  </g>
+
+  <!-- 前面シンボル: ツリー & 絆創膏 (Patch) モチーフ -->
+  <!-- コードブラケット '< / >' の要素を立方体前面にオーバーレイ -->
+  <path d="M200 240 L160 272 L200 304" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M312 240 L352 272 L312 304" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- 中央の Patch & Heal バッジ (緑のひらめき/絆創膏) -->
+  <g transform="translate(256, 272)">
+    <rect x="-24" y="-24" width="48" height="48" rx="12" fill="url(#patchGlow)" transform="rotate(45)"/>
+    <!-- Plus Icon (Patch) -->
+    <path d="M-10 0 H10 M0 -10 V10" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

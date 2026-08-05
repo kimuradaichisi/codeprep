@@ -7,6 +7,7 @@ import {
   loadProjects,
   removeProject,
   runDesktopAction,
+  saveOutput,
 } from './DesktopWorkflow';
 import type { DesktopApi } from '../DesktopApi';
 
@@ -27,6 +28,10 @@ describe('Desktop workflow', () => {
     expect(api.generateOutput).toHaveBeenCalledWith(output);
     await copyOutput(api, 'context');
     expect(api.copyOutput).toHaveBeenCalledWith('context');
+
+    const saveReq = { content: 'context', format: 'markdown' as const };
+    expect(await saveOutput(api, saveReq)).toEqual({ status: 'saved', filePath: 'C:/out.md' });
+    expect(api.saveOutput).toHaveBeenCalledWith(saveReq);
   });
 
   it('converts rejected bridge actions to a user-visible error', async () => {
@@ -44,6 +49,8 @@ const createApi = (): DesktopApi => ({
   addProject: vi.fn(async () => projects), analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })), discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
   chooseProjectFolder: vi.fn(async () => undefined),
   copyOutput: vi.fn(async () => undefined), generateOutput: vi.fn(async () => ({ preview: 'context', warning: 'Unavailable' })),
+  saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/out.md' })),
   listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []),
   readFileContent: vi.fn(async () => ''),
 });
+

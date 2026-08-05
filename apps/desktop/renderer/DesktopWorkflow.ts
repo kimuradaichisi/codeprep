@@ -1,6 +1,6 @@
 import type { AnalyzedCandidate, BuildDesktopContextInput } from '../../../src/features/desktop-core/application/ports';
 import type { Project } from '../../../src/features/desktop-core/domain/Project';
-import type { DesktopApi, DesktopOutput } from '../DesktopApi';
+import type { DesktopApi, DesktopOutput, SaveOutputRequest, SaveOutputResult } from '../DesktopApi';
 
 export const loadProjects = (api: DesktopApi): Promise<readonly Project[]> =>
   api.listProjects();
@@ -32,6 +32,9 @@ export const generateOutput = (api: DesktopApi, input: BuildDesktopContextInput)
 export const copyOutput = (api: DesktopApi, output: string): Promise<void> =>
   api.copyOutput(output);
 
+export const saveOutput = (api: DesktopApi, request: SaveOutputRequest): Promise<SaveOutputResult> =>
+  api.saveOutput(request);
+
 export const runDesktopAction = async <Value>(
   action: () => Promise<Value>,
   setValue: (value: Value) => void,
@@ -42,3 +45,4 @@ export const runDesktopAction = async <Value>(
 
 export const desktopErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'Desktop action failed.';
+

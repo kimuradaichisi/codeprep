@@ -10,6 +10,7 @@ import { SearchPanel } from './components/SearchPanel';
 const unavailableApi: DesktopApi = {
   addProject: async () => [], analyzeProjects: async () => ({ candidates: [], warnings: [] }),
   chooseProjectFolder: async () => undefined, copyOutput: async () => undefined,
+  saveOutput: async () => ({ status: 'cancelled' as const }),
   discoverFiles: async () => ({ candidates: [], warnings: [] }),
   listProjectFiles: async () => [],
   generateOutput: async () => ({ preview: '' }), listProjects: async () => [], removeProject: async () => [],

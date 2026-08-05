@@ -1,4 +1,5 @@
-import type { AnalyzeProjectsInput, BuildDesktopContextInput, DiscoverFilesInput } from '../../src/features/desktop-core/application/ports';
+import type { SaveOutputRequest } from './DesktopApi';
+import type { AnalyzeProjectsInput, BuildDesktopContextInput, ContextOutputFormat, DiscoverFilesInput } from '../../src/features/desktop-core/application/ports';
 import { isPackMode, type PackMode } from '../../src/features/desktop-core/domain/PackMode';
 import type { SourceExcerpt } from '../../src/features/desktop-core/domain/SourceExcerpt';
 import { defaultRecommendationSettings, type RecommendationSettings } from '../../src/features/desktop-core/domain/Recommendation';
@@ -91,7 +92,6 @@ const packMode = (value: unknown): PackMode => {
   return invalidOutputRequest();
 };
 
-
 const sizeLimit = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : invalidOutputRequest();
 
@@ -114,3 +114,14 @@ export const toBuildInput = (value: unknown): BuildDesktopContextInput => {
     autoOptimize: value.autoOptimize === true
   };
 };
+
+const isSaveFormat = (value: unknown): value is ContextOutputFormat =>
+  value === 'markdown' || value === 'xml' || value === 'json';
+
+export const toSaveOutputRequest = (value: unknown): SaveOutputRequest => {
+  if (!isRecord(value) || typeof value.content !== 'string' || !value.content.trim() || !isSaveFormat(value.format)) {
+    throw new Error('Invalid save output request.');
+  }
+  return { content: value.content, format: value.format };
+};
+

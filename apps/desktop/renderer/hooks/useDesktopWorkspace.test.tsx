@@ -241,6 +241,55 @@ describe('useDesktopWorkspace', () => {
     });
     expect(result.current?.selectedKeys).toContain('p1:docs/related.md');
   });
+
+  describe('saveOutput', () => {
+    it('shows notice and does not call saveOutput API when preview is empty', async () => {
+      const { api, result } = await renderWorkspace();
+      await act(async () => { await result.current?.saveOutput(); });
+      expect(api.saveOutput).not.toHaveBeenCalled();
+      expect(result.current?.outputNotice).toMatch(/generate/i);
+    });
+
+    it('invokes saveOutput with current preview and format, updates outputNotice on success', async () => {
+      const saveOutput = vi.fn().mockResolvedValue({ status: 'saved', filePath: 'C:/saved-path.md' });
+      const { result } = await renderWorkspace({ saveOutput });
+
+      await act(async () => { await result.current?.analyze('auth'); });
+      await act(async () => { await result.current?.generateOutput(); });
+      await act(async () => { await result.current?.saveOutput(); });
+
+      expect(saveOutput).toHaveBeenCalledWith({ content: 'context', format: 'markdown' });
+      expect(result.current?.outputNotice).toBe('Output saved: C:/saved-path.md');
+      expect(result.current?.isSaving).toBe(false);
+    });
+
+    it('does not change notice on cancel and restores isSaving state', async () => {
+      const saveOutput = vi.fn().mockResolvedValue({ status: 'cancelled' });
+      const { result } = await renderWorkspace({ saveOutput });
+
+      await act(async () => { await result.current?.analyze('auth'); });
+      await act(async () => { await result.current?.generateOutput(); });
+      const noticeBefore = result.current?.outputNotice;
+
+      await act(async () => { await result.current?.saveOutput(); });
+
+      expect(result.current?.outputNotice).toBe(noticeBefore);
+      expect(result.current?.isSaving).toBe(false);
+    });
+
+    it('displays error notice and resets isSaving on save failure', async () => {
+      const saveOutput = vi.fn().mockRejectedValue(new Error('Unable to save the generated output.'));
+      const { result } = await renderWorkspace({ saveOutput });
+
+      await act(async () => { await result.current?.analyze('auth'); });
+      await act(async () => { await result.current?.generateOutput(); });
+
+      await act(async () => { await result.current?.saveOutput(); });
+
+      expect(result.current?.outputNotice).toBe('Unable to save the generated output.');
+      expect(result.current?.isSaving).toBe(false);
+    });
+  });
 });
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
   const result: { current?: DesktopWorkspace } = {};
@@ -253,6 +302,7 @@ const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
 const createApi = (overrides: Partial<DesktopApi>): DesktopApi => ({
   addProject: vi.fn(async () => projects), analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
   chooseProjectFolder: vi.fn(async () => undefined), copyOutput: vi.fn(async () => undefined), discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
-  generateOutput: vi.fn(async () => ({ preview: 'context' })), listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []), readFileContent: vi.fn(async () => 'file content'), ...overrides,
+  generateOutput: vi.fn(async () => ({ preview: 'context' })), saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/output.md' })), listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []), readFileContent: vi.fn(async () => 'file content'), ...overrides,
 });
 const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+

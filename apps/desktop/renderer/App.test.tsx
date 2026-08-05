@@ -8,6 +8,7 @@ const api = {
   chooseProjectFolder: async () => undefined,
   copyOutput: async () => undefined,
   generateOutput: async () => ({ preview: '', warning: 'Output generation is not available yet.' }),
+  saveOutput: async () => ({ status: 'cancelled' as const }),
   listProjectFiles: async () => [], listProjects: async () => [{ id: 'project-1', name: 'Demo', rootPath: 'C:/demo' }],
   removeProject: async () => [],
   readFileContent: async () => '',
@@ -21,5 +22,7 @@ describe('App', () => {
     expect(markup).toContain('Search files');
     expect(markup).toContain('Candidates');
     expect(markup).toContain('Copy output');
+    expect(markup).toContain('Save output');
   });
 });
+

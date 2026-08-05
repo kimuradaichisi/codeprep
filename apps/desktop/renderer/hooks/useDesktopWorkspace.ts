@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AnalyzedCandidate, ContextOutputFormat } from '../../../../src/features/desktop-core/application/ports';
 import type { DesktopApi, DesktopOutput } from '../../DesktopApi';
-import { addProject, copyOutput, desktopErrorMessage, generateOutput, loadProjects, removeProject } from '../DesktopWorkflow';
+import { addProject, copyOutput, desktopErrorMessage, generateOutput, loadProjects, removeProject, saveOutput as saveOutputWorkflow } from '../DesktopWorkflow';
 import { buildCandidateTree, sortCandidateTree, toggleTreeNode as toggleNode } from '../model/candidateTree';
 import type { CandidateTreeNode, TreeSort } from '../model/candidateTree';
 import { candidateKey } from '../model/tokenBudget';
@@ -30,6 +30,7 @@ type WorkspaceState = Readonly<{
   activeTab: OutputTab;
   useGitignore: boolean;
   recommendationSettings: RecommendationSettings;
+  isSaving: boolean;
   projectNotice: string | undefined;
   searchNotice: string | undefined;
   outputNotice: string | undefined;
@@ -75,6 +76,7 @@ const initialState: WorkspaceState = {
   activeTab: 'preview',
   useGitignore: true,
   recommendationSettings: defaultRecommendationSettings(),
+  isSaving: false,
   projectNotice: undefined,
   searchNotice: undefined,
   outputNotice: undefined,
@@ -213,7 +215,7 @@ const workspace = (
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, tokenLimit: state.tokenLimit, sortKey, setSortKey, favorites, favoritesOnly, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly, toggleFavorite };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
   const searchPanel = { recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, recommendationSettings: state.recommendationSettings, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, setRecommendationSettings, analyze: actions.analyze, clearSearch: actions.clearSearch };
-  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, includeRelatedDocs: state.includeRelatedDocs, autoOptimize: state.autoOptimize, activeTab: state.activeTab, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setActiveTab, ...actions.output };
+  const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, includeRelatedDocs: state.includeRelatedDocs, autoOptimize: state.autoOptimize, activeTab: state.activeTab, isSaving: state.isSaving, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setActiveTab, ...actions.output };
   return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, sortKey, setSortKey, toggleProjects, toggleFavorite, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setRecommendationSettings, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
@@ -229,8 +231,24 @@ const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) =
       void handleDocGraphRelations(api, set, addedKeys);
     }
   },
-  output: { generateOutput: () => generate(api, set, state), copyOutput: () => copy(api, set, state.preview) },
+  output: { generateOutput: () => generate(api, set, state), copyOutput: () => copy(api, set, state.preview), saveOutput: () => save(api, set, state) },
 });
+
+const save = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {
+  const content = state.preview.trim();
+  if (!content) return update(set, { outputNotice: 'Generate output before saving.' });
+  update(set, { isSaving: true });
+  try {
+    const result = await saveOutputWorkflow(api, { content: state.preview, format: state.format });
+    if (result.status === 'saved') {
+      update(set, { outputNotice: `Output saved: ${result.filePath}` });
+    }
+  } catch (error) {
+    update(set, { outputNotice: desktopErrorMessage(error) });
+  } finally {
+    update(set, { isSaving: false });
+  }
+};
 
 const refreshProjects = async (api: DesktopApi, set: SetWorkspace, useGitignore?: boolean): Promise<void> => {
   try {
@@ -240,6 +258,7 @@ const refreshProjects = async (api: DesktopApi, set: SetWorkspace, useGitignore?
   }
   catch (error) { update(set, { projectNotice: desktopErrorMessage(error) }); }
 };
+
 
 const saveProject = async (api: DesktopApi, set: SetWorkspace, value: string, useGitignore?: boolean): Promise<void> => {
   const rootPath = value.trim();

@@ -23,15 +23,16 @@ describe('App interactions', () => {
     await toggle(container, 'Include src/auth.ts');
     await generate(container);
     await copy(container);
+    await save(container);
 
     expect(container.textContent).toContain('Demo');
     expect(api.removeProject).toHaveBeenCalledWith('p1');
     expect(api.addProject).toHaveBeenCalledWith('C:/new');
     expect(api.analyzeProjects).toHaveBeenCalledWith({ query: 'auth', projectIds: ['p1'], contextLines: 3 });
     expect(api.generateOutput).toHaveBeenCalledWith({ candidates, format: 'markdown', maxFileSizeKB: 500, packMode: 'full', tokenLimit: 50000, includeDependencies: false, autoOptimize: false });
+    expect(api.saveOutput).toHaveBeenCalledWith({ content: 'context', format: 'markdown' });
 
-    expect(container.textContent).toContain('context');
-    expect(container.querySelector('[role="alert"]')?.textContent).toBe('Clipboard unavailable');
+    expect(container.textContent).toContain('Output saved: C:/out.md');
     await act(async () => root.unmount());
   });
 });
@@ -40,8 +41,9 @@ const createApi = (): DesktopApi => ({
   addProject: vi.fn(async () => projects), analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
   chooseProjectFolder: vi.fn(async () => undefined),
   discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
-  copyOutput: vi.fn(async () => Promise.reject(new Error('Clipboard unavailable'))),
+  copyOutput: vi.fn(async () => Promise.resolve()),
   generateOutput: vi.fn(async () => ({ preview: 'context', warning: 'Output is temporary.' })),
+  saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/out.md' })),
   listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []),
   readFileContent: vi.fn(async () => ''),
 });
@@ -65,6 +67,7 @@ const analyze = async (container: Element): Promise<void> => {
 
 const generate = async (container: Element): Promise<void> => click(container, 'Generate output');
 const copy = async (container: Element): Promise<void> => click(container, 'Copy output');
+const save = async (container: Element): Promise<void> => click(container, 'Save output');
 
 const toggle = async (container: Element, label: string): Promise<void> => {
   const input = findAll<HTMLInputElement>(container, `input[aria-label="${label}"]`)[0];
@@ -100,3 +103,4 @@ const setValue = (input: HTMLInputElement, value: string): void => {
 };
 
 const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+
