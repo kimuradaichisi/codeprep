@@ -24,6 +24,8 @@ jobs:
 
       - name: Package Windows executable
         run: npm run desktop:package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Windows executable to Release
         uses: softprops/action-gh-release@v2
