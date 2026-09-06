@@ -58,7 +58,11 @@ export const discoverEntryPointsWorkspace = async (
   api: DesktopApi,
   task: string,
   projects: readonly Project[],
-): Promise<Readonly<{ candidates?: readonly EntryPointCandidate[]; searchNotice?: string }>> => {
+): Promise<Readonly<{
+  candidates?: readonly EntryPointCandidate[];
+  enrichedCandidates?: readonly import('../../../../src/features/repository-context/domain/CandidateEvidence').EnrichedEntryPointCandidate[];
+  searchNotice?: string;
+}>> => {
   const primaryProject = projects[0];
   if (!primaryProject) return { searchNotice: 'No project selected.' };
   if (!task.trim()) return { searchNotice: 'Task description is required.' };
@@ -70,6 +74,7 @@ export const discoverEntryPointsWorkspace = async (
     });
     return {
       candidates: result.candidates,
+      enrichedCandidates: result.enrichedCandidates,
       searchNotice: result.warnings.join('\n') || undefined,
     };
   } catch (error) {

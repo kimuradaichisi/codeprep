@@ -8,6 +8,7 @@ import type {
 } from '../../src/features/repository-context/application/ports';
 import type { ContextManifest } from '../../src/features/repository-context/domain/ContextManifest';
 import type { EntryPointCandidate } from '../../src/features/repository-context/domain/EntryPointCandidate';
+import type { EnrichedEntryPointCandidate } from '../../src/features/repository-context/domain/CandidateEvidence';
 import type { Project } from '../../src/features/repository-context/domain/Project';
 
 export type DesktopOutput = Readonly<{
@@ -32,6 +33,7 @@ export type DiscoverEntryPointCandidatesRequest = Readonly<{
 
 export type DiscoverEntryPointCandidatesResponse = Readonly<{
   candidates: readonly EntryPointCandidate[];
+  enrichedCandidates?: readonly EnrichedEntryPointCandidate[];
   terms: readonly string[];
   warnings: readonly string[];
 }>;

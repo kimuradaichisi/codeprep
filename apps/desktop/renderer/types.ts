@@ -3,6 +3,7 @@ import type { DesktopApi } from '../DesktopApi';
 import type { AnalyzedCandidate, ContextOutputFormat } from '../../../src/features/repository-context/application/ports';
 import type { Project } from '../../../src/features/repository-context/domain/Project';
 import type { EntryPointCandidate } from '../../../src/features/repository-context/domain/EntryPointCandidate';
+import type { EnrichedEntryPointCandidate } from '../../../src/features/repository-context/domain/CandidateEvidence';
 import type { CandidateTreeNode, TreeSort } from './model/candidateTree';
 import type { SearchRecipeKind } from '../../../src/features/repository-context/domain/SearchRecipe';
 import type { PackMode } from '../../../src/features/repository-context/domain/PackMode';
@@ -38,6 +39,7 @@ export type SearchPanelProps = Readonly<{
   presetKind: ScenarioPresetKind; useGitignore: boolean; recommendationSettings: RecommendationSettings;
   isAnalyzing?: boolean;
   entryPointCandidates?: readonly EntryPointCandidate[];
+  enrichedCandidates?: readonly EnrichedEntryPointCandidate[];
   isDiscoveringEntryPoints?: boolean;
   setDiscoveryMode(value: DiscoveryMode): void; setTaskInput(value: string): void; setEntryPointInput(value: string): void;
   setRecipeKind(value: SearchRecipeKind): void; setQuery(value: string): void; setContextLines(value: number): void;
@@ -93,6 +95,7 @@ export type DesktopWorkspace = Readonly<{
   generateOutput(): Promise<void>; copyOutput(): Promise<void>; saveOutput(): Promise<void>;
   setFilePackMode(projectId: string, relativePath: string, mode: PackMode | undefined): void;
   entryPointCandidates?: readonly EntryPointCandidate[];
+  enrichedCandidates?: readonly EnrichedEntryPointCandidate[];
   isDiscoveringEntryPoints?: boolean;
   discoverEntryPoints?(): Promise<void>;
   toggleEntryPointCandidate?(relativePath: string): void;

@@ -60,6 +60,40 @@ describe('ContextManifestFormatter', () => {
     expect(output).toContain('## Budget\n\n- Bytes: 98000\n- Estimated tokens: 24500\n- Limit: 40000\n- Within limit: yes');
   });
 
+  it('formats evidence section when evidences are present', () => {
+    const budget = evaluateBudget(1000, 10000);
+    const manifest = createContextManifest(
+      'p1',
+      'Task with evidence',
+      ['src/A.ts'],
+      [],
+      budget,
+      [
+        {
+          kind: 'dependency',
+          projectId: 'p1',
+          candidatePath: 'src/A.ts',
+          relatedPath: 'src/Policy.ts',
+          detail: 'uses Policy',
+        },
+        {
+          kind: 'relatedTest',
+          projectId: 'p1',
+          candidatePath: 'src/A.ts',
+          relatedPath: 'tests/A.test.ts',
+          startLine: 15,
+          detail: 'tests A',
+        },
+      ]
+    );
+
+    const output = formatContextManifest(manifest);
+    expect(output).toContain('## Candidate Evidence');
+    expect(output).toContain('### src/A.ts');
+    expect(output).toContain('- dependency: src/Policy.ts');
+    expect(output).toContain('- relatedTest: tests/A.test.ts:L15');
+  });
+
   it('displays "Within limit: no" when estimated tokens exceed limit', () => {
     const budget = evaluateBudget(100000, 10000); // 25000 tokens > 10000 limit
     const manifest = createContextManifest('p1', 'Over budget', ['src/a.ts'], [], budget);

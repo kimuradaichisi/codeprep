@@ -11,6 +11,7 @@ type TaskContextInputAreaProps = Pick<
   | 'clearSearch'
   | 'isAnalyzing'
   | 'entryPointCandidates'
+  | 'enrichedCandidates'
   | 'isDiscoveringEntryPoints'
   | 'discoverEntryPoints'
   | 'toggleEntryPointCandidate'
@@ -49,6 +50,7 @@ export const TaskContextInputArea = (props: TaskContextInputAreaProps) => {
       {props.entryPointCandidates && props.entryPointCandidates.length > 0 && (
         <EntryPointCandidateList
           candidates={props.entryPointCandidates}
+          enrichedCandidates={props.enrichedCandidates}
           selectedPaths={selectedPaths}
           onToggle={(path) => props.toggleEntryPointCandidate?.(path)}
         />

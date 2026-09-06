@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Native Context Evidence & Candidate Quality (Phase 4) を実装 — 外部 CLI 依存（RepoScout/WSL）を排し、CodePrep 内部の構造情報（Dependency, Related Test, Git Co-change, Directory Proximity, Markdown Link, Symbol Support）を用いて「なぜこの Candidate を見るべきか」の客観的 Evidence を付与
+- feat: `CandidateEvidence` / `CandidateEvidenceBundle` / `EnrichedEntryPointCandidate` ドメインモデルおよび決定論的 `supportScore`（重みテーブル・カテゴリ別Cap・最大100点）計算ロジックを実装
+- feat: `CollectCandidateEvidenceUseCase` / `EnrichEntryPointCandidatesUseCase` を実装 — Top-N 候補に対する限定深掘り、重複排除・決定論的ソート、および障害時の Graceful Degradation（スコア維持・候補温存）
+- feat: `expandContextFromEvidence` による Evidence 起点の関連コンテキスト展開ヘルパーを実装し、既存 Context Pack パイプライン（Role分類・Budget管理）へ接続
+- feat: Context Manifest (Markdown) 出力に `## Candidate Evidence` セクションを追加し、LLM 向けに客観的根拠を提示
+- feat: CodePrep Desktop UI に `Support: X pts` バッジおよび折りたたみ可能な Structural Evidence 詳細表示を統合
+- refactor: `useDesktopWorkspace.ts` (478行) を状態管理・アクション群（`workspaceState`, `workspaceDocGraph`, `workspacePresets`, `workspaceProjectActions`, `workspaceTaskActions`）にモジュール分割し、規約（150行/15行）に適合
 - feat: Real Embedding Calibration & Evaluation (Phase 3C-EVAL) — 実ローカル Ollama (`nomic-embed-text`) と実 CodePrep リポジトリを用いた 20問の Golden Set による Semantic Search 評価・較正ハーネス (`npm run eval:semantic`) を実装
 - feat: `EntryPointCandidateScorer` および `DiscoverEntryPointCandidatesUseCase` に `customWeights` パラメータを追加し、外部からのスコア重み動的較正に対応
 - refactor: `scripts/check-standards.ts` の `git status` パースを修正し、変更ファイルの正確な規約チェックに対応

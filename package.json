@@ -442,6 +442,7 @@
     "lint:standards:changed": "ts-node scripts/check-standards.ts --changed",
     "lint:standards:file": "ts-node scripts/check-standards.ts",
     "eval:semantic": "ts-node scripts/evaluate-semantic-entry-points.ts",
+    "eval:native-evidence": "ts-node scripts/evaluate-native-evidence.ts",
     "check": "npm run compile && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
   },
   "devDependencies": {
