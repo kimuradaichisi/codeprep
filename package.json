@@ -436,14 +436,17 @@
     "desktop:build": "esbuild apps/desktop/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=apps/desktop/dist/main.js && esbuild apps/desktop/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=apps/desktop/dist/preload.js && esbuild apps/desktop/renderer/bootstrap.tsx --bundle --platform=browser --format=esm --outfile=apps/desktop/dist/renderer/App.js && node -e \"require('fs').mkdirSync('apps/desktop/dist/renderer',{recursive:true});require('fs').copyFileSync('apps/desktop/renderer/index.html','apps/desktop/dist/renderer/index.html')\"",
     "desktop:dev": "npm run generate-icons && npm run desktop:build && electron apps/desktop/dist/main.js",
     "desktop:package": "npm run generate-icons && npm run desktop:build && node -e \"require('fs').writeFileSync('apps/desktop/dist/package.json', JSON.stringify({name:'codeprep-desktop',main:'main.js',version:require('./package.json').version}))\" && electron-builder --win --publish never",
-    "lint": "eslint src apps/desktop --ext .ts --ext .tsx --cache",
-    "lint:fix": "eslint src apps/desktop --ext .ts --ext .tsx --fix",
+    "lint": "eslint src apps/desktop apps/mcp --ext .ts --ext .tsx --cache",
+    "lint:fix": "eslint src apps/desktop apps/mcp --ext .ts --ext .tsx --fix",
     "lint:standards": "ts-node scripts/check-standards.ts",
     "lint:standards:changed": "ts-node scripts/check-standards.ts --changed",
     "lint:standards:file": "ts-node scripts/check-standards.ts",
+    "mcp": "ts-node apps/mcp/index.ts",
+    "mcp:build": "esbuild apps/mcp/index.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist-mcp/index.js",
+    "mcp:test": "vitest run apps/mcp",
     "eval:semantic": "ts-node scripts/evaluate-semantic-entry-points.ts",
     "eval:native-evidence": "ts-node scripts/evaluate-native-evidence.ts",
-    "check": "npm run compile && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
+    "check": "npm run compile && npm run mcp:build && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
@@ -471,12 +474,14 @@
     "vitest": "^4.1.5"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.22.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "overrides": {
     "diff": "^8.0.3",
-    "serialize-javascript": "^7.0.5"
+    "serialize-javascript": "^7.0.5",
+    "zod": "3.23.8"
   },
   "build": {
     "appId": "com.codeprep.desktop",

@@ -46,4 +46,5 @@ Structure
 meta.json
 .superpowers/
 dist-desktop/
+dist-mcp/
 reports/semantic-evaluation/indexes/

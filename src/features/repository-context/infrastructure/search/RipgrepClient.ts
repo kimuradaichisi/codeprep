@@ -75,7 +75,7 @@ function runProcess(
   cwd: string,
 ): Promise<ProcessOutput> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, [...args], { cwd, shell: false });
+    const child = spawn(command, [...args], { cwd, shell: false, stdio: ['ignore', 'pipe', 'pipe'] });
     const chunks = collectProcessChunks(child, resolve);
     child.stdout.on('data', chunks.stdout);
     child.stderr.on('data', chunks.stderr);

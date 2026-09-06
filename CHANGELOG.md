@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: MCP Tool Surface & External Agent Integration (Phase 5A) を実装 — Claude / Coding Agent / 外部 MCP Client から CodePrep の候補探索・Native Evidence・Context Pack パイプラインを利用可能な stdio transport MCP サーバー（`@modelcontextprotocol/sdk`）を構築
+- feat: `codeprep_workspace_status` ツールを実装 — Workspace バインド状態、Repository / Knowledge / Semantic 各インデックスの準備状態（ready/missing/degraded/error）および診断情報を取得
+- feat: `codeprep_discover_entry_points` ツールを実装 — タスク指示文からの決定論的・セマンティック候補探索および Native Structural Evidence（依存関係・テスト・共変更など）が付与された候補一覧を提供（Embedding未接続時は degraded 診断を付与し deterministic 継続）
+- feat: `codeprep_build_context_pack` ツールを実装 — Caller / Human が選択した Entry Points を明示入力として受け取り、トークン予算有界な Context Pack（Manifest + フォーマット済みコード）を生成
+- feat: Path Security（ディレクトリ脱出防止・絶対パス拒絶・`fs.realpath` による symlink/junction 実体境界検証）および Read-Only 実行境界を徹底
+- feat: Production Launch Bundle (`npm run mcp:build` / `dist-mcp/index.js`) を整備し、JSON-RPC プロトコルへの余分な出力ゼロ（0 byte stdout contamination）を実証
+- fix: Windows 環境において `RipgrepClient` が stdin 入力待ちでハングする現象を防止するため、`spawn` オプションに `stdio: ['ignore', 'pipe', 'pipe']` を明示指定
+- feat: `docs/mcp.md` ドキュメントを追加し、Claude Desktop や MCP クライアントとの接続設定・Tool 仕様・Production Launch コマンドを解説
+- feat: `npm run mcp`, `npm run mcp:build`, `npm run mcp:test` スクリプトを追加
 - feat: Native Context Evidence & Candidate Quality (Phase 4) を実装 — 外部 CLI 依存（RepoScout/WSL）を排し、CodePrep 内部の構造情報（Dependency, Related Test, Git Co-change, Directory Proximity, Markdown Link, Symbol Support）を用いて「なぜこの Candidate を見るべきか」の客観的 Evidence を付与
 - feat: `CandidateEvidence` / `CandidateEvidenceBundle` / `EnrichedEntryPointCandidate` ドメインモデルおよび決定論的 `supportScore`（重みテーブル・カテゴリ別Cap・最大100点）計算ロジックを実装
 - feat: `CollectCandidateEvidenceUseCase` / `EnrichEntryPointCandidatesUseCase` を実装 — Top-N 候補に対する限定深掘り、重複排除・決定論的ソート、および障害時の Graceful Degradation（スコア維持・候補温存）
