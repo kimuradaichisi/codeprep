@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Workspace Repository Index Foundation (Phase 3A) を実装 — Workspace 単位のリポジトリインデックス基盤、増分更新、差分変更セット（added/modified/deleted/unchanged）を構築
+- feat: `RepositoryIndex` / `RepositoryIndexEntry` / `RepositoryIndexMetadata` ドメインモデルおよび決定論的ソート・バージョン（schemaVersion=1）管理
+- feat: `FileKindClassifier` を追加 — code, document, config, test, other の軽量ファイル種別自動分類
+- feat: `BuildRepositoryIndexUseCase` / `RefreshRepositoryIndexUseCase` / `IndexEntryComparator` を追加 — ファイル変更のみ再ハッシュ化する増分更新最適化および破損/スキーマ不一致時の安全な再構築
+- feat: `JsonRepositoryIndexStore` / `NodeCryptoFingerprintClient` / `ProjectScannerClient` を実装 — AppData 領域への Atomic Write（一時ファイル+rename）による安全な保存
+- feat: CodePrep Desktop UI に「Repository Index」状態表示（READY/UPDATING/DEGRADED/NOT_INDEXED、総ファイル数、Refreshボタン）を統合
+- test: E2E ライフサイクルテスト（初回構築・増分更新・修正検知・追加検知・削除検知・Workspace隔離）を追加
 - feat: Task-driven Context Pack Phase 2 (Entry Point Candidate Discovery) を実装 — 自然言語 Task からリポジトリ内の Entry Point 候補を決定論的・説明可能な方法で抽出し、スコアリング・ランキング付きで提示する機能を追加
 - feat: `TaskSearchTermExtractor` を追加 — Task 文字列から引用符句、コード識別子、英単語、日本語（漢字・カタカナ語）を決定論的に抽出し、ストップワードを除外
 - feat: Entry Point 候補ソース群（`FilenameAndPathCandidateSource`, `TextCandidateSource`, `HeadingCandidateSource`, `SymbolCandidateSource`）を実装

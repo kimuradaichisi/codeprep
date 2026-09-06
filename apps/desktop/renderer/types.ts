@@ -25,7 +25,9 @@ export type DiscoveryMode = 'search' | 'task';
 
 export type ProjectPanelProps = Readonly<{
   projects: readonly Project[]; projectNotice: WorkspaceNotice;
+  indexStatus?: string; indexTotalFiles?: number;
   addProject(rootPath: string): Promise<void>; chooseProjectFolder(): Promise<void>; removeProject(projectId: string): Promise<void>;
+  refreshIndex?(): Promise<void>;
 }>;
 
 export type SearchPanelProps = Readonly<{

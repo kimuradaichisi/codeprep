@@ -13,6 +13,7 @@ import { defaultRecommendationSettings, type RecommendationSettings } from '../.
 import type { EntryPointCandidate } from '../../../../src/features/repository-context/domain/EntryPointCandidate';
 import { selectedCandidates, fileCandidates, analyzeWorkspace } from './workspaceAnalysis';
 import { analyzeTaskWorkspace, discoverEntryPointsWorkspace } from './workspaceTaskContext';
+import { useWorkspaceRepositoryIndex } from './workspaceRepositoryIndex';
 
 type WorkspaceState = Readonly<{
   projects: DesktopWorkspace['projects'];
@@ -133,6 +134,8 @@ export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
     });
   };
 
+  const indexInfo = useWorkspaceRepositoryIndex(api);
+
   return workspace(
     api,
     state,
@@ -145,7 +148,8 @@ export const useDesktopWorkspace = (api: DesktopApi): DesktopWorkspace => {
     setFavoritesOnly,
     toggleFavorite,
     sortKey,
-    setSortKey
+    setSortKey,
+    indexInfo
   );
 };
 
@@ -161,7 +165,8 @@ const workspace = (
   setFavoritesOnly: (v: boolean) => void,
   toggleFavorite: (projectId: string, relativePath: string) => void,
   sortKey: TreeSort,
-  setSortKey: (value: TreeSort) => void
+  setSortKey: (value: TreeSort) => void,
+  indexInfo: import('./workspaceRepositoryIndex').WorkspaceIndexState
 ): DesktopWorkspace => {
   const setDiscoveryMode = (discoveryMode: DiscoveryMode): void => update(set, { discoveryMode });
   const setTaskInput = (taskInput: string): void => update(set, { taskInput });
@@ -230,7 +235,14 @@ const workspace = (
   const clearAll = (): void => update(set, { selectedKeys: [] });
 
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, tokenLimit: state.tokenLimit, sortKey, setSortKey, favorites, favoritesOnly, isLoading: state.isAnalyzing, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly, toggleFavorite };
-  const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
+  const projectPanel = {
+    projects: state.projects,
+    projectNotice: state.projectNotice,
+    indexStatus: indexInfo.indexStatus,
+    indexTotalFiles: indexInfo.indexTotalFiles,
+    refreshIndex: indexInfo.refreshIndex,
+    ...actions.project,
+  };
   const searchPanel = { discoveryMode: state.discoveryMode, taskInput: state.taskInput, entryPointInput: state.entryPointInput, setDiscoveryMode, setTaskInput, setEntryPointInput, recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, recommendationSettings: state.recommendationSettings, isAnalyzing: state.isAnalyzing, entryPointCandidates: state.entryPointCandidates, isDiscoveringEntryPoints: state.isDiscoveringEntryPoints, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, setRecommendationSettings, analyze: actions.analyze, analyzeTask: actions.analyzeTask, discoverEntryPoints: actions.discoverEntryPoints, toggleEntryPointCandidate: actions.toggleEntryPointCandidate, clearSearch: actions.clearSearch };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, includeRelatedDocs: state.includeRelatedDocs, autoOptimize: state.autoOptimize, activeTab: state.activeTab, isSaving: state.isSaving, isGenerating: state.isGenerating, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setActiveTab, ...actions.output };
   return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, sortKey, setSortKey, toggleProjects, toggleFavorite, setDiscoveryMode, setTaskInput, setEntryPointInput, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setRecommendationSettings, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, analyzeTask: actions.analyzeTask, discoverEntryPoints: actions.discoverEntryPoints, toggleEntryPointCandidate: actions.toggleEntryPointCandidate, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };

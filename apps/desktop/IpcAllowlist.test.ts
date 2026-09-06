@@ -7,7 +7,7 @@ describe('IPC allowlist', () => {
 
     expect(Object.keys(api).sort()).toEqual([
       'addProject', 'analyzeProjects', 'buildTaskContext', 'chooseProjectFolder', 'copyOutput', 'discoverEntryPointCandidates', 'discoverFiles',
-      'generateOutput', 'listProjectFiles', 'listProjects', 'readFileContent', 'removeProject', 'saveOutput',
+      'generateOutput', 'getRepositoryIndexStatus', 'listProjectFiles', 'listProjects', 'readFileContent', 'refreshRepositoryIndex', 'removeProject', 'saveOutput',
     ]);
   });
 

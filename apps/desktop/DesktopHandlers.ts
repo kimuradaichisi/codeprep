@@ -1,4 +1,4 @@
-import { basename, resolve, dirname } from 'node:path';
+import { basename, resolve, dirname, join } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { clipboard, dialog, ipcMain } from 'electron';
@@ -16,8 +16,14 @@ import {
   handleGenerateOutput,
 } from './DesktopAnalysisHandlers';
 
+import {
+  handleGetRepositoryIndexStatus,
+  handleRefreshRepositoryIndex,
+} from './RepositoryIndexHandler';
+
 export const registerDesktopHandlers = (registryPath: string): void => {
   const registry = new ProjectRegistryStore(registryPath);
+  const indexesDir = join(dirname(registryPath), 'indexes');
   ipcMain.handle('chooseProjectFolder', createChooseProjectFolderHandler(openFolderDialog));
   ipcMain.handle('listProjectFiles', (_e, pId: unknown, opt: unknown) => listFiles(registry, pId, opt));
   ipcMain.handle('listProjects', () => listProjects(registry));
@@ -31,6 +37,8 @@ export const registerDesktopHandlers = (registryPath: string): void => {
   ipcMain.handle('readFileContent', (_e, pId: unknown, rel: unknown) => readFileContent(registry, pId, rel));
   ipcMain.handle('buildTaskContext', (_e, value: unknown) => handleBuildTaskContext(registry, value));
   ipcMain.handle('discoverEntryPointCandidates', (_e, val: unknown) => handleDiscoverEntryPointCandidates(registry, val));
+  ipcMain.handle('getRepositoryIndexStatus', (_e, wsId: unknown) => handleGetRepositoryIndexStatus(indexesDir, wsId));
+  ipcMain.handle('refreshRepositoryIndex', (_e, wsId: unknown) => handleRefreshRepositoryIndex(registry, indexesDir, wsId));
 };
 
 let lastChosenPath: string | undefined = undefined;

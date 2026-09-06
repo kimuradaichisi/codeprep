@@ -57,6 +57,27 @@ export type SaveOutputResult =
       status: 'cancelled';
     }>;
 
+export type RepositoryIndexStatus = 'ready' | 'updating' | 'degraded' | 'not_indexed';
+
+export type RepositoryIndexStatusResponse = Readonly<{
+  status: RepositoryIndexStatus;
+  totalFiles: number;
+  updatedAt?: string;
+  schemaVersion?: number;
+}>;
+
+export type RefreshRepositoryIndexResponse = Readonly<{
+  status: RepositoryIndexStatus;
+  metrics?: {
+    totalFiles: number;
+    added: number;
+    modified: number;
+    deleted: number;
+    unchanged: number;
+  };
+  rebuilt: boolean;
+}>;
+
 export type DesktopApi = Readonly<{
   chooseProjectFolder(): Promise<string | undefined>;
   listProjectFiles(projectId: string, options?: { useGitignore?: boolean }): Promise<readonly Readonly<{ relativePath: string; size: number }>[]>;
@@ -71,4 +92,6 @@ export type DesktopApi = Readonly<{
   readFileContent(projectId: string, relativePath: string): Promise<string>;
   buildTaskContext(request: BuildTaskContextRequest): Promise<DesktopTaskContextResult>;
   discoverEntryPointCandidates(request: DiscoverEntryPointCandidatesRequest): Promise<DiscoverEntryPointCandidatesResponse>;
+  getRepositoryIndexStatus(workspaceId: string): Promise<RepositoryIndexStatusResponse>;
+  refreshRepositoryIndex(workspaceId: string): Promise<RefreshRepositoryIndexResponse>;
 }>;

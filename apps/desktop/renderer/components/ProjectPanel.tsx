@@ -2,7 +2,16 @@ import { useState } from 'react';
 import type { ProjectPanelProps } from '../types';
 import { InlineNotice } from './InlineNotice';
 
-export const ProjectPanel = ({ projects, projectNotice, addProject, chooseProjectFolder, removeProject }: ProjectPanelProps) => {
+export const ProjectPanel = ({
+  projects,
+  projectNotice,
+  indexStatus,
+  indexTotalFiles,
+  refreshIndex,
+  addProject,
+  chooseProjectFolder,
+  removeProject,
+}: ProjectPanelProps) => {
   const [path, setPath] = useState('');
   const submit = async (): Promise<void> => { await addProject(path); setPath(''); };
   return (
@@ -18,6 +27,12 @@ export const ProjectPanel = ({ projects, projectNotice, addProject, chooseProjec
           <button onClick={() => void submit()} style={{ flex: '0 0 auto', padding: '4px 8px', fontSize: '11px', height: '28px' }}>Add</button>
         </div>
       </div>
+      {indexStatus && (
+        <div style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px' }}>
+          <span>Index: <strong style={{ textTransform: 'uppercase' }}>{indexStatus}</strong> ({indexTotalFiles ?? 0} files)</span>
+          {refreshIndex && <button onClick={() => void refreshIndex()} style={{ fontSize: '10px', padding: '2px 6px' }}>Refresh</button>}
+        </div>
+      )}
       <InlineNotice message={projectNotice} />
       <ul className="project-list" style={{ flex: 1, overflowY: 'auto' }}>
         {projects.map(project => (

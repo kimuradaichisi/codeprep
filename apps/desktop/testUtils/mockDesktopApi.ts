@@ -28,8 +28,13 @@ const createContextMocks = () => ({
   discoverEntryPointCandidates: vi.fn(async () => ({ candidates: [], terms: [], warnings: [] })),
 });
 
+const createIndexMocks = () => ({
+  getRepositoryIndexStatus: vi.fn(async () => ({ status: 'ready' as const, totalFiles: 0 })),
+  refreshRepositoryIndex: vi.fn(async () => ({ status: 'ready' as const, rebuilt: false })),
+});
+
 export function createMockDesktopApi(overrides: Partial<DesktopApi> = {}): DesktopApi {
-  return { ...createProjectMocks(), ...createContextMocks(), ...overrides };
+  return { ...createProjectMocks(), ...createContextMocks(), ...createIndexMocks(), ...overrides };
 }
 
 const defaultFallbackApi: DesktopApi = {
@@ -46,6 +51,8 @@ const defaultFallbackApi: DesktopApi = {
   readFileContent: async () => '',
   buildTaskContext: async () => ({ manifest: defaultManifest, markdown: '', candidates: [], warnings: [] }),
   discoverEntryPointCandidates: async () => ({ candidates: [], terms: [], warnings: [] }),
+  getRepositoryIndexStatus: async () => ({ status: 'ready' as const, totalFiles: 0 }),
+  refreshRepositoryIndex: async () => ({ status: 'ready' as const, rebuilt: false }),
 };
 
 export function createFallbackDesktopApi(overrides: Partial<DesktopApi> = {}): DesktopApi {
