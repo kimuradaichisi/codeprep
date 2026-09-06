@@ -56,3 +56,16 @@ When providing code, you must follow this exact format:
 3. **Added Immutability:** Makes bugs much harder to introduce.
 4. **Clarified Omission Anchors:** LLMs often fail at applying diffs if they don't provide exact anchor lines. Specifying "at least 2 lines of exact unmodified code" fixes this.
 5. **Refined Error Handling:** Explicitly told the AI not to crash the extension host, which is a common issue when `fs` operations fail in extensions.
+
+## 7. Gemini Execution Contract & Operational Guidelines
+CodePrep プロジェクトにおける Gemini (Antigravity Agent) の標準動作指針、品質契約、運用ガイドラインとして以下を策定しています。作業開始前に必ずこれらを参照し、最優先で遵守してください。
+
+- **実行契約 (基本原則・調査・編集・判断・品質4層評価):**
+  [.agents/GEMINI_EXECUTION_CONTRACT.md](file:///D:/git/codeprep/.agents/GEMINI_EXECUTION_CONTRACT.md)
+  - 安い手段の優先、最小変更、推測の排除 (UNKNOWN/ERRORの明示、false PASSの厳禁)
+  - 4層品質評価 (Implementation, Contract, Evidence, Decision Quality)
+- **運用フロー (Git・文書・自己改善・完了報告・Design Closure):**
+  [.agents/GEMINI_EXECUTION_WORKFLOW.md](file:///D:/git/codeprep/.agents/GEMINI_EXECUTION_WORKFLOW.md)
+  - 未コミット変更の保護、勝手なGit操作の禁止、反復の機械化候補フィードバック
+  - Design Closure / One-Pass Completion (次工程を意識した不変条件確認、完了前 Self-Review)
+  - **CHANGELOG 記録規約:** タスク作業完了時は必ずルートの `CHANGELOG.md` に変更概要を記録すること。

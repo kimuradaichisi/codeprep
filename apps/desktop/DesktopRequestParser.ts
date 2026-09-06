@@ -1,8 +1,8 @@
 import type { SaveOutputRequest } from './DesktopApi';
-import type { AnalyzeProjectsInput, BuildDesktopContextInput, ContextOutputFormat, DiscoverFilesInput } from '../../src/features/desktop-core/application/ports';
-import { isPackMode, type PackMode } from '../../src/features/desktop-core/domain/PackMode';
-import type { SourceExcerpt } from '../../src/features/desktop-core/domain/SourceExcerpt';
-import { defaultRecommendationSettings, type RecommendationSettings } from '../../src/features/desktop-core/domain/Recommendation';
+import type { AnalyzeProjectsInput, BuildDesktopContextInput, ContextOutputFormat, DiscoverFilesInput } from '../../src/features/repository-context/application/ports';
+import { isPackMode, type PackMode } from '../../src/features/repository-context/domain/PackMode';
+import type { SourceExcerpt } from '../../src/features/repository-context/domain/SourceExcerpt';
+import { defaultRecommendationSettings, type RecommendationSettings } from '../../src/features/repository-context/domain/Recommendation';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

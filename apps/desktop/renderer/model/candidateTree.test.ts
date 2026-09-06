@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
-import type { Project } from '../../../../src/features/desktop-core/domain/Project';
-import type { RecommendationReason } from '../../../../src/features/desktop-core/domain/Recommendation';
+import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
+import type { Project } from '../../../../src/features/repository-context/domain/Project';
+import type { RecommendationReason } from '../../../../src/features/repository-context/domain/Recommendation';
 import { buildCandidateTree, descendantCandidateKeys, nodeCheckState, sortCandidateTree, toggleTreeNode, type CandidateTreeNode } from './candidateTree';
 
 const projects: readonly Project[] = [

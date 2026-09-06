@@ -1,4 +1,4 @@
-import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
+import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
 
 export type BudgetSummary = Readonly<{ label: string; over: boolean; ratio: number }>;
 

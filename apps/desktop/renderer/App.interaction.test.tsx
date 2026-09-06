@@ -46,6 +46,10 @@ const createApi = (): DesktopApi => ({
   saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/out.md' })),
   listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []),
   readFileContent: vi.fn(async () => ''),
+  buildTaskContext: vi.fn(async () => ({
+    manifest: { projectId: 'p1', task: '', entryPoints: [], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
+    markdown: '', candidates: [], warnings: [],
+  })),
 });
 
 const render = async (root: ReturnType<typeof createRoot>, element: ReactElement): Promise<void> => {

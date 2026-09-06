@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CandidateTree } from './CandidateTree';
 import type { CandidateTreeProps } from '../types';
-import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
+import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
 
 const candidate: AnalyzedCandidate = {
   projectId: 'p1', relativePath: 'src/auth.ts', reasons: ['pathAffinity'], excluded: false, score: 0, size: 400,

@@ -1,0 +1,37 @@
+// apps/desktop/TaskContextRequestParser.ts
+import type { BuildTaskContextRequest } from './DesktopApi';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const requiredString = (value: unknown, label: string): string => {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(`${label} is required.`);
+  }
+  return value.trim();
+};
+
+const parseEntryPoints = (value: unknown): readonly string[] => {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error('At least one entry point is required.');
+  }
+  const items = value.map(item => requiredString(item, 'Entry point'));
+  return Object.freeze(items);
+};
+
+const parseTokenLimit = (value: unknown): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    throw new Error('Invalid token limit.');
+  }
+  return value;
+};
+
+export const toBuildTaskContextRequest = (value: unknown): BuildTaskContextRequest => {
+  if (!isRecord(value)) throw new Error('Invalid task context request.');
+  const projectId = requiredString(value.projectId, 'Project ID');
+  const task = requiredString(value.task, 'Task');
+  const entryPoints = parseEntryPoints(value.entryPoints);
+  const tokenLimit = parseTokenLimit(value.tokenLimit);
+  return Object.freeze({ projectId, task, entryPoints, tokenLimit });
+};

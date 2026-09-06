@@ -1,16 +1,32 @@
 import type {
   AnalyzeProjectsInput,
   AnalyzeProjectsResult,
+  AnalyzedCandidate,
   BuildDesktopContextInput,
   ContextOutputFormat,
   DiscoverFilesInput,
-} from '../../src/features/desktop-core/application/ports';
-import type { Project } from '../../src/features/desktop-core/domain/Project';
+} from '../../src/features/repository-context/application/ports';
+import type { ContextManifest } from '../../src/features/repository-context/domain/ContextManifest';
+import type { Project } from '../../src/features/repository-context/domain/Project';
 
 export type DesktopOutput = Readonly<{
   preview: string;
   warning?: string;
   manifest?: readonly Readonly<{ projectId: string; relativePath: string; included: boolean; reasons: readonly string[] }>[];
+}>;
+
+export type BuildTaskContextRequest = Readonly<{
+  projectId: string;
+  task: string;
+  entryPoints: readonly string[];
+  tokenLimit?: number;
+}>;
+
+export type DesktopTaskContextResult = Readonly<{
+  manifest: ContextManifest;
+  markdown: string;
+  candidates: readonly AnalyzedCandidate[];
+  warnings: readonly string[];
 }>;
 
 export type SaveOutputRequest = Readonly<{
@@ -39,4 +55,5 @@ export type DesktopApi = Readonly<{
   copyOutput(text: string): Promise<void>;
   saveOutput(request: SaveOutputRequest): Promise<SaveOutputResult>;
   readFileContent(projectId: string, relativePath: string): Promise<string>;
+  buildTaskContext(request: BuildTaskContextRequest): Promise<DesktopTaskContextResult>;
 }>;

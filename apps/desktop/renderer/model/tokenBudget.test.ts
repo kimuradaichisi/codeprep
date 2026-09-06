@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { budgetSummary, candidateKey, estimateTokens, formatTokens, selectedTokenTotal } from './tokenBudget';
-import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
+import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
 
 const candidate = (projectId: string, relativePath: string, size: number | undefined): AnalyzedCandidate => ({
     projectId, relativePath, reasons: ['pathAffinity'], excluded: false, score: 0, size,

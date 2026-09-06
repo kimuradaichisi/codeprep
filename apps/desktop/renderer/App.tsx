@@ -15,6 +15,12 @@ const unavailableApi: DesktopApi = {
   listProjectFiles: async () => [],
   generateOutput: async () => ({ preview: '' }), listProjects: async () => [], removeProject: async () => [],
   readFileContent: async () => '',
+  buildTaskContext: async () => ({
+    manifest: { projectId: '', task: '', entryPoints: [], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
+    markdown: '',
+    candidates: [],
+    warnings: [],
+  }),
 };
 
 import { FileViewerModal } from './components/FileViewerModal';

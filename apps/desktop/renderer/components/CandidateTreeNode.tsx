@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { nodeCheckState } from '../model/candidateTree';
 import type { CandidateTreeNode as TreeNode } from '../model/candidateTree';
 import type { CandidateTreeProps } from '../types';
-import { isPackMode } from '../../../../src/features/desktop-core/domain/PackMode';
+import { isPackMode } from '../../../../src/features/repository-context/domain/PackMode';
 
 export const CandidateTreeNode = ({ node, selectedKeys, favorites = [], toggleTreeNode, viewFile, setFilePackMode, toggleFavorite, depth = 0 }: Readonly<{
   node: TreeNode; selectedKeys: readonly string[]; favorites?: readonly string[]; toggleTreeNode: CandidateTreeProps['toggleTreeNode']; viewFile: CandidateTreeProps['viewFile']; setFilePackMode: CandidateTreeProps['setFilePackMode']; toggleFavorite: CandidateTreeProps['toggleFavorite']; depth?: number;

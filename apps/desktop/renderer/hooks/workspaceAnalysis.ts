@@ -1,11 +1,11 @@
 import type { DesktopApi } from '../../DesktopApi';
-import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
-import { createSearchRecipe, type SearchRecipeKind } from '../../../../src/features/desktop-core/domain/SearchRecipe';
+import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
+import { createSearchRecipe, type SearchRecipeKind } from '../../../../src/features/repository-context/domain/SearchRecipe';
 import { analyzeProjects, desktopErrorMessage } from '../DesktopWorkflow';
 import { buildCandidateTree, descendantCandidateKeys } from '../model/candidateTree';
 import { candidateKey } from '../model/tokenBudget';
-import type { Project } from '../../../../src/features/desktop-core/domain/Project';
-import { defaultRecommendationSettings, type RecommendationSettings } from '../../../../src/features/desktop-core/domain/Recommendation';
+import type { Project } from '../../../../src/features/repository-context/domain/Project';
+import { defaultRecommendationSettings, type RecommendationSettings } from '../../../../src/features/repository-context/domain/Recommendation';
 
 export const candidateKeys = (
   candidates: readonly AnalyzedCandidate[],

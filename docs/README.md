@@ -1,25 +1,27 @@
 # CodePrep Documentation
 
-CodePrep の設計、テスト、および使用方法に関するドキュメント一式です。
+CodePrep の設計、仕様、およびドキュメント一式です。
 
-## 📂 ディレクトリ構成
+## 📂 現在のドキュメント構成
 
-### 🏗 [Design (設計)](./design/)
-拡張機能のアーキテクチャおよび詳細設計です。
-- **[Features](./design/features/)**: 各機能（正規表現フィルタ、プレビュー、プリセット等）の設計書。
-- **[Milestones](./design/milestones/)**: 開発フェーズごとのマイルストーン設計書。
-- **[UI/UX](./design/ui/)**: ユーザーインターフェースおよびエクスペリエンスの設計。
+### 📄 仕様・ガイド
+- **[Smart Patch Engine](./smart-patch.md)**: クリップボードからの差分プレビューおよび適用機能の仕様・使い方
+- **[DocIndexer 要件定義書](./doc-indexer/requirements.md)**: ドキュメント関係性解析・インデクサー要件
+- **[AI-assisted Development](./ai-assisted-development.md)**: AI支援開発方針および責務
+- **[Safety](./safety.md)**: セキュリティおよび機密データ取り扱い方針
+- **[Publication Checklist](./publication-checklist.md)**: リリース前チェックリスト
 
-### 🧪 [Testing (テスト)](./testing/)
-品質保証のためのテスト戦略とシナリオです。
-- **[TEST_PLAN.md](./testing/TEST_PLAN.md)**: 全体的なテスト計画。
-- **[Scenarios](./testing/scenarios/)**: E2E テストなどの詳細なテストシナリオ。
-- **[Analysis](./testing/analysis/)**: カバレッジ分析や実装監査レポート。
+---
 
-### 📖 [Guides (ガイド)](./guides/)
-ユーザー向けの操作ガイドです。
-- **[Activity Bar Customization](./guides/activity_bar_customization.md)**: アクティビティバーのカスタマイズ方法。
+## 📦 過去アーカイブ ([./archive/](./archive/))
+過去のマイルストーン、初期設計、古い開発計画等はコンテキスト汚染防止のため `archive/` に退避されています。
+
+- **[Design (初期設計・マイルストーン)](./archive/design/)**
+- **[Testing (初期テスト計画・分析)](./archive/testing/)**
+- **[Guides (初期操作ガイド)](./archive/guides/)**
+- **[Superpowers (Electron/Desktop/ContextPack初期計画・仕様)](./archive/superpowers/)**
+- **[Todo (過去のTODO・計画)](./archive/todo/)**
 
 ---
 プロジェクト全体の概要については、ルートの [README.md](../README.md) を参照してください。
-AI開発に関する規約は [GEMINI.md](../GEMINI.md) にまとめられています。
+開発規約およびAIエージェント実行契約は [AGENTS.md](../AGENTS.md) を参照してください。

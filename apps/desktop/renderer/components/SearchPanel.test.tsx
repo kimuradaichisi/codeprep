@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 import { SearchPanel } from './SearchPanel';
 import type { SearchPanelProps } from '../types';
-import { defaultRecommendationSettings } from '../../../../src/features/desktop-core/domain/Recommendation';
+import { defaultRecommendationSettings } from '../../../../src/features/repository-context/domain/Recommendation';
 
 describe('SearchPanel', () => {
   it('disables Analyze button and shows Analyzing... when isAnalyzing is true', () => {
@@ -45,6 +45,28 @@ describe('SearchPanel', () => {
     expect(button).not.toBeNull();
     expect(button?.disabled).toBe(false);
   });
+
+  it('renders Task Context mode inputs and buttons', () => {
+    const props = createProps({
+      discoveryMode: 'task',
+      taskInput: '返品処理を追加',
+      entryPointInput: 'src/order/OrderService.ts',
+    });
+    const container = renderPanel(props);
+
+    const taskInput = container.querySelector<HTMLInputElement>('input[aria-label="Task description"]');
+    const epInput = container.querySelector<HTMLInputElement>('input[aria-label="Entry points"]');
+    const button = getButton(container, 'Analyze Task');
+
+    expect(taskInput?.value).toBe('返品処理を追加');
+    expect(epInput?.value).toBe('src/order/OrderService.ts');
+    expect(button?.disabled).toBe(false);
+
+    act(() => {
+      button?.click();
+    });
+    expect(props.analyzeTask).toHaveBeenCalled();
+  });
 });
 
 const renderPanel = (props: SearchPanelProps): HTMLElement => {
@@ -62,6 +84,9 @@ const getButton = (container: HTMLElement, text: string): HTMLButtonElement | nu
 };
 
 const createProps = (overrides: Partial<SearchPanelProps> = {}): SearchPanelProps => ({
+  discoveryMode: 'search',
+  taskInput: '',
+  entryPointInput: '',
   recipeKind: 'text',
   query: '',
   contextLines: 3,
@@ -70,6 +95,9 @@ const createProps = (overrides: Partial<SearchPanelProps> = {}): SearchPanelProp
   useGitignore: true,
   recommendationSettings: defaultRecommendationSettings(),
   isAnalyzing: false,
+  setDiscoveryMode: vi.fn(),
+  setTaskInput: vi.fn(),
+  setEntryPointInput: vi.fn(),
   setRecipeKind: vi.fn(),
   setQuery: vi.fn(),
   setContextLines: vi.fn(),
@@ -77,6 +105,7 @@ const createProps = (overrides: Partial<SearchPanelProps> = {}): SearchPanelProp
   setUseGitignore: vi.fn(),
   setRecommendationSettings: vi.fn(),
   analyze: vi.fn(async () => undefined),
+  analyzeTask: vi.fn(async () => undefined),
   clearSearch: vi.fn(async () => undefined),
   ...overrides,
 });

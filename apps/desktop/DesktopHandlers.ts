@@ -2,24 +2,25 @@ import { basename, resolve, dirname } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { clipboard, dialog, ipcMain } from 'electron';
-import { AnalyzeProjectsUseCase } from '../../src/features/desktop-core/application/AnalyzeProjectsUseCase';
-import { DiscoverFilesUseCase } from '../../src/features/desktop-core/application/DiscoverFilesUseCase';
-import { BuildDesktopContextUseCase } from '../../src/features/desktop-core/application/BuildDesktopContextUseCase';
-import type { Project } from '../../src/features/desktop-core/domain/Project';
-import { GitMetadataClient } from '../../src/features/desktop-node/GitMetadataClient';
-import { GitHistoryReader } from '../../src/features/desktop-node/GitHistoryReader';
-import { ProjectRegistryStore } from '../../src/features/desktop-node/ProjectRegistryStore';
-import { RipgrepClient } from '../../src/features/desktop-node/RipgrepClient';
-import { DesktopContextFormatter } from '../../src/features/desktop-node/DesktopContextFormatter';
-import { canReadProjectFile, readProjectFile, getProjectFileSize } from '../../src/features/desktop-node/ProjectFileContentReader';
-import { listProjectFiles } from '../../src/features/desktop-node/ProjectFileTree';
+import { AnalyzeProjectsUseCase } from '../../src/features/repository-context/application/AnalyzeProjectsUseCase';
+import { DiscoverFilesUseCase } from '../../src/features/repository-context/application/DiscoverFilesUseCase';
+import { BuildDesktopContextUseCase } from '../../src/features/repository-context/application/BuildDesktopContextUseCase';
+import type { Project } from '../../src/features/repository-context/domain/Project';
+import { GitMetadataClient } from '../../src/features/repository-context/infrastructure/git/GitMetadataClient';
+import { GitHistoryReader } from '../../src/features/repository-context/infrastructure/git/GitHistoryReader';
+import { ProjectRegistryStore } from '../../src/features/repository-context/infrastructure/filesystem/ProjectRegistryStore';
+import { RipgrepClient } from '../../src/features/repository-context/infrastructure/search/RipgrepClient';
+import { DesktopContextFormatter } from '../../src/features/repository-context/infrastructure/formatting/DesktopContextFormatter';
+import { canReadProjectFile, readProjectFile, getProjectFileSize } from '../../src/features/repository-context/infrastructure/filesystem/ProjectFileContentReader';
+import { listProjectFiles } from '../../src/features/repository-context/infrastructure/filesystem/ProjectFileTree';
 import { DependencyScanner } from '../../src/features/engine/application/DependencyScanner';
-import { DocGraphClient } from '../../src/features/desktop-node/DocGraphClient';
-import { MarkdownRecommendationClient } from '../../src/features/desktop-node/MarkdownRecommendationClient';
-import { GitCoChangeClient } from '../../src/features/desktop-node/GitCoChangeClient';
-import { DirectoryProximityClient } from '../../src/features/desktop-node/DirectoryProximityClient';
+import { DocGraphClient } from '../../src/features/repository-context/infrastructure/recommendation/DocGraphClient';
+import { MarkdownRecommendationClient } from '../../src/features/repository-context/infrastructure/recommendation/MarkdownRecommendationClient';
+import { GitCoChangeClient } from '../../src/features/repository-context/infrastructure/git/GitCoChangeClient';
+import { DirectoryProximityClient } from '../../src/features/repository-context/infrastructure/recommendation/DirectoryProximityClient';
 import { toAnalyzeInput, toDiscoverInput, toBuildInput, toSaveOutputRequest } from './DesktopRequestParser';
 import { saveOutputFile, type OutputFileDependencies } from './OutputFileSaver';
+import { handleBuildTaskContext } from './TaskContextHandler';
 
 export const registerDesktopHandlers = (registryPath: string): void => {
   const registry = new ProjectRegistryStore(registryPath);
@@ -34,6 +35,7 @@ export const registerDesktopHandlers = (registryPath: string): void => {
   ipcMain.handle('copyOutput', (_event, value: unknown) => copyOutput(value));
   ipcMain.handle('saveOutput', (_event, value: unknown) => saveOutput(value));
   ipcMain.handle('readFileContent', (_event, pId: unknown, rel: unknown) => readFileContent(registry, pId, rel));
+  ipcMain.handle('buildTaskContext', (_event, value: unknown) => handleBuildTaskContext(registry, value));
 };
 
 let lastChosenPath: string | undefined = undefined;

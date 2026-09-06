@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react';
-import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
-import { isPackMode } from '../../../../src/features/desktop-core/domain/PackMode';
+import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
+import { isPackMode } from '../../../../src/features/repository-context/domain/PackMode';
 import type { CandidateTreeProps } from '../types';
 import type { CandidateTreeNode as TreeNode } from '../model/candidateTree';
 import { budgetSummary, candidateKey, selectedTokenTotal } from '../model/tokenBudget';

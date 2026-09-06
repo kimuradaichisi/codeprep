@@ -12,6 +12,10 @@ const api = {
   listProjectFiles: async () => [], listProjects: async () => [{ id: 'project-1', name: 'Demo', rootPath: 'C:/demo' }],
   removeProject: async () => [],
   readFileContent: async () => '',
+  buildTaskContext: async () => ({
+    manifest: { projectId: 'project-1', task: '', entryPoints: [], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
+    markdown: '', candidates: [], warnings: [],
+  }),
 };
 
 describe('App', () => {

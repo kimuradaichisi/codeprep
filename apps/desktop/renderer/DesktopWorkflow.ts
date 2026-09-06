@@ -1,5 +1,5 @@
-import type { AnalyzedCandidate, BuildDesktopContextInput } from '../../../src/features/desktop-core/application/ports';
-import type { Project } from '../../../src/features/desktop-core/domain/Project';
+import type { AnalyzedCandidate, BuildDesktopContextInput } from '../../../src/features/repository-context/application/ports';
+import type { Project } from '../../../src/features/repository-context/domain/Project';
 import type { DesktopApi, DesktopOutput, SaveOutputRequest, SaveOutputResult } from '../DesktopApi';
 
 export const loadProjects = (api: DesktopApi): Promise<readonly Project[]> =>

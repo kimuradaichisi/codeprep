@@ -1,8 +1,8 @@
-import type { AnalyzedCandidate } from '../../../../src/features/desktop-core/application/ports';
-import type { Project } from '../../../../src/features/desktop-core/domain/Project';
-import type { CandidateReason } from '../../../../src/features/desktop-core/domain/CandidateFile';
-import type { PackMode } from '../../../../src/features/desktop-core/domain/PackMode';
-import type { RecommendationReason } from '../../../../src/features/desktop-core/domain/Recommendation';
+import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
+import type { Project } from '../../../../src/features/repository-context/domain/Project';
+import type { CandidateReason } from '../../../../src/features/repository-context/domain/CandidateFile';
+import type { PackMode } from '../../../../src/features/repository-context/domain/PackMode';
+import type { RecommendationReason } from '../../../../src/features/repository-context/domain/Recommendation';
 import { candidateKey } from './tokenBudget';
 export type CandidateTreeNodeKind = 'project' | 'directory' | 'file';
 export type CandidateTreeNode = Readonly<{

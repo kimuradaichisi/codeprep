@@ -1,27 +1,50 @@
 import type { SearchPanelProps } from '../types';
 import { InlineNotice } from './InlineNotice';
+import { TaskContextInputArea } from './TaskContextInputArea';
 
 export const SearchPanel = (props: SearchPanelProps) => (
   <div className="search-panel" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
       <div><p className="eyebrow" style={{ margin: 0 }}>DISCOVERY</p><h2 style={{ fontSize: '18px', margin: 0 }}>Search files</h2></div>
-    </div>
-    <div className="search-controls-row" style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1.2, minWidth: 0 }}>
-        <span style={{ fontSize: '11px', color: '#9eafc8', whiteSpace: 'nowrap', fontWeight: 'bold' }}>Preset:</span>
-        <PresetSelect presetKind={props.presetKind} setPresetKind={props.setPresetKind} />
+      <div style={{ display: 'flex', gap: '4px' }}>
+        <button
+          className={props.discoveryMode === 'search' ? 'primary-button' : ''}
+          style={{ fontSize: '11px', padding: '2px 8px' }}
+          onClick={() => props.setDiscoveryMode('search')}
+        >
+          Search
+        </button>
+        <button
+          className={props.discoveryMode === 'task' ? 'primary-button' : ''}
+          style={{ fontSize: '11px', padding: '2px 8px' }}
+          onClick={() => props.setDiscoveryMode('task')}
+        >
+          Task Context
+        </button>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: '11px', color: '#9eafc8', whiteSpace: 'nowrap', fontWeight: 'bold' }}>Recipe:</span>
-        <RecipeSelect recipeKind={props.recipeKind} setRecipeKind={props.setRecipeKind} />
-      </div>
-      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#b7c6da', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', paddingLeft: '4px' }}>
-        <input type="checkbox" checked={props.useGitignore} onChange={e => props.setUseGitignore(e.target.checked)} style={{ width: 'auto', margin: 0 }} />
-        Respect gitignore
-      </label>
     </div>
-    <RecommendationSources recommendationSettings={props.recommendationSettings} setRecommendationSettings={props.setRecommendationSettings} />
-    <SearchInputArea {...props} />
+    {props.discoveryMode === 'task' ? (
+      <TaskContextInputArea {...props} />
+    ) : (
+      <>
+        <div className="search-controls-row" style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1.2, minWidth: 0 }}>
+            <span style={{ fontSize: '11px', color: '#9eafc8', whiteSpace: 'nowrap', fontWeight: 'bold' }}>Preset:</span>
+            <PresetSelect presetKind={props.presetKind} setPresetKind={props.setPresetKind} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: '11px', color: '#9eafc8', whiteSpace: 'nowrap', fontWeight: 'bold' }}>Recipe:</span>
+            <RecipeSelect recipeKind={props.recipeKind} setRecipeKind={props.setRecipeKind} />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#b7c6da', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', paddingLeft: '4px' }}>
+            <input type="checkbox" checked={props.useGitignore} onChange={e => props.setUseGitignore(e.target.checked)} style={{ width: 'auto', margin: 0 }} />
+            Respect gitignore
+          </label>
+        </div>
+        <RecommendationSources recommendationSettings={props.recommendationSettings} setRecommendationSettings={props.setRecommendationSettings} />
+        <SearchInputArea {...props} />
+      </>
+    )}
     <InlineNotice message={props.searchNotice} />
   </div>
 );

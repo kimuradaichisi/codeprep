@@ -1,4 +1,4 @@
-import type { ContextOutputFormat } from '../../src/features/desktop-core/application/ports';
+import type { ContextOutputFormat } from '../../src/features/repository-context/application/ports';
 import type { SaveOutputRequest, SaveOutputResult } from './DesktopApi';
 
 export type FileFilter = Readonly<{

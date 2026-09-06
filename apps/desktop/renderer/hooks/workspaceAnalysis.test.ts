@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { candidateKeys, selectedCandidates, analyzeWorkspace } from './workspaceAnalysis';
 import type { DesktopApi } from '../../DesktopApi';
-import type { RecommendationSettings } from '../../../../src/features/desktop-core/domain/Recommendation';
+import type { RecommendationSettings } from '../../../../src/features/repository-context/domain/Recommendation';
 
 const projects = [{ id: 'p1', name: 'Demo', rootPath: 'C:/demo' }];
 const candidates = [

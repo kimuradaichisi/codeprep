@@ -2,7 +2,7 @@ import type { DesktopApi } from './DesktopApi';
 
 export const desktopChannels = [
   'chooseProjectFolder', 'listProjectFiles', 'listProjects', 'addProject', 'removeProject', 'analyzeProjects', 'discoverFiles',
-  'generateOutput', 'copyOutput', 'saveOutput', 'readFileContent',
+  'generateOutput', 'copyOutput', 'saveOutput', 'readFileContent', 'buildTaskContext',
 ] as const;
 
 export type DesktopChannel = (typeof desktopChannels)[number];
@@ -29,6 +29,7 @@ export const createDesktopApi = (invoke: IpcInvoker): DesktopApi => ({
   copyOutput: text => invokeAs(invoke, 'copyOutput', text),
   saveOutput: request => invokeAs(invoke, 'saveOutput', request),
   readFileContent: (projectId, relativePath) => invokeAs(invoke, 'readFileContent', projectId, relativePath),
+  buildTaskContext: request => invokeAs(invoke, 'buildTaskContext', request),
 });
 
 const isDesktopChannel = (value: string): value is DesktopChannel =>
