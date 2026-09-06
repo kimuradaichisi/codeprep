@@ -42,8 +42,36 @@ function analyzeFile(filePath: string) {
     walk(sourceFile);
 }
 
+import { execSync } from 'node:child_process';
+
+function getChangedFiles(): string[] {
+    try {
+        const output = execSync('git status -s', { encoding: 'utf8' });
+        return output
+            .split(/\r?\n/)
+            .map(line => line.trim().slice(3))
+            .filter(f => (f.endsWith('.ts') || f.endsWith('.tsx')) && !f.includes('.test.') && fs.existsSync(f));
+    } catch {
+        return [];
+    }
+}
+
+function resolveTargetFiles(): string[] {
+    const args = process.argv.slice(2);
+    if (args.includes('--changed')) {
+        return getChangedFiles();
+    }
+    const specificFiles = args.filter(a => !a.startsWith('--'));
+    if (specificFiles.length > 0) {
+        return specificFiles.filter(f => fs.existsSync(f));
+    }
+    return globSync(['src/**/*.ts', 'apps/**/*.ts', 'apps/**/*.tsx'], {
+        ignore: ['**/*.test.ts', '**/*.test.tsx', '**/dist/**', '**/node_modules/**']
+    }).map(f => f.toString());
+}
+
 // 実行部
-console.log('Checking code standards...');
-// globSync を使用
-const files = globSync('src/**/*.ts', { ignore: 'src/**/*.test.ts' });
-files.forEach((file) => analyzeFile(file.toString()));
+const targetFiles = resolveTargetFiles();
+console.log(`Checking code standards (${targetFiles.length} files)...`);
+targetFiles.forEach((file) => analyzeFile(file));
+console.log('Standards check completed.');

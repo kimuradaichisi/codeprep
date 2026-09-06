@@ -2,21 +2,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
 
-const api = {
-  addProject: async () => [],
-  analyzeProjects: async () => ({ candidates: [], warnings: [] }), discoverFiles: async () => ({ candidates: [], warnings: [] }),
-  chooseProjectFolder: async () => undefined,
-  copyOutput: async () => undefined,
+import { createFallbackDesktopApi } from '../testUtils/mockDesktopApi';
+
+const api = createFallbackDesktopApi({
+  listProjects: async () => [{ id: 'project-1', name: 'Demo', rootPath: 'C:/demo' }],
   generateOutput: async () => ({ preview: '', warning: 'Output generation is not available yet.' }),
-  saveOutput: async () => ({ status: 'cancelled' as const }),
-  listProjectFiles: async () => [], listProjects: async () => [{ id: 'project-1', name: 'Demo', rootPath: 'C:/demo' }],
-  removeProject: async () => [],
-  readFileContent: async () => '',
-  buildTaskContext: async () => ({
-    manifest: { projectId: 'project-1', task: '', entryPoints: [], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
-    markdown: '', candidates: [], warnings: [],
-  }),
-};
+});
 
 describe('App', () => {
   it('renders the desktop context workflow', () => {

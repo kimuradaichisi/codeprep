@@ -7,21 +7,9 @@ import { OutputPanel } from './components/OutputPanel';
 import { ProjectPanel } from './components/ProjectPanel';
 import { SearchPanel } from './components/SearchPanel';
 
-const unavailableApi: DesktopApi = {
-  addProject: async () => [], analyzeProjects: async () => ({ candidates: [], warnings: [] }),
-  chooseProjectFolder: async () => undefined, copyOutput: async () => undefined,
-  saveOutput: async () => ({ status: 'cancelled' as const }),
-  discoverFiles: async () => ({ candidates: [], warnings: [] }),
-  listProjectFiles: async () => [],
-  generateOutput: async () => ({ preview: '' }), listProjects: async () => [], removeProject: async () => [],
-  readFileContent: async () => '',
-  buildTaskContext: async () => ({
-    manifest: { projectId: '', task: '', entryPoints: [], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
-    markdown: '',
-    candidates: [],
-    warnings: [],
-  }),
-};
+import { createFallbackDesktopApi } from '../testUtils/mockDesktopApi';
+
+const unavailableApi = createFallbackDesktopApi();
 
 import { FileViewerModal } from './components/FileViewerModal';
 

@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Task-driven Context Pack Phase 2 (Entry Point Candidate Discovery) を実装 — 自然言語 Task からリポジトリ内の Entry Point 候補を決定論的・説明可能な方法で抽出し、スコアリング・ランキング付きで提示する機能を追加
+- feat: `TaskSearchTermExtractor` を追加 — Task 文字列から引用符句、コード識別子、英単語、日本語（漢字・カタカナ語）を決定論的に抽出し、ストップワードを除外
+- feat: Entry Point 候補ソース群（`FilenameAndPathCandidateSource`, `TextCandidateSource`, `HeadingCandidateSource`, `SymbolCandidateSource`）を実装
+- feat: `DiscoverEntryPointCandidatesUseCase` を追加 — 複数ソースからの候補探索、マージ、決定論的スコアリング（完全一致・部分一致・シンボル・見出し・テキスト一致）およびランキング付け
+- feat: CodePrep Desktop UI に「Find Entry Points」機能を追加 — 候補一覧（スコア・理由バッジ・相対パス）の表示、チェックボックス選択、手動入力との併用に対応
+- refactor: `DesktopHandlers.ts` の責任分離を行い、`DesktopAnalysisHandlers.ts` を新規抽出して 150行/15行のコーディング規約を遵守
+- refactor: `apps/desktop/testUtils/mockDesktopApi.ts` を作成し、複数テストに散らばっていた `DesktopApi` モック定義を集約共通化
+- chore: 変更ファイルのみを局所検査する `lint:standards:changed` および `lint:standards:file` スクリプトを追加
+- docs: インターフェース変更時の一括同期プロトコルおよびメソッド長10行セーフティマージンを開発規約・実行契約書に追加
 - feat: Task-driven Context Pack (Phase 1) を実装 — 自然言語 Task と明示 Entry Point から関連ファイル群を探索し、Role分類・優先順位付けされた Context Manifest (Markdown) を生成
 - feat: `ContextRole` (target, repositoryRule, test, specification, dependency, supporting) と優先順位ソート・Budget 配分モデルを定義
 - feat: `BuildTaskContextUseCase` を追加 — 探索・Role分類・重複排除・決定論的ソートを行い `ContextManifest` を構築

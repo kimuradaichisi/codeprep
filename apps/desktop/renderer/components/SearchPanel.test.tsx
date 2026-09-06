@@ -56,7 +56,7 @@ describe('SearchPanel', () => {
 
     const taskInput = container.querySelector<HTMLInputElement>('input[aria-label="Task description"]');
     const epInput = container.querySelector<HTMLInputElement>('input[aria-label="Entry points"]');
-    const button = getButton(container, 'Analyze Task');
+    const button = getButton(container, 'Build Context');
 
     expect(taskInput?.value).toBe('返品処理を追加');
     expect(epInput?.value).toBe('src/order/OrderService.ts');
@@ -66,6 +66,30 @@ describe('SearchPanel', () => {
       button?.click();
     });
     expect(props.analyzeTask).toHaveBeenCalled();
+  });
+
+  it('renders Find Entry Points button and candidate list', () => {
+    const discoverEntryPoints = vi.fn(async () => {});
+    const toggleEntryPointCandidate = vi.fn();
+    const props = createProps({
+      discoveryMode: 'task',
+      taskInput: '返品二重返金',
+      discoverEntryPoints,
+      toggleEntryPointCandidate,
+      entryPointCandidates: [
+        { projectId: 'p1', relativePath: 'src/Refund.ts', score: 95, reasons: ['filenameMatch'], matchedTerms: ['Refund'] },
+      ],
+    });
+    const container = renderPanel(props);
+
+    const findBtn = getButton(container, 'Find Entry Points');
+    expect(findBtn).not.toBeNull();
+    act(() => {
+      findBtn?.click();
+    });
+    expect(discoverEntryPoints).toHaveBeenCalled();
+    expect(container.textContent).toContain('Refund.ts');
+    expect(container.textContent).toContain('95 pts');
   });
 });
 

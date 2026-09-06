@@ -7,6 +7,7 @@ import type {
   DiscoverFilesInput,
 } from '../../src/features/repository-context/application/ports';
 import type { ContextManifest } from '../../src/features/repository-context/domain/ContextManifest';
+import type { EntryPointCandidate } from '../../src/features/repository-context/domain/EntryPointCandidate';
 import type { Project } from '../../src/features/repository-context/domain/Project';
 
 export type DesktopOutput = Readonly<{
@@ -20,6 +21,19 @@ export type BuildTaskContextRequest = Readonly<{
   task: string;
   entryPoints: readonly string[];
   tokenLimit?: number;
+}>;
+
+export type DiscoverEntryPointCandidatesRequest = Readonly<{
+  projectId: string;
+  task: string;
+  maxCandidates?: number;
+  manualPinnedPaths?: readonly string[];
+}>;
+
+export type DiscoverEntryPointCandidatesResponse = Readonly<{
+  candidates: readonly EntryPointCandidate[];
+  terms: readonly string[];
+  warnings: readonly string[];
 }>;
 
 export type DesktopTaskContextResult = Readonly<{
@@ -56,4 +70,5 @@ export type DesktopApi = Readonly<{
   saveOutput(request: SaveOutputRequest): Promise<SaveOutputResult>;
   readFileContent(projectId: string, relativePath: string): Promise<string>;
   buildTaskContext(request: BuildTaskContextRequest): Promise<DesktopTaskContextResult>;
+  discoverEntryPointCandidates(request: DiscoverEntryPointCandidatesRequest): Promise<DiscoverEntryPointCandidatesResponse>;
 }>;

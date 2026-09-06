@@ -1,6 +1,6 @@
 // apps/desktop/TaskContextRequestParser.test.ts
 import { describe, expect, it } from 'vitest';
-import { toBuildTaskContextRequest } from './TaskContextRequestParser';
+import { toBuildTaskContextRequest, toDiscoverEntryPointCandidatesRequest } from './TaskContextRequestParser';
 
 describe('toBuildTaskContextRequest', () => {
   it('parses valid request correctly', () => {
@@ -49,5 +49,33 @@ describe('toBuildTaskContextRequest', () => {
   it('throws on invalid tokenLimit', () => {
     expect(() => toBuildTaskContextRequest({ projectId: 'p1', task: 'task', entryPoints: ['a'], tokenLimit: -1 })).toThrow('Invalid token limit.');
     expect(() => toBuildTaskContextRequest({ projectId: 'p1', task: 'task', entryPoints: ['a'], tokenLimit: 'not-number' })).toThrow('Invalid token limit.');
+  });
+});
+
+describe('toDiscoverEntryPointCandidatesRequest', () => {
+  it('parses valid request correctly', () => {
+    const raw = {
+      projectId: 'p1',
+      task: 'Find refund service',
+      maxCandidates: 10,
+      manualPinnedPaths: ['src/Refund.ts'],
+    };
+    const parsed = toDiscoverEntryPointCandidatesRequest(raw);
+    expect(parsed.projectId).toBe('p1');
+    expect(parsed.task).toBe('Find refund service');
+    expect(parsed.maxCandidates).toBe(10);
+    expect(parsed.manualPinnedPaths).toEqual(['src/Refund.ts']);
+  });
+
+  it('handles optional fields', () => {
+    const raw = { projectId: 'p1', task: 'Simple task' };
+    const parsed = toDiscoverEntryPointCandidatesRequest(raw);
+    expect(parsed.maxCandidates).toBeUndefined();
+    expect(parsed.manualPinnedPaths).toBeUndefined();
+  });
+
+  it('throws on missing projectId or task', () => {
+    expect(() => toDiscoverEntryPointCandidatesRequest({ task: 'abc' })).toThrow('Project ID is required.');
+    expect(() => toDiscoverEntryPointCandidatesRequest({ projectId: 'p1', task: '' })).toThrow('Task is required.');
   });
 });

@@ -2,6 +2,7 @@
 import type { DesktopApi, DesktopTaskContextResult } from '../../DesktopApi';
 import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
 import type { Project } from '../../../../src/features/repository-context/domain/Project';
+import type { EntryPointCandidate } from '../../../../src/features/repository-context/domain/EntryPointCandidate';
 import { desktopErrorMessage } from '../DesktopWorkflow';
 import { candidateKeys } from './workspaceAnalysis';
 
@@ -52,3 +53,26 @@ const toSuccessUpdate = (
   preview: result.markdown,
   searchNotice: result.warnings.join('\n') || undefined,
 });
+
+export const discoverEntryPointsWorkspace = async (
+  api: DesktopApi,
+  task: string,
+  projects: readonly Project[],
+): Promise<Readonly<{ candidates?: readonly EntryPointCandidate[]; searchNotice?: string }>> => {
+  const primaryProject = projects[0];
+  if (!primaryProject) return { searchNotice: 'No project selected.' };
+  if (!task.trim()) return { searchNotice: 'Task description is required.' };
+
+  try {
+    const result = await api.discoverEntryPointCandidates({
+      projectId: primaryProject.id,
+      task: task.trim(),
+    });
+    return {
+      candidates: result.candidates,
+      searchNotice: result.warnings.join('\n') || undefined,
+    };
+  } catch (error) {
+    return { searchNotice: desktopErrorMessage(error) };
+  }
+};

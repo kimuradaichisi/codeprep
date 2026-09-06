@@ -37,20 +37,17 @@ describe('App interactions', () => {
   });
 });
 
-const createApi = (): DesktopApi => ({
-  addProject: vi.fn(async () => projects), analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
-  chooseProjectFolder: vi.fn(async () => undefined),
-  discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
-  copyOutput: vi.fn(async () => Promise.resolve()),
-  generateOutput: vi.fn(async () => ({ preview: 'context', warning: 'Output is temporary.' })),
-  saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/out.md' })),
-  listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []),
-  readFileContent: vi.fn(async () => ''),
-  buildTaskContext: vi.fn(async () => ({
-    manifest: { projectId: 'p1', task: '', entryPoints: [], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
-    markdown: '', candidates: [], warnings: [],
-  })),
-});
+import { createMockDesktopApi } from '../testUtils/mockDesktopApi';
+
+const createApi = (): DesktopApi =>
+  createMockDesktopApi({
+    addProject: vi.fn(async () => projects),
+    analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
+    discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
+    generateOutput: vi.fn(async () => ({ preview: 'context', warning: 'Output is temporary.' })),
+    saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/out.md' })),
+    listProjects: vi.fn(async () => projects),
+  });
 
 const render = async (root: ReturnType<typeof createRoot>, element: ReactElement): Promise<void> => {
   await act(async () => { root.render(element); await flush(); });

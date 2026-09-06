@@ -2,40 +2,35 @@ import { basename, resolve, dirname } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { clipboard, dialog, ipcMain } from 'electron';
-import { AnalyzeProjectsUseCase } from '../../src/features/repository-context/application/AnalyzeProjectsUseCase';
-import { DiscoverFilesUseCase } from '../../src/features/repository-context/application/DiscoverFilesUseCase';
-import { BuildDesktopContextUseCase } from '../../src/features/repository-context/application/BuildDesktopContextUseCase';
 import type { Project } from '../../src/features/repository-context/domain/Project';
-import { GitMetadataClient } from '../../src/features/repository-context/infrastructure/git/GitMetadataClient';
-import { GitHistoryReader } from '../../src/features/repository-context/infrastructure/git/GitHistoryReader';
 import { ProjectRegistryStore } from '../../src/features/repository-context/infrastructure/filesystem/ProjectRegistryStore';
-import { RipgrepClient } from '../../src/features/repository-context/infrastructure/search/RipgrepClient';
-import { DesktopContextFormatter } from '../../src/features/repository-context/infrastructure/formatting/DesktopContextFormatter';
-import { canReadProjectFile, readProjectFile, getProjectFileSize } from '../../src/features/repository-context/infrastructure/filesystem/ProjectFileContentReader';
+import { readProjectFile, getProjectFileSize } from '../../src/features/repository-context/infrastructure/filesystem/ProjectFileContentReader';
 import { listProjectFiles } from '../../src/features/repository-context/infrastructure/filesystem/ProjectFileTree';
-import { DependencyScanner } from '../../src/features/engine/application/DependencyScanner';
-import { DocGraphClient } from '../../src/features/repository-context/infrastructure/recommendation/DocGraphClient';
-import { MarkdownRecommendationClient } from '../../src/features/repository-context/infrastructure/recommendation/MarkdownRecommendationClient';
-import { GitCoChangeClient } from '../../src/features/repository-context/infrastructure/git/GitCoChangeClient';
-import { DirectoryProximityClient } from '../../src/features/repository-context/infrastructure/recommendation/DirectoryProximityClient';
-import { toAnalyzeInput, toDiscoverInput, toBuildInput, toSaveOutputRequest } from './DesktopRequestParser';
+import { toSaveOutputRequest } from './DesktopRequestParser';
 import { saveOutputFile, type OutputFileDependencies } from './OutputFileSaver';
 import { handleBuildTaskContext } from './TaskContextHandler';
+import { handleDiscoverEntryPointCandidates } from './EntryPointDiscoveryHandler';
+import {
+  handleAnalyzeProjects,
+  handleDiscoverFiles,
+  handleGenerateOutput,
+} from './DesktopAnalysisHandlers';
 
 export const registerDesktopHandlers = (registryPath: string): void => {
   const registry = new ProjectRegistryStore(registryPath);
   ipcMain.handle('chooseProjectFolder', createChooseProjectFolderHandler(openFolderDialog));
-  ipcMain.handle('listProjectFiles', (_event, pId: unknown, opt: unknown) => listFiles(registry, pId, opt));
+  ipcMain.handle('listProjectFiles', (_e, pId: unknown, opt: unknown) => listFiles(registry, pId, opt));
   ipcMain.handle('listProjects', () => listProjects(registry));
-  ipcMain.handle('addProject', (_event, value: unknown) => addProject(registry, value));
-  ipcMain.handle('removeProject', (_event, value: unknown) => removeProject(registry, value));
-  ipcMain.handle('analyzeProjects', (_event, value: unknown) => analyzeProjects(registry, value));
-  ipcMain.handle('discoverFiles', (_event, value: unknown) => discoverFiles(registry, value));
-  ipcMain.handle('generateOutput', (_event, value: unknown) => generateOutput(registry, value));
-  ipcMain.handle('copyOutput', (_event, value: unknown) => copyOutput(value));
-  ipcMain.handle('saveOutput', (_event, value: unknown) => saveOutput(value));
-  ipcMain.handle('readFileContent', (_event, pId: unknown, rel: unknown) => readFileContent(registry, pId, rel));
-  ipcMain.handle('buildTaskContext', (_event, value: unknown) => handleBuildTaskContext(registry, value));
+  ipcMain.handle('addProject', (_e, value: unknown) => addProject(registry, value));
+  ipcMain.handle('removeProject', (_e, value: unknown) => removeProject(registry, value));
+  ipcMain.handle('analyzeProjects', (_e, value: unknown) => handleAnalyzeProjects(registry, value));
+  ipcMain.handle('discoverFiles', (_e, value: unknown) => handleDiscoverFiles(registry, value));
+  ipcMain.handle('generateOutput', (_e, value: unknown) => handleGenerateOutput(registry, value));
+  ipcMain.handle('copyOutput', (_e, value: unknown) => copyOutput(value));
+  ipcMain.handle('saveOutput', (_e, value: unknown) => saveOutput(value));
+  ipcMain.handle('readFileContent', (_e, pId: unknown, rel: unknown) => readFileContent(registry, pId, rel));
+  ipcMain.handle('buildTaskContext', (_e, value: unknown) => handleBuildTaskContext(registry, value));
+  ipcMain.handle('discoverEntryPointCandidates', (_e, val: unknown) => handleDiscoverEntryPointCandidates(registry, val));
 };
 
 let lastChosenPath: string | undefined = undefined;
@@ -67,12 +62,12 @@ const requiredString = (value: unknown, label: string): string => {
 
 const listFiles = async (registry: ProjectRegistryStore, pIdVal: unknown, optVal: unknown) => {
   const projectId = requiredString(pIdVal, 'Project id');
-  const useGitignore = optVal && typeof optVal === 'object' && typeof (optVal as any).useGitignore === 'boolean'
-    ? (optVal as any).useGitignore : undefined;
+  const useGitignore = optVal && typeof optVal === 'object' && typeof (optVal as { useGitignore?: unknown }).useGitignore === 'boolean'
+    ? (optVal as { useGitignore?: boolean }).useGitignore : undefined;
   const project = (await listProjects(registry)).find(item => item.id === projectId);
   if (!project) throw new Error('Project was not found.');
   const relativePaths = await listProjectFiles(project.rootPath, useGitignore);
-  return Promise.all(relativePaths.map(async relativePath => ({ relativePath, size: await getProjectFileSize(project, relativePath) })));
+  return Promise.all(relativePaths.map(async rel => ({ relativePath: rel, size: await getProjectFileSize(project, rel) })));
 };
 
 const addProject = async (registry: ProjectRegistryStore, value: unknown) => {
@@ -87,39 +82,6 @@ const removeProject = async (registry: ProjectRegistryStore, value: unknown) => 
   const projects = (await listProjects(registry)).filter(project => project.id !== projectId);
   await registry.saveAll(projects);
   return projects;
-};
-
-const analyzeProjects = async (registry: ProjectRegistryStore, value: unknown) => new AnalyzeProjectsUseCase({
-  projects: registry, ripgrep: new RipgrepClient(), gitMetadata: new GitMetadataClient(),
-  fileContent: { canRead: canReadProjectFile, read: readProjectFile }, fileSize: { getSize: getProjectFileSize },
-}).analyze(toAnalyzeInput(value));
-
-const discoverFiles = async (registry: ProjectRegistryStore, value: unknown) => {
-  const filePort = {
-    list: async (project: Project) => {
-      const relativePaths = await listProjectFiles(project.rootPath);
-      return Promise.all(relativePaths.map(async relativePath => ({ relativePath, size: await getProjectFileSize(project, relativePath) })));
-    },
-  };
-  return new DiscoverFilesUseCase({
-    projects: registry, ripgrep: new RipgrepClient(), gitMetadata: new GitMetadataClient(),
-    files: filePort,
-    clipboard: { readText: () => Promise.resolve(clipboard.readText()) }, gitHistory: new GitHistoryReader(),
-    fileSize: { getSize: getProjectFileSize }, fileContent: { read: readProjectFile, canRead: canReadProjectFile },
-    dependencyScanner: new DependencyScanner(), docGraph: new DocGraphClient(),
-    recommendations: {
-      markdownLink: new MarkdownRecommendationClient({ read: readProjectFile, canRead: canReadProjectFile }, filePort, 'markdownLink'),
-      nameHeading: new MarkdownRecommendationClient({ read: readProjectFile, canRead: canReadProjectFile }, filePort, 'nameHeading'),
-      gitCoChange: new GitCoChangeClient(), directoryProximity: new DirectoryProximityClient(filePort),
-    },
-  }).discover(toDiscoverInput(value));
-};
-
-const generateOutput = async (registry: ProjectRegistryStore, value: unknown) => {
-  const result = await new BuildDesktopContextUseCase({
-    projects: registry, fileContent: { canRead: canReadProjectFile, read: readProjectFile }, formatter: new DesktopContextFormatter(),
-  }).build(toBuildInput(value));
-  return { preview: result.preview, warning: result.warnings.map(w => w.message).join('\n') || undefined, manifest: result.manifest };
 };
 
 const readFileContent = async (registry: ProjectRegistryStore, pId: unknown, relPath: unknown) => {
@@ -152,5 +114,3 @@ const createProject = (rootPath: string): Project => {
   const resolvedPath = resolve(rootPath);
   return { id: randomUUID(), name: basename(resolvedPath), rootPath: resolvedPath };
 };
-
-

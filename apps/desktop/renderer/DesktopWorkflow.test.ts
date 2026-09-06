@@ -45,16 +45,15 @@ describe('Desktop workflow', () => {
   });
 });
 
-const createApi = (): DesktopApi => ({
-  addProject: vi.fn(async () => projects), analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })), discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
-  chooseProjectFolder: vi.fn(async () => undefined),
-  copyOutput: vi.fn(async () => undefined), generateOutput: vi.fn(async () => ({ preview: 'context', warning: 'Unavailable' })),
-  saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/out.md' })),
-  listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []),
-  readFileContent: vi.fn(async () => ''),
-  buildTaskContext: vi.fn(async () => ({
-    manifest: { projectId: 'project-1', task: '', entryPoints: [], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
-    markdown: '', candidates: [], warnings: [],
-  })),
-});
+import { createMockDesktopApi } from '../testUtils/mockDesktopApi';
+
+const createApi = (): DesktopApi =>
+  createMockDesktopApi({
+    addProject: vi.fn(async () => projects),
+    analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
+    discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
+    generateOutput: vi.fn(async () => ({ preview: 'context', warning: 'Unavailable' })),
+    saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/out.md' })),
+    listProjects: vi.fn(async () => projects),
+  });
 

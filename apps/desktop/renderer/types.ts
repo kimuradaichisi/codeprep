@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { DesktopApi } from '../DesktopApi';
 import type { AnalyzedCandidate, ContextOutputFormat } from '../../../src/features/repository-context/application/ports';
 import type { Project } from '../../../src/features/repository-context/domain/Project';
+import type { EntryPointCandidate } from '../../../src/features/repository-context/domain/EntryPointCandidate';
 import type { CandidateTreeNode, TreeSort } from './model/candidateTree';
 import type { SearchRecipeKind } from '../../../src/features/repository-context/domain/SearchRecipe';
 import type { PackMode } from '../../../src/features/repository-context/domain/PackMode';
@@ -26,16 +27,20 @@ export type ProjectPanelProps = Readonly<{
   projects: readonly Project[]; projectNotice: WorkspaceNotice;
   addProject(rootPath: string): Promise<void>; chooseProjectFolder(): Promise<void>; removeProject(projectId: string): Promise<void>;
 }>;
+
 export type SearchPanelProps = Readonly<{
   discoveryMode: DiscoveryMode; taskInput: string; entryPointInput: string;
   recipeKind: SearchRecipeKind; query: string; contextLines: number; searchNotice: WorkspaceNotice;
   presetKind: ScenarioPresetKind; useGitignore: boolean; recommendationSettings: RecommendationSettings;
   isAnalyzing?: boolean;
+  entryPointCandidates?: readonly EntryPointCandidate[];
+  isDiscoveringEntryPoints?: boolean;
   setDiscoveryMode(value: DiscoveryMode): void; setTaskInput(value: string): void; setEntryPointInput(value: string): void;
   setRecipeKind(value: SearchRecipeKind): void; setQuery(value: string): void; setContextLines(value: number): void;
   setPresetKind(value: ScenarioPresetKind): void; setUseGitignore(value: boolean): void;
   setRecommendationSettings(value: RecommendationSettings): void; analyze(query?: string): Promise<void>;
-  analyzeTask(): Promise<void>; clearSearch(): Promise<void>;
+  analyzeTask(): Promise<void>; discoverEntryPoints?(): Promise<void>;
+  toggleEntryPointCandidate?(relativePath: string): void; clearSearch(): Promise<void>;
 }>;
 
 export type CandidateTreeProps = Readonly<{
@@ -83,6 +88,10 @@ export type DesktopWorkspace = Readonly<{
   toggleTreeNode(root: CandidateTreeNode, nodeId: string): void;
   generateOutput(): Promise<void>; copyOutput(): Promise<void>; saveOutput(): Promise<void>;
   setFilePackMode(projectId: string, relativePath: string, mode: PackMode | undefined): void;
+  entryPointCandidates?: readonly EntryPointCandidate[];
+  isDiscoveringEntryPoints?: boolean;
+  discoverEntryPoints?(): Promise<void>;
+  toggleEntryPointCandidate?(relativePath: string): void;
 }>;
 
 

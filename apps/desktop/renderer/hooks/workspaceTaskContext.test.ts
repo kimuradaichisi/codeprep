@@ -63,5 +63,29 @@ describe('workspaceTaskContext', () => {
       const res = await analyzeTaskWorkspace(api, 'task', 'src/a.ts', [mockProject], 1000);
       expect(res.searchNotice).toBe('Network error');
     });
+
+    it('handles api exception gracefully', async () => {
+      const api = { buildTaskContext: vi.fn(async () => { throw new Error('API failed'); }) } as unknown as DesktopApi;
+      const res = await analyzeTaskWorkspace(api, 'task 1', 'src/a.ts', [mockProject], 1000);
+      expect(res.searchNotice).toBe('API failed');
+    });
+  });
+
+  describe('discoverEntryPointsWorkspace', () => {
+    const mockProject = { id: 'p1', name: 'proj', rootPath: '/repo' };
+
+    it('returns candidates and warnings on success', async () => {
+      const api = {
+        discoverEntryPointCandidates: vi.fn(async () => ({
+          candidates: [{ projectId: 'p1', relativePath: 'src/Service.ts', score: 95, reasons: ['filenameMatch'], matchedTerms: [] }],
+          terms: ['Service'],
+          warnings: ['warn-discovery'],
+        })),
+      } as unknown as DesktopApi;
+
+      const res = await (await import('./workspaceTaskContext')).discoverEntryPointsWorkspace(api, 'Find Service', [mockProject]);
+      expect(res.candidates?.length).toBe(1);
+      expect(res.searchNotice).toBe('warn-discovery');
+    });
   });
 });

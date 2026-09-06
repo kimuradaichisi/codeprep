@@ -347,15 +347,18 @@ const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
   await act(async () => { root.render(<Probe />); await flush(); });
   return { api, result };
 };
-const createApi = (overrides: Partial<DesktopApi>): DesktopApi => ({
-  addProject: vi.fn(async () => projects), analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
-  chooseProjectFolder: vi.fn(async () => undefined), copyOutput: vi.fn(async () => undefined), discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
-  generateOutput: vi.fn(async () => ({ preview: 'context' })), saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/output.md' })), listProjectFiles: vi.fn(async () => []), listProjects: vi.fn(async () => projects), removeProject: vi.fn(async () => []), readFileContent: vi.fn(async () => 'file content'),
-  buildTaskContext: vi.fn(async () => ({
-    manifest: { projectId: 'p1', task: '', entryPoints: [], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
-    markdown: '', candidates: [], warnings: [],
-  })),
-  ...overrides,
-});
+import { createMockDesktopApi } from '../../testUtils/mockDesktopApi';
+
+const createApi = (overrides: Partial<DesktopApi>): DesktopApi =>
+  createMockDesktopApi({
+    addProject: vi.fn(async () => projects),
+    analyzeProjects: vi.fn(async () => ({ candidates, warnings: [] })),
+    discoverFiles: vi.fn(async () => ({ candidates, warnings: [] })),
+    generateOutput: vi.fn(async () => ({ preview: 'context' })),
+    saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: 'C:/output.md' })),
+    listProjects: vi.fn(async () => projects),
+    readFileContent: vi.fn(async () => 'file content'),
+    ...overrides,
+  });
 const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
 

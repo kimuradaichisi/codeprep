@@ -35,3 +35,16 @@ export const toBuildTaskContextRequest = (value: unknown): BuildTaskContextReque
   const tokenLimit = parseTokenLimit(value.tokenLimit);
   return Object.freeze({ projectId, task, entryPoints, tokenLimit });
 };
+
+export const toDiscoverEntryPointCandidatesRequest = (
+  value: unknown
+): import('./DesktopApi').DiscoverEntryPointCandidatesRequest => {
+  if (!isRecord(value)) throw new Error('Invalid discover entry points request.');
+  const projectId = requiredString(value.projectId, 'Project ID');
+  const task = requiredString(value.task, 'Task');
+  const max = typeof value.maxCandidates === 'number' && value.maxCandidates > 0 ? value.maxCandidates : undefined;
+  const pins = Array.isArray(value.manualPinnedPaths)
+    ? Object.freeze(value.manualPinnedPaths.filter((p): p is string => typeof p === 'string' && !!p.trim()))
+    : undefined;
+  return Object.freeze({ projectId, task, maxCandidates: max, manualPinnedPaths: pins });
+};

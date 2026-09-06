@@ -10,8 +10,9 @@ import type { SearchRecipeKind } from '../../../../src/features/repository-conte
 import type { CandidateReason } from '../../../../src/features/repository-context/domain/CandidateFile';
 import type { PackMode } from '../../../../src/features/repository-context/domain/PackMode';
 import { defaultRecommendationSettings, type RecommendationSettings } from '../../../../src/features/repository-context/domain/Recommendation';
+import type { EntryPointCandidate } from '../../../../src/features/repository-context/domain/EntryPointCandidate';
 import { selectedCandidates, fileCandidates, analyzeWorkspace } from './workspaceAnalysis';
-import { analyzeTaskWorkspace } from './workspaceTaskContext';
+import { analyzeTaskWorkspace, discoverEntryPointsWorkspace } from './workspaceTaskContext';
 
 type WorkspaceState = Readonly<{
   projects: DesktopWorkspace['projects'];
@@ -41,6 +42,8 @@ type WorkspaceState = Readonly<{
   searchNotice: string | undefined;
   outputNotice: string | undefined;
   activePreviewFile?: Readonly<{ projectId: string; relativePath: string }>;
+  entryPointCandidates?: readonly EntryPointCandidate[];
+  isDiscoveringEntryPoints?: boolean;
 }>;
 
 type SetWorkspace = Dispatch<SetStateAction<WorkspaceState>>;
@@ -228,15 +231,17 @@ const workspace = (
 
   const treePanel = { tree, candidates: state.candidates, selectedKeys: state.selectedKeys, tokenLimit: state.tokenLimit, sortKey, setSortKey, favorites, favoritesOnly, isLoading: state.isAnalyzing, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly, toggleFavorite };
   const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...actions.project };
-  const searchPanel = { discoveryMode: state.discoveryMode, taskInput: state.taskInput, entryPointInput: state.entryPointInput, setDiscoveryMode, setTaskInput, setEntryPointInput, recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, recommendationSettings: state.recommendationSettings, isAnalyzing: state.isAnalyzing, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, setRecommendationSettings, analyze: actions.analyze, analyzeTask: actions.analyzeTask, clearSearch: actions.clearSearch };
+  const searchPanel = { discoveryMode: state.discoveryMode, taskInput: state.taskInput, entryPointInput: state.entryPointInput, setDiscoveryMode, setTaskInput, setEntryPointInput, recipeKind: state.recipeKind, query: state.query, contextLines: state.contextLines, searchNotice: state.searchNotice, presetKind: state.presetKind, useGitignore: state.useGitignore, recommendationSettings: state.recommendationSettings, isAnalyzing: state.isAnalyzing, entryPointCandidates: state.entryPointCandidates, isDiscoveringEntryPoints: state.isDiscoveringEntryPoints, setRecipeKind, setQuery, setContextLines, setPresetKind, setUseGitignore, setRecommendationSettings, analyze: actions.analyze, analyzeTask: actions.analyzeTask, discoverEntryPoints: actions.discoverEntryPoints, toggleEntryPointCandidate: actions.toggleEntryPointCandidate, clearSearch: actions.clearSearch };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, includeRelatedDocs: state.includeRelatedDocs, autoOptimize: state.autoOptimize, activeTab: state.activeTab, isSaving: state.isSaving, isGenerating: state.isGenerating, setFormat, setPackMode, setTokenLimit, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setActiveTab, ...actions.output };
-  return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, sortKey, setSortKey, toggleProjects, toggleFavorite, setDiscoveryMode, setTaskInput, setEntryPointInput, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setRecommendationSettings, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, analyzeTask: actions.analyzeTask, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
+  return { ...state, tree, isProjectsOpen, useGitignore: state.useGitignore, favorites, favoritesOnly, sortKey, setSortKey, toggleProjects, toggleFavorite, setDiscoveryMode, setTaskInput, setEntryPointInput, setQuery, setRecipeKind, setFormat, setPackMode, setTokenLimit, setContextLines, setIncludeDependencies, setIncludeRelatedDocs, setAutoOptimize, setPresetKind, setActiveTab, setUseGitignore, setRecommendationSettings, setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, analyzeTask: actions.analyzeTask, discoverEntryPoints: actions.discoverEntryPoints, toggleEntryPointCandidate: actions.toggleEntryPointCandidate, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };
 };
 
 const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) => ({
   project: { addProject: (path: string) => saveProject(api, set, path, state.useGitignore), chooseProjectFolder: () => chooseFolder(api, set), removeProject: (id: string) => deleteProject(api, set, id, state.useGitignore) },
   analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.contextLines, state.projects, state.recommendationSettings),
   analyzeTask: () => analyzeTask(api, set, state),
+  discoverEntryPoints: () => discoverEntryPoints(api, set, state),
+  toggleEntryPointCandidate: (path: string) => toggleEntryPointCandidate(set, path),
   clearSearch: () => clearSearch(api, set, state.projects, state.useGitignore),
   toggleTreeNode: (root: CandidateTreeNode, id: string) => {
     const nextKeys = toggleNode(root, id, state.selectedKeys);
@@ -326,6 +331,26 @@ const analyzeTask = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceS
   } finally {
     update(set, { isAnalyzing: false });
   }
+};
+
+const discoverEntryPoints = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {
+  if (!state.taskInput.trim()) return update(set, { searchNotice: 'Task description is required.' });
+  update(set, { isDiscoveringEntryPoints: true, searchNotice: undefined });
+  try {
+    const result = await discoverEntryPointsWorkspace(api, state.taskInput, state.projects);
+    update(set, { entryPointCandidates: result.candidates, searchNotice: result.searchNotice });
+  } finally {
+    update(set, { isDiscoveringEntryPoints: false });
+  }
+};
+
+const toggleEntryPointCandidate = (set: SetWorkspace, path: string): void => {
+  set(current => {
+    const currentPaths = current.entryPointInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    const index = currentPaths.indexOf(path);
+    const nextPaths = index >= 0 ? currentPaths.filter(p => p !== path) : [...currentPaths, path];
+    return { ...current, entryPointInput: nextPaths.join(', ') };
+  });
 };
 
 const generate = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {

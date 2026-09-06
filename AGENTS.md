@@ -11,10 +11,11 @@
 You must comply with the following quantitative restrictions with **zero exceptions**. If a requirement forces you to break these limits, you must immediately propose extracting logic into new functions or classes.
 
 - **File Length:** Max **150 lines per file**. If it exceeds this, split the responsibilities into separate files.
-- **Method Length:** Max **15 lines per method/function**. Extract logic into private, well-named helper functions.
+- **Method Length:** Max **15 lines per method/function**. Extract logic into private, well-named helper functions. **(10-Line Safety Margin: 新規作成・変更時は 10 行以内を目標に設計し、後追い分割の手戻りを防ぐこと。)**
 - **Cyclomatic Complexity:** Max **5 per function**. Avoid deep nesting (if/for/switch). Use guard clauses and early returns exclusively.
 - **Zero "Any" Policy:** The use of `any` is strictly prohibited. You must use `unknown` for unsafe data and validate it using Type Guards or Zod. Ensure total type safety.
 - **Immutability:** Prefer `const` and immutable data structures. Avoid mutating variables unless absolutely necessary for performance in a specific loop.
+- **Interface Sync Protocol:** `DesktopApi` や Ports 等の共通インターフェース変更時は、テスト実行前に `grep_search` で全参照・モック箇所を特定し、同一ターン内で一括同期すること（逐次エラー修正によるモグラ叩きの禁止）。
 
 ## 3. Architecture & Boundaries (DDD + Dependency Injection)
 You must strictly enforce the Dependency Rule: `Domain < Application < Infrastructure / UI`.
@@ -35,7 +36,7 @@ VSCode extensions are prone to specific bugs. You must strictly follow these rul
 - **100% Coverage Expectation:** Every logic modification or creation must be accompanied by a Vitest unit test.
 - **Isolate Domain/App Tests:** Because Domain and Application layers do not import `vscode`, they must be unit-tested thoroughly without VSCode API mocks.
 - **Edge-Case Mastery:** Always write tests for: empty workspaces, unreadable files, missing configurations, malformed input, and boundaries.
-- **Pinpoint-First Verification (ピンポイント検証の原則):** 開発・実装中のテスト実行は、変更対象ファイルのみをピンポイントで実行すること（例: `npm run test:file -- <path>` または `npm run test:changed`）。都度の全体テストや重いフルチェックの多用を厳禁とする。
+- **Pinpoint-First Verification (ピンポイント検証の原則):** 開発・実装中のテスト実行は、変更対象ファイルのみをピンポイントで実行すること（例: `npm run test:file -- <path>` または `npm run test:changed`）。規約確認も `npm run lint:standards:changed` で変更ファイルのみを局所確認すること。都度の全体テストや重いフルチェックの多用を厳禁とする。
 - **Batch Gate at Completion (完了時一括チェック):** 全体テストスイートおよび品質ゲート（`npm run check`, `npm run desktop:test`）は、ステップ完了の節目またはタスク全体の最終検証時に1回まとめて実行すること。
 
 ## 6. AI Output & Editing Protocol
