@@ -61,6 +61,8 @@ export type RepositoryIndexStatus = 'ready' | 'updating' | 'degraded' | 'not_ind
 
 export type StructuredKnowledgeIndexStatus = 'ready' | 'building' | 'degraded' | 'not_built';
 
+export type SemanticIndexStatus = 'ready' | 'building' | 'degraded' | 'not_built';
+
 export type RepositoryIndexStatusResponse = Readonly<{
   status: RepositoryIndexStatus;
   totalFiles: number;
@@ -68,6 +70,8 @@ export type RepositoryIndexStatusResponse = Readonly<{
   schemaVersion?: number;
   knowledgeStatus?: StructuredKnowledgeIndexStatus;
   knowledgeEntries?: number;
+  semanticStatus?: SemanticIndexStatus;
+  semanticEntries?: number;
 }>;
 
 export type RefreshRepositoryIndexResponse = Readonly<{
@@ -82,6 +86,8 @@ export type RefreshRepositoryIndexResponse = Readonly<{
   rebuilt: boolean;
   knowledgeStatus?: StructuredKnowledgeIndexStatus;
   knowledgeEntries?: number;
+  semanticStatus?: SemanticIndexStatus;
+  semanticEntries?: number;
 }>;
 
 export type DesktopApi = Readonly<{

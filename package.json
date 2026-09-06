@@ -396,6 +396,26 @@
           "type": "string",
           "default": "%prompt.gitCommit%",
           "description": "%config.gitCommitPrompt.description%"
+        },
+        "codeprep.embedding.provider": {
+          "type": "string",
+          "default": "ollama",
+          "description": "Embedding provider (e.g. 'ollama', 'local-http')"
+        },
+        "codeprep.embedding.endpoint": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Embedding service HTTP endpoint"
+        },
+        "codeprep.embedding.model": {
+          "type": "string",
+          "default": "nomic-embed-text",
+          "description": "Embedding model name"
+        },
+        "codeprep.embedding.dimensions": {
+          "type": "integer",
+          "default": 768,
+          "description": "Embedding vector dimensions"
         }
       }
     }

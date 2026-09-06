@@ -27,6 +27,7 @@ export type ProjectPanelProps = Readonly<{
   projects: readonly Project[]; projectNotice: WorkspaceNotice;
   indexStatus?: string; indexTotalFiles?: number;
   knowledgeStatus?: string; knowledgeEntries?: number;
+  semanticStatus?: string; semanticEntries?: number;
   addProject(rootPath: string): Promise<void>; chooseProjectFolder(): Promise<void>; removeProject(projectId: string): Promise<void>;
   refreshIndex?(): Promise<void>;
 }>;

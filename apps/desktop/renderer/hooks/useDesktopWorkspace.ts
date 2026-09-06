@@ -242,6 +242,8 @@ const workspace = (
     indexTotalFiles: indexInfo.indexTotalFiles,
     knowledgeStatus: indexInfo.knowledgeStatus,
     knowledgeEntries: indexInfo.knowledgeEntries,
+    semanticStatus: indexInfo.semanticStatus,
+    semanticEntries: indexInfo.semanticEntries,
     refreshIndex: indexInfo.refreshIndex,
     ...actions.project,
   };

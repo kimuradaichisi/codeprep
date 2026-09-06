@@ -3,6 +3,7 @@ import { JsonRepositoryIndexStore } from '../../src/features/repository-context/
 import { ProjectScannerClient } from '../../src/features/repository-context/infrastructure/filesystem/ProjectScannerClient';
 import { NodeCryptoFingerprintClient } from '../../src/features/repository-context/infrastructure/filesystem/NodeCryptoFingerprintClient';
 import { RefreshRepositoryIndexUseCase } from '../../src/features/repository-context/application/RefreshRepositoryIndexUseCase';
+import type { EmbeddingPort } from '../../src/features/repository-context/application/semanticIndexPorts';
 import type {
   RepositoryIndexStatusResponse,
   RefreshRepositoryIndexResponse,
@@ -11,6 +12,10 @@ import {
   getStructuredKnowledgeStatus,
   syncStructuredKnowledgeIndex,
 } from './StructuredKnowledgeHandler';
+import {
+  getSemanticIndexStatus,
+  syncSemanticIndex,
+} from './SemanticIndexHandler';
 
 export const handleGetRepositoryIndexStatus = async (
   indexesDir: string,
@@ -21,6 +26,7 @@ export const handleGetRepositoryIndexStatus = async (
   const index = await store.load(workspaceId);
   if (!index) return { status: 'not_indexed', totalFiles: 0 };
   const knowledge = await getStructuredKnowledgeStatus(indexesDir, workspaceId);
+  const semantic = await getSemanticIndexStatus(indexesDir, workspaceId);
   return {
     status: 'ready',
     totalFiles: index.entries.length,
@@ -28,13 +34,16 @@ export const handleGetRepositoryIndexStatus = async (
     schemaVersion: index.metadata.schemaVersion,
     knowledgeStatus: knowledge.status,
     knowledgeEntries: knowledge.entries,
+    semanticStatus: semantic.status,
+    semanticEntries: semantic.entries,
   };
 };
 
 export const handleRefreshRepositoryIndex = async (
   registry: ProjectRegistryStore,
   indexesDir: string,
-  workspaceIdVal: unknown
+  workspaceIdVal: unknown,
+  embeddingPort?: EmbeddingPort
 ): Promise<RefreshRepositoryIndexResponse> => {
   try {
     const workspaceId = typeof workspaceIdVal === 'string' ? workspaceIdVal : 'default';
@@ -56,12 +65,24 @@ export const handleRefreshRepositoryIndex = async (
       changeSet: result.changeSet,
       rebuilt: result.rebuilt,
     });
+    const semantic = knowledge.index
+      ? await syncSemanticIndex({
+          indexesDir,
+          workspaceId,
+          currentKnowledge: knowledge.index,
+          changeSet: result.changeSet,
+          rebuilt: result.rebuilt,
+          embeddingPort,
+        })
+      : { status: 'degraded' as const, entries: 0 };
     return {
       status: 'ready',
       metrics: result.metrics,
       rebuilt: result.rebuilt,
       knowledgeStatus: knowledge.status,
       knowledgeEntries: knowledge.entries,
+      semanticStatus: semantic.status,
+      semanticEntries: semantic.entries,
     };
   } catch {
     return { status: 'degraded', rebuilt: false };

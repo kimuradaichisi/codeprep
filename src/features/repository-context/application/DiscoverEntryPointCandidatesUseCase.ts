@@ -34,7 +34,7 @@ export class DiscoverEntryPointCandidatesUseCase {
     const projects = await this.ports.projects.getByIds(input.projectIds ?? []);
     if (projects.length === 0) return { candidates: [], terms, warnings: [] };
 
-    const evidences = await this.collectAllEvidences(projects, terms, input.manualPinnedPaths);
+    const evidences = await this.collectAllEvidences(projects, terms, trimmedTask, input.manualPinnedPaths);
     const merged = mergeCandidateEvidences(evidences);
     const filtered = filterEntryPointCandidates(merged, input.maxCandidates ?? 20);
 
@@ -44,6 +44,7 @@ export class DiscoverEntryPointCandidatesUseCase {
   private async collectAllEvidences(
     projects: readonly Project[],
     terms: readonly string[],
+    task: string,
     manualPins?: readonly string[]
   ): Promise<readonly EntryPointCandidateEvidence[]> {
     const allSources = [...this.defaultSources, ...(this.ports.customSources ?? [])];
@@ -52,7 +53,7 @@ export class DiscoverEntryPointCandidatesUseCase {
     this.appendManualPins(projects, manualPins, evidences);
     for (const project of projects) {
       for (const source of allSources) {
-        await this.safeDiscover(source, project, terms, evidences);
+        await this.safeDiscover(source, project, terms, task, evidences);
       }
     }
     return evidences;
@@ -75,10 +76,11 @@ export class DiscoverEntryPointCandidatesUseCase {
     source: EntryPointCandidateSource,
     project: Project,
     terms: readonly string[],
+    task: string,
     out: EntryPointCandidateEvidence[]
   ): Promise<void> {
     try {
-      const found = await source.discover(project, terms);
+      const found = await source.discover(project, terms, task);
       out.push(...found);
     } catch {
       // Partial failure is tolerated

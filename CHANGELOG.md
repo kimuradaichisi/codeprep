@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Semantic Index / Semantic Entry Point Candidate Source (Phase 3C) を実装 — Structured Knowledge Index の意味単位に Embedding を付与し、自然言語 Task からの類似度検索（Cosine Similarity）による Entry Point 候補抽出を統合
+- feat: `EmbeddingVector` ドメインモデルを `Float32Array` として定義し、バリデーションおよび決定論的 Cosine Similarity 計算（次元不一致例外・ゼロベクトル対応）を実装
+- feat: `HttpEmbeddingAdapter` を実装 — Production runtime 用の実 EmbeddingPort Adapter（ローカル優先・設定注入・Ollama/HTTP API 連携）
+- feat: `JsonSemanticIndexStore` にて `Float32Array` ↔ `number[]` の明示的シリアライズ/デシリアライズおよび Load境界での NaN/Infinity/次元不一致の厳格バリデーションを実装
+- test: Persistence round-trip（Save → Load → Search の結果同一性）および異常値拒否テストを追加
+- feat: `SemanticIndexEntry` / `SemanticIndex` ドメインモデルおよび決定論的ソート・バージョン（schemaVersion=1）管理
+- feat: `EmbeddingTextBuilder` を実装 — Markdown見出しパス、シンボル情報、JSDoc/コメント、コード断片を決定論的テキストへフォーマット
+- feat: `BuildSemanticIndexUseCase` / `RefreshSemanticIndexUseCase` / `SemanticSearchUseCase` を実装 — Structured Knowledge の差分更新と連携した増分 Embedding 生成・セマンティック類似度検索
+- feat: `SemanticEntryPointCandidateSource` を実装 — Task 類似度検索による Entry Point 候補（reason: 'semanticMatch'）の生成とファイル単位集約（max score）
+- feat: CodePrep Desktop UI に「Semantic: READY」サブステータス表示を統合し、Provider unavailable 時の Graceful Degradation（Semantic = DEGRADED かつ deterministic 継続）を実現
+- test: 実 `HttpEmbeddingAdapter` とローカル HTTP サーバーを用いた 15問の Golden Set 再評価（Deterministic Only: Top5=93.3%, Recall@10=66.7% → Hybrid: Top5=100.0%, Recall@10=93.3%）を追加
 - feat: Markdown Section / Code Symbol Index (Phase 3B) を実装 — リポジトリ内コンテンツを意味単位（Markdown 見出しセクションおよび TypeScript/JavaScript コードシンボル）へ構造化した `StructuredKnowledgeIndex` 基盤を構築
 - feat: `MarkdownSectionEntry` / `CodeSymbolEntry` / `StructuredKnowledgeIndex` ドメインモデルおよび決定論的 `entryId` 生成・ソート・バージョン（schemaVersion=1）管理
 - feat: `MarkdownSectionExtractor` を実装 — コードフェンス状態管理・見出しスタック追跡・root content 抽出による Markdown セクション抽出

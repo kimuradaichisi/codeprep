@@ -15,7 +15,8 @@ import type {
 export interface EntryPointCandidateSource {
   discover(
     project: Project,
-    terms: readonly string[]
+    terms: readonly string[],
+    task?: string
   ): Promise<readonly EntryPointCandidateEvidence[]>;
 }
 

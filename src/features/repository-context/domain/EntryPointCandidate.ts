@@ -8,6 +8,7 @@ export const entryPointCandidateReasons = [
   'textMatch',
   'headingMatch',
   'symbolLikeMatch',
+  'semanticMatch',
   'manualPin',
 ] as const;
 

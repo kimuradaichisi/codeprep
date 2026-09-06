@@ -12,6 +12,7 @@ export const REASON_WEIGHTS: Readonly<Record<EntryPointCandidateReason, number>>
   symbolLikeMatch: 70,
   filenameMatch: 60,
   headingMatch: 45,
+  semanticMatch: 40,
   textMatch: 35,
   pathMatch: 25,
 };

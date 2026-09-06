@@ -9,6 +9,8 @@ export const ProjectPanel = ({
   indexTotalFiles,
   knowledgeStatus,
   knowledgeEntries,
+  semanticStatus,
+  semanticEntries,
   refreshIndex,
   addProject,
   chooseProjectFolder,
@@ -35,6 +37,9 @@ export const ProjectPanel = ({
             Index: <strong style={{ textTransform: 'uppercase' }}>{indexStatus}</strong> ({indexTotalFiles ?? 0} files)
             {knowledgeStatus && (
               <> · Knowledge: <strong style={{ textTransform: 'uppercase' }}>{knowledgeStatus}</strong> ({knowledgeEntries ?? 0})</>
+            )}
+            {semanticStatus && (
+              <> · Semantic: <strong style={{ textTransform: 'uppercase' }}>{semanticStatus}</strong> ({semanticEntries ?? 0})</>
             )}
           </span>
           {refreshIndex && <button onClick={() => void refreshIndex()} style={{ fontSize: '10px', padding: '2px 6px' }}>Refresh</button>}

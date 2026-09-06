@@ -1,6 +1,7 @@
 import type { Project } from '../../src/features/repository-context/domain/Project';
 import type { RepositoryIndex } from '../../src/features/repository-context/domain/RepositoryIndex';
 import type { RepositoryIndexChangeSet } from '../../src/features/repository-context/domain/RepositoryIndexChangeSet';
+import type { StructuredKnowledgeIndex } from '../../src/features/repository-context/domain/StructuredKnowledgeIndex';
 import { BuildStructuredKnowledgeIndexUseCase } from '../../src/features/repository-context/application/BuildStructuredKnowledgeIndexUseCase';
 import { KnowledgeExtractionService } from '../../src/features/repository-context/application/KnowledgeExtractionService';
 import { RefreshStructuredKnowledgeIndexUseCase } from '../../src/features/repository-context/application/RefreshStructuredKnowledgeIndexUseCase';
@@ -13,6 +14,7 @@ import type { StructuredKnowledgeIndexStatus } from './DesktopApi';
 export interface KnowledgeStatusResult {
   readonly status: StructuredKnowledgeIndexStatus;
   readonly entries: number;
+  readonly index?: StructuredKnowledgeIndex;
 }
 
 export const getStructuredKnowledgeStatus = async (
@@ -23,7 +25,7 @@ export const getStructuredKnowledgeStatus = async (
     const store = new JsonStructuredKnowledgeIndexStore(indexesDir);
     const index = await store.load(workspaceId);
     if (!index) return { status: 'not_built', entries: 0 };
-    return { status: 'ready', entries: index.entries.length };
+    return { status: 'ready', entries: index.entries.length, index };
   } catch {
     return { status: 'degraded', entries: 0 };
   }
@@ -56,7 +58,7 @@ export const syncStructuredKnowledgeIndex = async (params: {
     const result = params.rebuilt
       ? await buildUseCase.execute(params.repoIndex)
       : await refreshUseCase.execute(params.workspaceId, params.changeSet, params.repoIndex);
-    return { status: 'ready', entries: result.entries.length };
+    return { status: 'ready', entries: result.entries.length, index: result };
   } catch {
     return { status: 'degraded', entries: 0 };
   }

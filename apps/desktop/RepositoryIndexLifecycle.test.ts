@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProjectRegistryStore } from '../../src/features/repository-context/infrastructure/filesystem/ProjectRegistryStore';
+import { FakeEmbeddingPort } from '../../src/features/repository-context/infrastructure/embedding/FakeEmbeddingPort';
 import {
   handleGetRepositoryIndexStatus,
   handleRefreshRepositoryIndex,
@@ -52,24 +53,30 @@ describe('Workspace Lifecycle Repository & Knowledge Index', () => {
   it('runs complete lifecycle: first load, no-change reuse, one-file incremental refresh, and resilience to failure', async () => {
     const workspaceId = 'test-workspace';
 
+    const fakePort = new FakeEmbeddingPort();
+
     // 0. Initial Status before build
     const initialStatus = await handleGetRepositoryIndexStatus(indexesDir, workspaceId);
     expect(initialStatus.status).toBe('not_indexed');
 
     // 1. First Load -> Build
-    const firstRes = await handleRefreshRepositoryIndex(mockRegistry, indexesDir, workspaceId);
+    const firstRes = await handleRefreshRepositoryIndex(mockRegistry, indexesDir, workspaceId, fakePort);
     expect(firstRes.status).toBe('ready');
     expect(firstRes.rebuilt).toBe(true);
     expect(firstRes.knowledgeStatus).toBe('ready');
     expect(firstRes.knowledgeEntries).toBeGreaterThan(0);
+    expect(firstRes.semanticStatus).toBe('ready');
+    expect(firstRes.semanticEntries).toBeGreaterThan(0);
 
     const postBuildStatus = await handleGetRepositoryIndexStatus(indexesDir, workspaceId);
     expect(postBuildStatus.status).toBe('ready');
     expect(postBuildStatus.knowledgeStatus).toBe('ready');
     expect(postBuildStatus.knowledgeEntries).toBe(firstRes.knowledgeEntries);
+    expect(postBuildStatus.semanticStatus).toBe('ready');
+    expect(postBuildStatus.semanticEntries).toBe(firstRes.semanticEntries);
 
     // 2. No-change Load -> Reuse
-    const secondRes = await handleRefreshRepositoryIndex(mockRegistry, indexesDir, workspaceId);
+    const secondRes = await handleRefreshRepositoryIndex(mockRegistry, indexesDir, workspaceId, fakePort);
     expect(secondRes.status).toBe('ready');
     expect(secondRes.rebuilt).toBe(false);
     expect(secondRes.metrics?.modified).toBe(0);
@@ -83,7 +90,7 @@ describe('Workspace Lifecycle Repository & Knowledge Index', () => {
       'export class OrderService { async cancelOrder() {} }',
       'utf8'
     );
-    const thirdRes = await handleRefreshRepositoryIndex(mockRegistry, indexesDir, workspaceId);
+    const thirdRes = await handleRefreshRepositoryIndex(mockRegistry, indexesDir, workspaceId, fakePort);
     expect(thirdRes.status).toBe('ready');
     expect(thirdRes.rebuilt).toBe(false);
     expect(thirdRes.metrics?.modified).toBe(1);
@@ -92,11 +99,27 @@ describe('Workspace Lifecycle Repository & Knowledge Index', () => {
 
     // 4. Knowledge Index failure -> Workspace remains usable
     const brokenIndexesDir = join(tempRoot, 'non-writable-sub');
-    await writeFile(brokenIndexesDir, 'not a directory', 'utf8'); // causes knowledge save to fail
+    await writeFile(brokenIndexesDir, 'not a directory', 'utf8');
 
-    // Knowledge sync fails inside handleRefreshRepositoryIndex, but Repository index or degraded knowledge is caught
-    const resWithBrokenKnowledge = await handleRefreshRepositoryIndex(mockRegistry, brokenIndexesDir, workspaceId);
-    // Even if store path has issue, the handler gracefully returns without throwing
+    const resWithBrokenKnowledge = await handleRefreshRepositoryIndex(mockRegistry, brokenIndexesDir, workspaceId, fakePort);
     expect(['ready', 'degraded']).toContain(resWithBrokenKnowledge.status);
+  });
+
+  it('marks semanticStatus as degraded when embedding provider fails while workspace remains ready', async () => {
+    const workspaceId = 'test-workspace-degraded';
+    const failingPort = {
+      providerId: 'failing',
+      modelId: 'fail-model',
+      dimensions: 768,
+      embed: async () => {
+        throw new Error('Connection refused (ECONNREFUSED)');
+      },
+    };
+
+    const res = await handleRefreshRepositoryIndex(mockRegistry, indexesDir, workspaceId, failingPort);
+    expect(res.status).toBe('ready');
+    expect(res.knowledgeStatus).toBe('ready');
+    expect(res.semanticStatus).toBe('degraded');
+    expect(res.semanticEntries).toBe(0);
   });
 });
