@@ -95,6 +95,19 @@ describe('DiscoverFilesUseCase', () => {
     expect(result.warnings[0].message).toContain('Unresolved: unknown.ts');
   });
 
+  it('resolves all files under a directory path in clipboard', async () => {
+    const customPorts = {
+      ...ports,
+      clipboard: { readText: async () => 'src' }
+    };
+    const result = await new DiscoverFilesUseCase(customPorts).discover({
+      recipe: { kind: 'clipboardPaths' }, projectIds: ['p1'],
+    });
+
+    expect(result.candidates.map(file => file.relativePath)).toEqual(['src/auth.ts', 'src/app.ts']);
+    expect(result.candidates.every(file => file.reasons.includes('clipboardPath'))).toBe(true);
+  });
+
   it('finds related documents using DocGraph', async () => {
     const customPorts: DiscoverFilesPorts = {
       ...ports,

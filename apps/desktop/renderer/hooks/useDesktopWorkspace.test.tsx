@@ -290,6 +290,54 @@ describe('useDesktopWorkspace', () => {
       expect(result.current?.isSaving).toBe(false);
     });
   });
+
+  describe('isAnalyzing and isGenerating', () => {
+    it('manages isAnalyzing state during analyze call', async () => {
+      let resolveAnalyze: (val: unknown) => void = () => {};
+      const analyzePromise = new Promise(resolve => { resolveAnalyze = resolve; });
+      const analyzeProjects = vi.fn(async () => {
+        await analyzePromise;
+        return { candidates, warnings: [] };
+      });
+      const { result } = await renderWorkspace({ analyzeProjects });
+
+      expect(result.current?.isAnalyzing).toBe(false);
+      let action: Promise<void> | undefined;
+      act(() => {
+        action = result.current?.analyze('auth');
+      });
+      await act(async () => { await flush(); });
+      expect(result.current?.isAnalyzing).toBe(true);
+
+      resolveAnalyze(undefined);
+      await act(async () => { await action; });
+      expect(result.current?.isAnalyzing).toBe(false);
+    });
+
+    it('manages isGenerating state during generateOutput call', async () => {
+      let resolveGenerate: (val: unknown) => void = () => {};
+      const generatePromise = new Promise(resolve => { resolveGenerate = resolve; });
+      const generateOutput = vi.fn(async () => {
+        await generatePromise;
+        return { preview: 'result' };
+      });
+      const { result } = await renderWorkspace({ generateOutput });
+
+      await act(async () => { await result.current?.analyze('auth'); });
+      expect(result.current?.isGenerating).toBe(false);
+
+      let genAction: Promise<void> | undefined;
+      act(() => {
+        genAction = result.current?.generateOutput();
+      });
+      await act(async () => { await flush(); });
+      expect(result.current?.isGenerating).toBe(true);
+
+      resolveGenerate(undefined);
+      await act(async () => { await genAction; });
+      expect(result.current?.isGenerating).toBe(false);
+    });
+  });
 });
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {
   const result: { current?: DesktopWorkspace } = {};

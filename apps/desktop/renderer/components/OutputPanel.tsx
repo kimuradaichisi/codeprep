@@ -14,7 +14,7 @@ export const OutputPanel = (props: OutputPanelProps) => (
     {props.activeTab === 'preview' ? (
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
         <OutputConfig {...props} />
-        <OutputActions preview={props.preview} isSaving={props.isSaving} generateOutput={props.generateOutput} copyOutput={props.copyOutput} saveOutput={props.saveOutput} />
+        <OutputActions preview={props.preview} isSaving={props.isSaving} isGenerating={props.isGenerating} generateOutput={props.generateOutput} copyOutput={props.copyOutput} saveOutput={props.saveOutput} />
         <InlineNotice message={props.outputNotice} />
         <pre className="preview" style={{ flex: 1, margin: '14px 0 0' }}>{props.preview || 'Generated context will appear here.'}</pre>
       </div>
@@ -84,14 +84,17 @@ const OutputConfig = (props: OutputPanelProps) => (
 const OutputActions = ({
   preview,
   isSaving,
+  isGenerating,
   generateOutput,
   copyOutput,
   saveOutput,
-}: Pick<OutputPanelProps, 'preview' | 'isSaving' | 'generateOutput' | 'copyOutput' | 'saveOutput'>) => (
+}: Pick<OutputPanelProps, 'preview' | 'isSaving' | 'isGenerating' | 'generateOutput' | 'copyOutput' | 'saveOutput'>) => (
   <div className="button-row">
-    <button type="button" className="primary-button" onClick={() => void generateOutput()}>Generate output</button>
-    <button type="button" disabled={!preview} onClick={() => void copyOutput()}>Copy output</button>
-    <button type="button" disabled={!preview || isSaving} onClick={() => void saveOutput()}>
+    <button type="button" className="primary-button" disabled={isGenerating} onClick={() => void generateOutput()}>
+      {isGenerating ? 'Generating...' : 'Generate output'}
+    </button>
+    <button type="button" disabled={!preview || isGenerating} onClick={() => void copyOutput()}>Copy output</button>
+    <button type="button" disabled={!preview || isSaving || isGenerating} onClick={() => void saveOutput()}>
       {isSaving ? 'Saving...' : 'Save output'}
     </button>
   </div>

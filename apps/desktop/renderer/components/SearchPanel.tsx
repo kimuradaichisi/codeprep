@@ -66,20 +66,28 @@ const RecipeSelect = ({ recipeKind, setRecipeKind }: Pick<SearchPanelProps, 'rec
 );
 
 const SearchInputArea = (props: SearchPanelProps) => {
+  const isBusy = Boolean(props.isAnalyzing);
+  const analyzeLabel = isBusy ? 'Analyzing...' : 'Analyze';
   if (!needsInput(props.recipeKind)) {
     return (
       <div className="button-row">
-        <button className="primary-button" onClick={() => void props.analyze()}>Analyze</button>
-        <button onClick={() => void props.clearSearch()} style={{ marginLeft: '8px' }}>Clear</button>
+        <button className="primary-button" disabled={isBusy} onClick={() => void props.analyze()}>
+          {isBusy && <span className="inline-spinner" />}
+          {analyzeLabel}
+        </button>
+        <button disabled={isBusy} onClick={() => void props.clearSearch()} style={{ marginLeft: '8px' }}>Clear</button>
       </div>
     );
   }
   return (
     <div className="search-row">
-      <input aria-label="Query" value={props.query} placeholder={placeholder(props.recipeKind)} onChange={event => props.setQuery(event.target.value)} />
+      <input aria-label="Query" disabled={isBusy} value={props.query} placeholder={placeholder(props.recipeKind)} onChange={event => props.setQuery(event.target.value)} />
       {props.recipeKind === 'text' && <ContextLinesInput value={props.contextLines} onChange={props.setContextLines} />}
-      <button className="primary-button" disabled={!props.query.trim()} onClick={() => void props.analyze()}>Analyze</button>
-      <button onClick={() => void props.clearSearch()} style={{ whiteSpace: 'nowrap' }}>Clear</button>
+      <button className="primary-button" disabled={isBusy || !props.query.trim()} onClick={() => void props.analyze()}>
+        {isBusy && <span className="inline-spinner" />}
+        {analyzeLabel}
+      </button>
+      <button disabled={isBusy} onClick={() => void props.clearSearch()} style={{ whiteSpace: 'nowrap' }}>Clear</button>
     </div>
   );
 };

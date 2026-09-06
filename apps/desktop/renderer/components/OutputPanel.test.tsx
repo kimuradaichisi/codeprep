@@ -45,6 +45,15 @@ describe('OutputPanel', () => {
     expect(savingButton).not.toBeNull();
     expect(savingButton?.disabled).toBe(true);
   });
+
+  it('disables Generate output button and displays Generating... when isGenerating is true', async () => {
+    const props = createDefaultProps({ preview: '# Content', isGenerating: true });
+    const container = renderPanel(props);
+    const generatingButton = getButton(container, 'Generating...');
+
+    expect(generatingButton).not.toBeNull();
+    expect(generatingButton?.disabled).toBe(true);
+  });
 });
 
 const renderPanel = (props: OutputPanelProps): HTMLElement => {

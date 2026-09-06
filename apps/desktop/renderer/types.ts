@@ -28,6 +28,7 @@ export type ProjectPanelProps = Readonly<{
 export type SearchPanelProps = Readonly<{
   recipeKind: SearchRecipeKind; query: string; contextLines: number; searchNotice: WorkspaceNotice;
   presetKind: ScenarioPresetKind; useGitignore: boolean; recommendationSettings: RecommendationSettings;
+  isAnalyzing?: boolean;
   setRecipeKind(value: SearchRecipeKind): void; setQuery(value: string): void; setContextLines(value: number): void;
   setPresetKind(value: ScenarioPresetKind): void; setUseGitignore(value: boolean): void;
   setRecommendationSettings(value: RecommendationSettings): void; analyze(query?: string): Promise<void>; clearSearch(): Promise<void>;
@@ -36,6 +37,7 @@ export type SearchPanelProps = Readonly<{
 export type CandidateTreeProps = Readonly<{
   tree: readonly CandidateTreeNode[]; candidates?: readonly AnalyzedCandidate[]; selectedKeys: readonly string[];
   tokenLimit: number; sortKey: TreeSort; setSortKey(value: TreeSort): void; favorites: readonly string[]; favoritesOnly: boolean;
+  isLoading?: boolean;
   toggleTreeNode(root: CandidateTreeNode, nodeId: string): void; selectAll(): void; clearAll(): void;
   viewFile(projectId: string, relativePath: string): void;
   setFilePackMode(projectId: string, relativePath: string, mode: PackMode | undefined): void;
@@ -45,6 +47,7 @@ export type CandidateTreeProps = Readonly<{
 export type OutputPanelProps = Readonly<{
   packMode: PackMode; tokenLimit: number; format: ContextOutputFormat; preview: string; outputNotice: WorkspaceNotice;
   includeDependencies: boolean; includeRelatedDocs: boolean; autoOptimize: boolean; activeTab: OutputTab; isSaving: boolean;
+  isGenerating?: boolean;
   setFormat(value: ContextOutputFormat): void; setPackMode(value: PackMode): void; setTokenLimit(value: number): void;
   setIncludeDependencies(value: boolean): void; setIncludeRelatedDocs(value: boolean): void; setAutoOptimize(value: boolean): void;
   setActiveTab(value: OutputTab): void; generateOutput(): Promise<void>; copyOutput(): Promise<void>; saveOutput(): Promise<void>;
@@ -57,6 +60,7 @@ export type DesktopWorkspace = Readonly<{
   includeRelatedDocs: boolean; autoOptimize: boolean; presetKind: ScenarioPresetKind; activeTab: OutputTab;
   isProjectsOpen: boolean; useGitignore: boolean; recommendationSettings: RecommendationSettings;
   favorites: readonly string[]; favoritesOnly: boolean; sortKey: TreeSort; isSaving: boolean;
+  isAnalyzing: boolean; isGenerating: boolean;
   setSortKey(value: TreeSort): void; tree: readonly CandidateTreeNode[]; projectNotice: WorkspaceNotice;
   searchNotice: WorkspaceNotice; outputNotice: WorkspaceNotice;
   activePreviewFile?: Readonly<{ projectId: string; relativePath: string }>;

@@ -99,6 +99,15 @@ describe('CandidateTree', () => {
     expect(favorite?.getAttribute('aria-label')).toBe('Add favorite src/auth.ts');
     expect(packMode?.getAttribute('aria-label')).toBe('Pack mode for src/auth.ts');
   });
+
+  it('renders loading indicator when isLoading is true', async () => {
+    const container = await renderTree(createProps({ isLoading: true }));
+    const loading = container.querySelector('.tree-loading');
+    expect(loading).not.toBeNull();
+    expect(loading?.textContent).toContain('Analyzing workspace & checking candidates...');
+    const selectAllBtn = findButton(container, 'Select All');
+    expect(selectAllBtn.disabled).toBe(true);
+  });
 });
 
 const findButton = (container: Element, label: string): HTMLButtonElement =>
