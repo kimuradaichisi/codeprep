@@ -240,6 +240,8 @@ const workspace = (
     projectNotice: state.projectNotice,
     indexStatus: indexInfo.indexStatus,
     indexTotalFiles: indexInfo.indexTotalFiles,
+    knowledgeStatus: indexInfo.knowledgeStatus,
+    knowledgeEntries: indexInfo.knowledgeEntries,
     refreshIndex: indexInfo.refreshIndex,
     ...actions.project,
   };

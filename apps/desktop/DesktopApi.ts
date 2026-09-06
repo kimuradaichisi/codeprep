@@ -59,11 +59,15 @@ export type SaveOutputResult =
 
 export type RepositoryIndexStatus = 'ready' | 'updating' | 'degraded' | 'not_indexed';
 
+export type StructuredKnowledgeIndexStatus = 'ready' | 'building' | 'degraded' | 'not_built';
+
 export type RepositoryIndexStatusResponse = Readonly<{
   status: RepositoryIndexStatus;
   totalFiles: number;
   updatedAt?: string;
   schemaVersion?: number;
+  knowledgeStatus?: StructuredKnowledgeIndexStatus;
+  knowledgeEntries?: number;
 }>;
 
 export type RefreshRepositoryIndexResponse = Readonly<{
@@ -76,6 +80,8 @@ export type RefreshRepositoryIndexResponse = Readonly<{
     unchanged: number;
   };
   rebuilt: boolean;
+  knowledgeStatus?: StructuredKnowledgeIndexStatus;
+  knowledgeEntries?: number;
 }>;
 
 export type DesktopApi = Readonly<{

@@ -7,6 +7,8 @@ export const ProjectPanel = ({
   projectNotice,
   indexStatus,
   indexTotalFiles,
+  knowledgeStatus,
+  knowledgeEntries,
   refreshIndex,
   addProject,
   chooseProjectFolder,
@@ -29,7 +31,12 @@ export const ProjectPanel = ({
       </div>
       {indexStatus && (
         <div style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px' }}>
-          <span>Index: <strong style={{ textTransform: 'uppercase' }}>{indexStatus}</strong> ({indexTotalFiles ?? 0} files)</span>
+          <span>
+            Index: <strong style={{ textTransform: 'uppercase' }}>{indexStatus}</strong> ({indexTotalFiles ?? 0} files)
+            {knowledgeStatus && (
+              <> · Knowledge: <strong style={{ textTransform: 'uppercase' }}>{knowledgeStatus}</strong> ({knowledgeEntries ?? 0})</>
+            )}
+          </span>
           {refreshIndex && <button onClick={() => void refreshIndex()} style={{ fontSize: '10px', padding: '2px 6px' }}>Refresh</button>}
         </div>
       )}

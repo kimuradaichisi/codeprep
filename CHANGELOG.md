@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Markdown Section / Code Symbol Index (Phase 3B) を実装 — リポジトリ内コンテンツを意味単位（Markdown 見出しセクションおよび TypeScript/JavaScript コードシンボル）へ構造化した `StructuredKnowledgeIndex` 基盤を構築
+- feat: `MarkdownSectionEntry` / `CodeSymbolEntry` / `StructuredKnowledgeIndex` ドメインモデルおよび決定論的 `entryId` 生成・ソート・バージョン（schemaVersion=1）管理
+- feat: `MarkdownSectionExtractor` を実装 — コードフェンス状態管理・見出しスタック追跡・root content 抽出による Markdown セクション抽出
+- feat: `TypeScriptSymbolExtractor` を実装 — TypeScript Compiler API を利用した クラス・インターフェース・関数・アロー関数・メソッド・型エイリアス・列挙型・定数・JSDoc コメントの抽出
+- feat: `BuildStructuredKnowledgeIndexUseCase` / `RefreshStructuredKnowledgeIndexUseCase` を実装 — Phase 3A の `RepositoryIndexChangeSet` と連携し、unchanged ファイルの再パースを完全抑止する増分更新および障害復旧
+- feat: `JsonStructuredKnowledgeIndexStore` / `NodeFsKnowledgeFileReader` を実装 — Atomic Write（一時ファイル+rename）による JSON 保存
+- test: 初期構築・無変更増分・1ファイル変更・1ファイル削除・ストア破損リカバリの E2E ライフサイクルテストを追加
 - feat: Workspace Repository Index Foundation (Phase 3A) を実装 — Workspace 単位のリポジトリインデックス基盤、増分更新、差分変更セット（added/modified/deleted/unchanged）を構築
 - feat: `RepositoryIndex` / `RepositoryIndexEntry` / `RepositoryIndexMetadata` ドメインモデルおよび決定論的ソート・バージョン（schemaVersion=1）管理
 - feat: `FileKindClassifier` を追加 — code, document, config, test, other の軽量ファイル種別自動分類
