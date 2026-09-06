@@ -35,6 +35,8 @@ VSCode extensions are prone to specific bugs. You must strictly follow these rul
 - **100% Coverage Expectation:** Every logic modification or creation must be accompanied by a Vitest unit test.
 - **Isolate Domain/App Tests:** Because Domain and Application layers do not import `vscode`, they must be unit-tested thoroughly without VSCode API mocks.
 - **Edge-Case Mastery:** Always write tests for: empty workspaces, unreadable files, missing configurations, malformed input, and boundaries.
+- **Pinpoint-First Verification (ピンポイント検証の原則):** 開発・実装中のテスト実行は、変更対象ファイルのみをピンポイントで実行すること（例: `npm run test:file -- <path>` または `npm run test:changed`）。都度の全体テストや重いフルチェックの多用を厳禁とする。
+- **Batch Gate at Completion (完了時一括チェック):** 全体テストスイートおよび品質ゲート（`npm run check`, `npm run desktop:test`）は、ステップ完了の節目またはタスク全体の最終検証時に1回まとめて実行すること。
 
 ## 6. AI Output & Editing Protocol
 When providing code, you must follow this exact format:

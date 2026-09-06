@@ -17,6 +17,9 @@
 > 安い手段を優先する。  
 > ただし、Acceptance条件を満たすために必要な調査・検証・Evidence取得は省略しない。
 
+> 検証はピンポイントで実施する。  
+> 開発・試行中は対象ファイルのみを局所検証（`npm run test:file -- <path>` または `npm run test:changed`）し、全体のフルチェック（`npm run check` 等）はタスク完了時にまとめて1回実施する。
+
 > 機械的に確認できることは機械的に確認する。  
 > 確認できないことは推測で埋めず、UNKNOWN / UNRESOLVED / ERRORとして扱う。
 
