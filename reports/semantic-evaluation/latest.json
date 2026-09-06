@@ -1,0 +1,365 @@
+{
+  "environment": {
+    "repository": "codeprep",
+    "provider": "ollama",
+    "endpoint": "http://localhost:11434",
+    "model": "nomic-embed-text",
+    "dimensions": 768,
+    "embeddingTextFormatVersion": 1,
+    "semanticSchemaVersion": 1
+  },
+  "goldenSetSummary": {
+    "totalTasks": 20,
+    "jpTasksCount": 5
+  },
+  "baselineMetrics": {
+    "top1Rate": 0.1,
+    "hitRate3": 0.1,
+    "hitRate5": 0.3,
+    "recall10Rate": 0.325,
+    "mrr": 0.15333333333333335,
+    "totalTasks": 20
+  },
+  "hybridMetrics": {
+    "top1Rate": 0.15,
+    "hitRate3": 0.25,
+    "hitRate5": 0.4,
+    "recall10Rate": 0.425,
+    "mrr": 0.2213888888888889,
+    "totalTasks": 20
+  },
+  "jpSubsetComparison": {
+    "baseline": {
+      "top1Rate": 0,
+      "hitRate3": 0,
+      "hitRate5": 0,
+      "recall10Rate": 0,
+      "mrr": 0,
+      "totalTasks": 5
+    },
+    "hybrid": {
+      "top1Rate": 0,
+      "hitRate3": 0,
+      "hitRate5": 0,
+      "recall10Rate": 0,
+      "mrr": 0,
+      "totalTasks": 5
+    }
+  },
+  "parameterSweep": [
+    {
+      "minScore": 0.45,
+      "semanticWeight": 20,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.25,
+      "hitRate5": 0.4,
+      "recall10Rate": 0.425,
+      "mrr": 0.2266666666666667
+    },
+    {
+      "minScore": 0.45,
+      "semanticWeight": 30,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.25,
+      "hitRate5": 0.4,
+      "recall10Rate": 0.425,
+      "mrr": 0.2213888888888889
+    },
+    {
+      "minScore": 0.45,
+      "semanticWeight": 40,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.25,
+      "hitRate5": 0.4,
+      "recall10Rate": 0.425,
+      "mrr": 0.2213888888888889
+    },
+    {
+      "minScore": 0.45,
+      "semanticWeight": 50,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.25,
+      "hitRate5": 0.4,
+      "recall10Rate": 0.425,
+      "mrr": 0.22972222222222222
+    },
+    {
+      "minScore": 0.55,
+      "semanticWeight": 20,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.25,
+      "hitRate5": 0.4,
+      "recall10Rate": 0.425,
+      "mrr": 0.2266666666666667
+    },
+    {
+      "minScore": 0.55,
+      "semanticWeight": 30,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.25,
+      "hitRate5": 0.4,
+      "recall10Rate": 0.425,
+      "mrr": 0.2213888888888889
+    },
+    {
+      "minScore": 0.55,
+      "semanticWeight": 40,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.25,
+      "hitRate5": 0.4,
+      "recall10Rate": 0.425,
+      "mrr": 0.2213888888888889
+    },
+    {
+      "minScore": 0.55,
+      "semanticWeight": 50,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.25,
+      "hitRate5": 0.4,
+      "recall10Rate": 0.425,
+      "mrr": 0.22972222222222222
+    },
+    {
+      "minScore": 0.65,
+      "semanticWeight": 20,
+      "topK": 10,
+      "top1Rate": 0.1,
+      "hitRate3": 0.15,
+      "hitRate5": 0.35,
+      "recall10Rate": 0.375,
+      "mrr": 0.17
+    },
+    {
+      "minScore": 0.65,
+      "semanticWeight": 30,
+      "topK": 10,
+      "top1Rate": 0.1,
+      "hitRate3": 0.15,
+      "hitRate5": 0.35,
+      "recall10Rate": 0.375,
+      "mrr": 0.16472222222222227
+    },
+    {
+      "minScore": 0.65,
+      "semanticWeight": 40,
+      "topK": 10,
+      "top1Rate": 0.1,
+      "hitRate3": 0.15,
+      "hitRate5": 0.35,
+      "recall10Rate": 0.375,
+      "mrr": 0.16472222222222227
+    },
+    {
+      "minScore": 0.65,
+      "semanticWeight": 50,
+      "topK": 10,
+      "top1Rate": 0.1,
+      "hitRate3": 0.15,
+      "hitRate5": 0.3,
+      "recall10Rate": 0.375,
+      "mrr": 0.16305555555555556
+    },
+    {
+      "minScore": 0.75,
+      "semanticWeight": 20,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.15,
+      "hitRate5": 0.35,
+      "recall10Rate": 0.375,
+      "mrr": 0.2033333333333333
+    },
+    {
+      "minScore": 0.75,
+      "semanticWeight": 30,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.15,
+      "hitRate5": 0.35,
+      "recall10Rate": 0.375,
+      "mrr": 0.2033333333333333
+    },
+    {
+      "minScore": 0.75,
+      "semanticWeight": 40,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.15,
+      "hitRate5": 0.35,
+      "recall10Rate": 0.375,
+      "mrr": 0.2033333333333333
+    },
+    {
+      "minScore": 0.75,
+      "semanticWeight": 50,
+      "topK": 10,
+      "top1Rate": 0.15,
+      "hitRate3": 0.15,
+      "hitRate5": 0.35,
+      "recall10Rate": 0.375,
+      "mrr": 0.2033333333333333
+    },
+    {
+      "minScore": 0.55,
+      "semanticWeight": 40,
+      "topK": 5,
+      "top1Rate": 0.1,
+      "hitRate3": 0.15,
+      "hitRate5": 0.35,
+      "recall10Rate": 0.375,
+      "mrr": 0.17305555555555557
+    },
+    {
+      "minScore": 0.55,
+      "semanticWeight": 40,
+      "topK": 20,
+      "top1Rate": 0.2,
+      "hitRate3": 0.3,
+      "hitRate5": 0.45,
+      "recall10Rate": 0.425,
+      "mrr": 0.27666666666666667
+    }
+  ],
+  "performance": {
+    "initialBuild": {
+      "structuredEntries": 1496,
+      "embeddedEntries": 1496,
+      "embeddingCalls": 47,
+      "durationMs": 24493,
+      "serializedBytes": 35065494
+    },
+    "noChangeRefresh": {
+      "embeddingCalls": 0,
+      "durationMs": 748
+    },
+    "oneFileRefresh": {
+      "embeddingCalls": 1,
+      "durationMs": 1022
+    },
+    "queryLatencyMs": {
+      "avg": 352.23636999999945,
+      "p50": 339.3651000000027,
+      "p95": 434.37710000000516,
+      "max": 434.37710000000516
+    },
+    "indexSize": {
+      "entries": 1496,
+      "dimensions": 768,
+      "serializedBytes": 35065494,
+      "bytesPerEntry": 23440
+    }
+  },
+  "falsePositives": [
+    {
+      "taskId": "EVAL-001",
+      "task": "DiscoverEntryPointCandidatesUseCase で Entry Point 候補の探索順序を調整したい",
+      "falseCandidate": "apps/desktop/EntryPointDiscoveryHandler.ts",
+      "score": 100,
+      "reason": "semanticMatch without exact match"
+    },
+    {
+      "taskId": "EVAL-001",
+      "task": "DiscoverEntryPointCandidatesUseCase で Entry Point 候補の探索順序を調整したい",
+      "falseCandidate": "src/features/repository-context/application/entryPointCandidatePorts.ts",
+      "score": 100,
+      "reason": "semanticMatch without exact match"
+    },
+    {
+      "taskId": "EVAL-002",
+      "task": "EntryPointCandidateScorer の理由ごとのスコア重み付けを変更したい",
+      "falseCandidate": "src/features/repository-context/application/entryPointCandidatePorts.ts",
+      "score": 40,
+      "reason": "semanticMatch without exact match"
+    },
+    {
+      "taskId": "EVAL-003",
+      "task": "ワークスペースごとのインデックス永続化とファイル保存処理を変更したい",
+      "falseCandidate": "CHANGELOG.md",
+      "score": 40,
+      "reason": "semanticMatch without exact match"
+    },
+    {
+      "taskId": "EVAL-003",
+      "task": "ワークスペースごとのインデックス永続化とファイル保存処理を変更したい",
+      "falseCandidate": "src/features/engine/README.md",
+      "score": 40,
+      "reason": "semanticMatch without exact match"
+    }
+  ],
+  "falseNegatives": [
+    {
+      "taskId": "EVAL-003",
+      "task": "ワークスペースごとのインデックス永続化とファイル保存処理を変更したい",
+      "missedExpected": "src/features/repository-context/infrastructure/filesystem/JsonRepositoryIndexStore.ts",
+      "topFound": "CHANGELOG.md"
+    },
+    {
+      "taskId": "EVAL-004",
+      "task": "自然言語のタスク指示文から検索キーワードや識別子を抽出するルールを修正したい",
+      "missedExpected": "src/features/repository-context/domain/TaskSearchTermExtractor.ts",
+      "topFound": "CHANGELOG.md"
+    },
+    {
+      "taskId": "EVAL-005",
+      "task": "ファイルの変更差分ハッシュ計算とフィンガープリント生成の仕組みを見直したい",
+      "missedExpected": "src/features/repository-context/infrastructure/filesystem/NodeCryptoFingerprintClient.ts",
+      "topFound": "CHANGELOG.md"
+    },
+    {
+      "taskId": "EVAL-006",
+      "task": "文書のトークン上限と予算配分アルゴリズムを最適化したい",
+      "missedExpected": "apps/desktop/renderer/model/tokenBudget.ts",
+      "topFound": "CHANGELOG.md"
+    },
+    {
+      "taskId": "EVAL-007",
+      "task": "リポジトリ内のファイルを走査して無視パターンを適用するスキャン処理を修正したい",
+      "missedExpected": "src/features/repository-context/infrastructure/filesystem/ProjectScannerClient.ts",
+      "topFound": "CHANGELOG.md"
+    },
+    {
+      "taskId": "EVAL-010",
+      "task": "変更されたファイルのみを検知してインデックスの無駄な再生成を防ぎたい",
+      "missedExpected": "src/features/repository-context/application/RefreshRepositoryIndexUseCase.ts",
+      "topFound": "CHANGELOG.md"
+    },
+    {
+      "taskId": "EVAL-011",
+      "task": "ベクトルの内積とノルムからコサイン類似度を計算するロジックの例外処理を見直したい",
+      "missedExpected": "src/features/repository-context/domain/cosineSimilarity.ts",
+      "topFound": "CHANGELOG.md"
+    },
+    {
+      "taskId": "EVAL-016",
+      "task": "デスクトップ画面で探索された Entry Point 候補の一覧ツリーとチェックボックス選択を修正したい",
+      "missedExpected": "apps/desktop/renderer/components/CandidateTree.tsx",
+      "topFound": "apps/desktop/EntryPointDiscoveryHandler.ts"
+    },
+    {
+      "taskId": "EVAL-017",
+      "task": "タスクと Entry Point から Context Manifest Markdown を生成して出力する処理を変更したい",
+      "missedExpected": "src/features/repository-context/application/BuildTaskContextUseCase.ts, src/features/repository-context/infrastructure/formatting/ContextManifestFormatter.ts",
+      "topFound": "src/features/repository-context/domain/MarkdownSectionEntry.ts"
+    },
+    {
+      "taskId": "EVAL-019",
+      "task": "サービス層の共通的な知識抽出処理やオーケストレーションを見直したい",
+      "missedExpected": "src/features/repository-context/application/KnowledgeExtractionService.ts",
+      "topFound": "CHANGELOG.md"
+    },
+    {
+      "taskId": "EVAL-020",
+      "task": "データのシリアライズとファイル書き込みの安全性を向上させたい",
+      "missedExpected": "src/features/repository-context/infrastructure/filesystem/semanticIndexSerialization.ts",
+      "topFound": "CHANGELOG.md"
+    }
+  ]
+}

@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Real Embedding Calibration & Evaluation (Phase 3C-EVAL) — 実ローカル Ollama (`nomic-embed-text`) と実 CodePrep リポジトリを用いた 20問の Golden Set による Semantic Search 評価・較正ハーネス (`npm run eval:semantic`) を実装
+- feat: `EntryPointCandidateScorer` および `DiscoverEntryPointCandidatesUseCase` に `customWeights` パラメータを追加し、外部からのスコア重み動的較正に対応
+- refactor: `scripts/check-standards.ts` の `git status` パースを修正し、変更ファイルの正確な規約チェックに対応
 - feat: Semantic Index / Semantic Entry Point Candidate Source (Phase 3C) を実装 — Structured Knowledge Index の意味単位に Embedding を付与し、自然言語 Task からの類似度検索（Cosine Similarity）による Entry Point 候補抽出を統合
 - feat: `EmbeddingVector` ドメインモデルを `Float32Array` として定義し、バリデーションおよび決定論的 Cosine Similarity 計算（次元不一致例外・ゼロベクトル対応）を実装
 - feat: `HttpEmbeddingAdapter` を実装 — Production runtime 用の実 EmbeddingPort Adapter（ローカル優先・設定注入・Ollama/HTTP API 連携）

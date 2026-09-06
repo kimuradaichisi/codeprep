@@ -3,6 +3,7 @@ import type { Project, ProjectId } from '../domain/Project';
 import type {
   EntryPointCandidate,
   EntryPointCandidateEvidence,
+  EntryPointCandidateReason,
 } from '../domain/EntryPointCandidate';
 import type {
   AnalysisWarning,
@@ -25,6 +26,7 @@ export type DiscoverEntryPointCandidatesInput = Readonly<{
   projectIds?: readonly ProjectId[];
   maxCandidates?: number;
   manualPinnedPaths?: readonly string[];
+  customWeights?: Partial<Record<EntryPointCandidateReason, number>>;
 }>;
 
 export type DiscoverEntryPointCandidatesResult = Readonly<{

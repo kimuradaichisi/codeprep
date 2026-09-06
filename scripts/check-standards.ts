@@ -49,8 +49,8 @@ function getChangedFiles(): string[] {
         const output = execSync('git status -s', { encoding: 'utf8' });
         return output
             .split(/\r?\n/)
-            .map(line => line.trim().slice(3))
-            .filter(f => (f.endsWith('.ts') || f.endsWith('.tsx')) && !f.includes('.test.') && fs.existsSync(f));
+            .map(line => line.replace(/^..\s+/, '').trim())
+            .filter(f => (f.startsWith('src/') || f.startsWith('apps/')) && (f.endsWith('.ts') || f.endsWith('.tsx')) && !f.includes('.test.') && fs.existsSync(f));
     } catch {
         return [];
     }

@@ -35,7 +35,7 @@ export class DiscoverEntryPointCandidatesUseCase {
     if (projects.length === 0) return { candidates: [], terms, warnings: [] };
 
     const evidences = await this.collectAllEvidences(projects, terms, trimmedTask, input.manualPinnedPaths);
-    const merged = mergeCandidateEvidences(evidences);
+    const merged = mergeCandidateEvidences(evidences, input.customWeights);
     const filtered = filterEntryPointCandidates(merged, input.maxCandidates ?? 20);
 
     return { candidates: filtered, terms, warnings: [] };
@@ -47,16 +47,25 @@ export class DiscoverEntryPointCandidatesUseCase {
     task: string,
     manualPins?: readonly string[]
   ): Promise<readonly EntryPointCandidateEvidence[]> {
-    const allSources = [...this.defaultSources, ...(this.ports.customSources ?? [])];
+    const sources = [...this.defaultSources, ...(this.ports.customSources ?? [])];
     const evidences: EntryPointCandidateEvidence[] = [];
-
     this.appendManualPins(projects, manualPins, evidences);
+    await this.collectFromProjects(projects, sources, terms, task, evidences);
+    return evidences;
+  }
+
+  private async collectFromProjects(
+    projects: readonly Project[],
+    sources: readonly EntryPointCandidateSource[],
+    terms: readonly string[],
+    task: string,
+    out: EntryPointCandidateEvidence[]
+  ): Promise<void> {
     for (const project of projects) {
-      for (const source of allSources) {
-        await this.safeDiscover(source, project, terms, task, evidences);
+      for (const source of sources) {
+        await this.safeDiscover(source, project, terms, task, out);
       }
     }
-    return evidences;
   }
 
   private appendManualPins(

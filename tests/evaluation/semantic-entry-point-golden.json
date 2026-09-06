@@ -1,0 +1,184 @@
+[
+  {
+    "id": "EVAL-001",
+    "task": "DiscoverEntryPointCandidatesUseCase で Entry Point 候補の探索順序を調整したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/application/DiscoverEntryPointCandidatesUseCase.ts"
+    ],
+    "category": "exact",
+    "notes": "Exact use case name match"
+  },
+  {
+    "id": "EVAL-002",
+    "task": "EntryPointCandidateScorer の理由ごとのスコア重み付けを変更したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/domain/EntryPointCandidateScorer.ts"
+    ],
+    "category": "exact",
+    "notes": "Exact domain scorer match"
+  },
+  {
+    "id": "EVAL-003",
+    "task": "ワークスペースごとのインデックス永続化とファイル保存処理を変更したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/infrastructure/filesystem/JsonRepositoryIndexStore.ts"
+    ],
+    "category": "jp-en",
+    "notes": "JP vocabulary to English JsonRepositoryIndexStore"
+  },
+  {
+    "id": "EVAL-004",
+    "task": "自然言語のタスク指示文から検索キーワードや識別子を抽出するルールを修正したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/domain/TaskSearchTermExtractor.ts"
+    ],
+    "category": "jp-en",
+    "notes": "JP concept to TaskSearchTermExtractor"
+  },
+  {
+    "id": "EVAL-005",
+    "task": "ファイルの変更差分ハッシュ計算とフィンガープリント生成の仕組みを見直したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/infrastructure/filesystem/NodeCryptoFingerprintClient.ts"
+    ],
+    "category": "jp-en",
+    "notes": "JP hash/fingerprint to NodeCryptoFingerprintClient"
+  },
+  {
+    "id": "EVAL-006",
+    "task": "文書のトークン上限と予算配分アルゴリズムを最適化したい",
+    "expectedEntryPoints": [
+      "apps/desktop/renderer/model/tokenBudget.ts"
+    ],
+    "category": "jp-en",
+    "notes": "Token limit and budget calculation model"
+  },
+  {
+    "id": "EVAL-007",
+    "task": "リポジトリ内のファイルを走査して無視パターンを適用するスキャン処理を修正したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/infrastructure/filesystem/ProjectScannerClient.ts"
+    ],
+    "category": "jp-en",
+    "notes": "Scan files and ignore patterns"
+  },
+  {
+    "id": "EVAL-008",
+    "task": "Markdown の見出し階層構造をパースしてセクションに分割する処理を直したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/infrastructure/markdown/MarkdownSectionExtractor.ts"
+    ],
+    "category": "symbol-diff",
+    "notes": "Markdown heading parser to MarkdownSectionExtractor"
+  },
+  {
+    "id": "EVAL-009",
+    "task": "TypeScript の AST を解析してクラスや関数の定義情報と JSDoc を取り出す処理を変更したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/infrastructure/code/TypeScriptSymbolExtractor.ts"
+    ],
+    "category": "symbol-diff",
+    "notes": "AST parser to TypeScriptSymbolExtractor"
+  },
+  {
+    "id": "EVAL-010",
+    "task": "変更されたファイルのみを検知してインデックスの無駄な再生成を防ぎたい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/application/RefreshRepositoryIndexUseCase.ts"
+    ],
+    "category": "symbol-diff",
+    "notes": "Incremental index refresh"
+  },
+  {
+    "id": "EVAL-011",
+    "task": "ベクトルの内積とノルムからコサイン類似度を計算するロジックの例外処理を見直したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/domain/cosineSimilarity.ts"
+    ],
+    "category": "symbol-diff",
+    "notes": "Cosine similarity vector math"
+  },
+  {
+    "id": "EVAL-012",
+    "task": "プロジェクトの開発方針や God-Class Killer のコーディング制約規約を確認したい",
+    "expectedEntryPoints": [
+      "AGENTS.md"
+    ],
+    "category": "docs",
+    "notes": "AI instructions and coding standards"
+  },
+  {
+    "id": "EVAL-013",
+    "task": "最近追加された機能やバージョンの変更履歴を確認・追記したい",
+    "expectedEntryPoints": [
+      "CHANGELOG.md"
+    ],
+    "category": "docs",
+    "notes": "Changelog and release notes"
+  },
+  {
+    "id": "EVAL-014",
+    "task": "Repository Context の設計方針と責務分離のドキュメントを読みたい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/README.md"
+    ],
+    "category": "docs",
+    "notes": "Feature architecture documentation"
+  },
+  {
+    "id": "EVAL-015",
+    "task": "Semantic Index の同期ステータスや件数を Desktop のプロジェクトパネルに表示する処理を変更したい",
+    "expectedEntryPoints": [
+      "apps/desktop/SemanticIndexHandler.ts",
+      "apps/desktop/renderer/components/ProjectPanel.tsx"
+    ],
+    "category": "cross-layer",
+    "notes": "Desktop handler and project panel UI"
+  },
+  {
+    "id": "EVAL-016",
+    "task": "デスクトップ画面で探索された Entry Point 候補の一覧ツリーとチェックボックス選択を修正したい",
+    "expectedEntryPoints": [
+      "apps/desktop/renderer/components/CandidateTree.tsx"
+    ],
+    "category": "cross-layer",
+    "notes": "CandidateTree renderer component"
+  },
+  {
+    "id": "EVAL-017",
+    "task": "タスクと Entry Point から Context Manifest Markdown を生成して出力する処理を変更したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/application/BuildTaskContextUseCase.ts",
+      "src/features/repository-context/infrastructure/formatting/ContextManifestFormatter.ts"
+    ],
+    "category": "cross-layer",
+    "notes": "Task Context orchestration and formatting"
+  },
+  {
+    "id": "EVAL-018",
+    "task": "ローカルの Ollama HTTP API に接続してテキストを埋め込みベクトル化する通信処理を修正したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/infrastructure/embedding/HttpEmbeddingAdapter.ts"
+    ],
+    "category": "cross-layer",
+    "notes": "HttpEmbeddingAdapter Ollama integration"
+  },
+  {
+    "id": "EVAL-019",
+    "task": "サービス層の共通的な知識抽出処理やオーケストレーションを見直したい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/application/KnowledgeExtractionService.ts"
+    ],
+    "category": "ambiguous",
+    "notes": "Knowledge extraction service"
+  },
+  {
+    "id": "EVAL-020",
+    "task": "データのシリアライズとファイル書き込みの安全性を向上させたい",
+    "expectedEntryPoints": [
+      "src/features/repository-context/infrastructure/filesystem/semanticIndexSerialization.ts"
+    ],
+    "category": "ambiguous",
+    "notes": "Serialization and Float32Array safety"
+  }
+]

@@ -17,11 +17,14 @@ export const REASON_WEIGHTS: Readonly<Record<EntryPointCandidateReason, number>>
   pathMatch: 25,
 };
 
-export const calculateCandidateScore = (reasons: readonly EntryPointCandidateReason[]): number => {
+export const calculateCandidateScore = (
+  reasons: readonly EntryPointCandidateReason[],
+  customWeights?: Partial<Record<EntryPointCandidateReason, number>>
+): number => {
   const uniqueReasons = new Set(reasons);
   let total = 0;
   for (const reason of uniqueReasons) {
-    total += REASON_WEIGHTS[reason] ?? 0;
+    total += customWeights?.[reason] ?? REASON_WEIGHTS[reason] ?? 0;
   }
   return total;
 };
@@ -51,14 +54,15 @@ const aggregateEvidences = (evidences: readonly EntryPointCandidateEvidence[]): 
 };
 
 export const mergeCandidateEvidences = (
-  evidences: readonly EntryPointCandidateEvidence[]
+  evidences: readonly EntryPointCandidateEvidence[],
+  customWeights?: Partial<Record<EntryPointCandidateReason, number>>
 ): readonly EntryPointCandidate[] => {
   const aggregated = aggregateEvidences(evidences);
   const result: EntryPointCandidate[] = [];
   for (const item of aggregated.values()) {
     const reasons = Object.freeze(Array.from(item.reasons));
     const matchedTerms = Object.freeze(Array.from(item.matchedTerms));
-    const score = calculateCandidateScore(reasons);
+    const score = calculateCandidateScore(reasons, customWeights);
     const kind = resolveCandidateKind(item.relativePath);
     result.push({
       projectId: item.projectId,
