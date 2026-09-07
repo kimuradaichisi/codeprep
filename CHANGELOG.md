@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.8.9] - 2026-09-07
 - feat: `.gitignore` 除外機能の全面対応およびデフォルト除外・機密ファイル保護の強化
   - `GitignoreMatcher`（`src/shared/filesystem/GitignoreMatcher.ts`）の実装: ディレクトリ指定（`venv/`）、ルート相対指定（`/build`）、ワイルドカード（`*`, `**`）、否定パターン（`!data/.gitkeep`）の解釈と、ディレクトリ走査時の早期プルーニング（不要サブディレクトリの再帰走査スキップ）を実現
   - 共通デフォルト除外（`DEFAULT_EXCLUDED_PATTERNS`, `DEFAULT_EXCLUDED_DIR_NAMES`）を策定: `.git`, `node_modules`, `dist`, `out`, `.next`, `build`, `.venv`, `venv`, `coverage`, `.mypy_cache`, `.pytest_cache`, `.ruff_cache`, `.turbo`, `.nuxt`, `.cache` などを自動除外
