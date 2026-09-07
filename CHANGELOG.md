@@ -3,7 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Phase 6E Project KAIROS × Sonnet Repository Exploration Compression — 外部大規模リポジトリ（`project-kairos`）において、強力なモデル（Claude Code Sonnet）を対象に CodePrep MCP の探索圧縮効果を A/B 実証
+- feat: Search/Grep コールを 34 → 10（**-70.6% 削減**）、総ツールコールを 90 → 39（**-56.7% 削減**）、手動ドキュメント閲覧を 8 → 3（**-62.5% 削減**）、キャッシュトークンを 6.33M → 2.56M（**-59.5% 削減**）、総コストを $2.27 → $1.04（**-54.3% 削減・半減以下**）達成
+- feat: 探索を大幅削減しながらも、Gold Facts 品質スコアが 55 点 → **70 点（+27.3% 向上）** へ伸長し、難関である Signal Check の形骸化トラップ（Gold 6）やレガシースクリプト（Gold 9）の特定を実証
+- docs: [`docs/evaluations/phase-6e-kairos-sonnet-exploration.md`](file:///D:/git/codeprep/docs/evaluations/phase-6e-kairos-sonnet-exploration.md) を生成 — 全探索指標、品質スコア内訳、二重系統/MMTW/実弾手動運用の所見、H1〜H4全仮説検証結果を記録
 - feat: Phase 6D Zero-LLM Fast Path & Context Delivery Optimization — Generative LLM を CodePrep 内部に追加せず（Zero-LLM 原則）、2-step MCP の Handshake 遅延および Post-pack Duplicate Read を削減する One-Shot ツール `codeprep_prepare_context` を実装
+
 - feat: Gate 0 原因分解解析（`evaluation/agent-context/analyzeGate0.ts`）により、エージェント思考・ToolSearch に伴う Handshake 遅延（10.8s〜13.2s）と重複手動Read（2〜4件）の定量的実態を解明
 - feat: `AutoPackDecision` および `PrepareTaskContextUseCase` を Clean Architecture / DDD で設計 — HIGH confidence 時は `AUTO_FAST_PACK`（完全展開済みヘッダー付与、`requiresSelection: false`）、MEDIUM/LOW 時は `MANUAL_SELECTION_REQUIRED`（候補・証拠のみ返却、`requiresSelection: true`）
 - feat: ディレクトリ分散（`dirSpread > 1`）やスコア僅差を厳格に除外することで、False HIGH 0件（安全性 100%）を担保
