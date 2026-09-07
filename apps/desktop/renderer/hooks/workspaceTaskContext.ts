@@ -10,6 +10,10 @@ export type TaskAnalysisResultUpdate = Readonly<{
   candidates?: readonly AnalyzedCandidate[];
   selectedKeys?: readonly string[];
   preview?: string;
+  manifestMarkdown?: string;
+  packContent?: string;
+  manifest?: import('../../../../src/features/repository-context/domain/ContextManifest').ContextManifest;
+  resolvedStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode;
   searchNotice: string | undefined;
 }>;
 
@@ -52,7 +56,11 @@ const toSuccessUpdate = (
 ): TaskAnalysisResultUpdate => ({
   candidates: result.candidates,
   selectedKeys: candidateKeys(result.candidates, projects),
-  preview: result.markdown,
+  preview: result.content || result.markdown,
+  manifestMarkdown: result.markdown,
+  packContent: result.content,
+  manifest: result.manifest,
+  resolvedStrategy: result.resolvedStrategy,
   searchNotice: result.warnings.join('\n') || undefined,
 });
 

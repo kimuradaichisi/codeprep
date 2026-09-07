@@ -54,9 +54,9 @@ describe('SearchPanel', () => {
     });
     const container = renderPanel(props);
 
-    const taskInput = container.querySelector<HTMLInputElement>('input[aria-label="Task description"]');
-    const epInput = container.querySelector<HTMLInputElement>('input[aria-label="Entry points"]');
-    const button = getButton(container, 'Build Context');
+    const taskInput = container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Task description"]');
+    const epInput = container.querySelector<HTMLInputElement>('input[aria-label="Selected entry points"]');
+    const button = getButton(container, 'Build Context Pack');
 
     expect(taskInput?.value).toBe('返品処理を追加');
     expect(epInput?.value).toBe('src/order/OrderService.ts');
@@ -82,14 +82,14 @@ describe('SearchPanel', () => {
     });
     const container = renderPanel(props);
 
-    const findBtn = getButton(container, 'Find Entry Points');
+    const findBtn = getButton(container, 'Find Context');
     expect(findBtn).not.toBeNull();
     act(() => {
       findBtn?.click();
     });
     expect(discoverEntryPoints).toHaveBeenCalled();
     expect(container.textContent).toContain('Refund.ts');
-    expect(container.textContent).toContain('95 pts');
+    expect(container.textContent).toContain('Discovery 95');
   });
 });
 

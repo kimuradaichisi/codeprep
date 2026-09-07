@@ -21,6 +21,8 @@ describe('workspaceTaskContext', () => {
     const mockResult = {
       manifest: { projectId: 'p1', task: 'T', entryPoints: ['src/a.ts'], entries: [], budget: { bytes: 0, estimatedTokens: 0, limit: 0, withinLimit: true } },
       markdown: '# Context Manifest',
+      content: '# Packaged Content',
+      resolvedStrategy: 'standard' as const,
       candidates: [{ projectId: 'p1', relativePath: 'src/a.ts', reasons: ['pathAffinity'] as const, score: 10, excluded: false }],
       warnings: ['warn1'],
     };
@@ -54,7 +56,9 @@ describe('workspaceTaskContext', () => {
         tokenLimit: 1000,
       });
       expect(res.candidates).toEqual(mockResult.candidates);
-      expect(res.preview).toBe('# Context Manifest');
+      expect(res.preview).toBe('# Packaged Content');
+      expect(res.manifestMarkdown).toBe('# Context Manifest');
+      expect(res.resolvedStrategy).toBe('standard');
       expect(res.searchNotice).toBe('warn1');
     });
 

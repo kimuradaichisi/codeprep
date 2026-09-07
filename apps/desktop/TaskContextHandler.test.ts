@@ -36,6 +36,8 @@ describe('TaskContextHandler', () => {
     expect(result.markdown).toContain('# Context Manifest');
     expect(result.markdown).toContain('Add return policy');
     expect(result.candidates.length).toBeGreaterThanOrEqual(1);
+    expect(result.content).toBeDefined();
+    expect(result.resolvedStrategy).toBeDefined();
     expect(result.warnings).toEqual([]);
   });
 

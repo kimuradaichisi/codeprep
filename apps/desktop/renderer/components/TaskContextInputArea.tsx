@@ -1,97 +1,90 @@
+// apps/desktop/renderer/components/TaskContextInputArea.tsx
+import React from 'react';
 import type { SearchPanelProps } from '../types';
-import { EntryPointCandidateList } from './EntryPointCandidateList';
-import { ConfidenceBadge } from './ConfidenceBadge';
+import { WorkspaceStatusHeader } from './WorkspaceStatusHeader';
+import { TaskInputArea } from './TaskInputArea';
+import { ConfidenceSummary } from './ConfidenceSummary';
+import { CandidateCardList } from './CandidateCardList';
+import { ContextPackViewer } from './ContextPackViewer';
+import { parseEntryPoints } from '../hooks/workspaceTaskContext';
 
-type TaskContextInputAreaProps = Pick<
-  SearchPanelProps,
-  | 'taskInput'
-  | 'entryPointInput'
-  | 'setTaskInput'
-  | 'setEntryPointInput'
-  | 'analyzeTask'
-  | 'clearSearch'
-  | 'isAnalyzing'
-  | 'entryPointCandidates'
-  | 'enrichedCandidates'
-  | 'confidence'
-  | 'suggestedPackStrategy'
-  | 'adaptiveStrategy'
-  | 'setAdaptiveStrategy'
-  | 'isDiscoveringEntryPoints'
-  | 'discoverEntryPoints'
-  | 'toggleEntryPointCandidate'
->;
-
-export const TaskContextInputArea = (props: TaskContextInputAreaProps) => {
+export const TaskContextInputArea: React.FC<SearchPanelProps> = (props) => {
   const isBusy = Boolean(props.isAnalyzing || props.isDiscoveringEntryPoints);
-  const canDiscover = !isBusy && props.taskInput.trim().length > 0;
-  const canAnalyze = !isBusy && props.taskInput.trim().length > 0 && props.entryPointInput.trim().length > 0;
-  const selectedPaths = props.entryPointInput.split(',').map((p) => p.trim()).filter(Boolean);
+  const selectedPaths = parseEntryPoints(props.entryPointInput);
+  const canBuild = !isBusy && props.taskInput.trim().length > 0 && selectedPaths.length > 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div>
-        <label style={{ fontSize: '11px', color: '#9eafc8', display: 'block', marginBottom: '4px' }}>Task</label>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <input
-            aria-label="Task description"
-            disabled={isBusy}
-            value={props.taskInput}
-            placeholder="e.g. 返品処理を OrderService へ追加する"
-            onChange={(event) => props.setTaskInput(event.target.value)}
-            style={{ flex: 1 }}
-          />
-          {props.discoverEntryPoints && (
-            <button
-              disabled={!canDiscover}
-              onClick={() => void props.discoverEntryPoints?.()}
-              style={{ whiteSpace: 'nowrap' }}
-            >
-              {props.isDiscoveringEntryPoints ? 'Finding...' : 'Find Entry Points'}
-            </button>
-          )}
-        </div>
-      </div>
-      {props.entryPointCandidates && props.entryPointCandidates.length > 0 && (
-        <EntryPointCandidateList
-          candidates={props.entryPointCandidates}
-          enrichedCandidates={props.enrichedCandidates}
-          selectedPaths={selectedPaths}
-          onToggle={(path) => props.toggleEntryPointCandidate?.(path)}
-        />
-      )}
-      <ConfidenceBadge
+    <div className="task-context-workflow" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <WorkspaceStatusHeader
+        indexStatus={props.indexStatus}
+        knowledgeStatus={props.knowledgeStatus}
+        semanticStatus={props.semanticStatus}
+      />
+
+      <TaskInputArea
+        taskInput={props.taskInput}
+        isBusy={isBusy}
+        onTaskChange={props.setTaskInput}
+        onFindContext={() => void props.discoverEntryPoints?.()}
+      />
+
+      <ConfidenceSummary
         confidence={props.confidence}
         suggestedStrategy={props.suggestedPackStrategy}
         selectedStrategy={props.adaptiveStrategy}
         onStrategyChange={props.setAdaptiveStrategy}
       />
-      <div>
-        <label style={{ fontSize: '11px', color: '#9eafc8', display: 'block', marginBottom: '4px' }}>
-          Selected Entry Points (comma separated)
-        </label>
-        <input
-          aria-label="Entry points"
-          disabled={isBusy}
-          value={props.entryPointInput}
-          placeholder="e.g. src/order/OrderService.ts"
-          onChange={(event) => props.setEntryPointInput(event.target.value)}
-          style={{ width: '100%' }}
+
+      {props.entryPointCandidates && props.entryPointCandidates.length > 0 ? (
+        <CandidateCardList
+          candidates={props.entryPointCandidates}
+          enrichedCandidates={props.enrichedCandidates}
+          selectedPaths={selectedPaths}
+          manualInput={props.entryPointInput}
+          isBusy={isBusy}
+          onToggle={(path) => props.toggleEntryPointCandidate?.(path)}
+          onManualInputChange={props.setEntryPointInput}
         />
-      </div>
-      <div className="button-row" style={{ marginTop: '4px' }}>
+      ) : (
+        <div>
+          <label style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground, #888)', display: 'block', marginBottom: '2px' }}>
+            Selected / Manual Entry Points (comma separated)
+          </label>
+          <input
+            aria-label="Selected entry points"
+            disabled={isBusy}
+            value={props.entryPointInput}
+            placeholder="e.g. src/order/OrderService.ts"
+            onChange={(e) => props.setEntryPointInput(e.target.value)}
+            style={{ width: '100%', fontSize: '11px', padding: '4px 6px' }}
+          />
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button
           className="primary-button"
-          disabled={!canAnalyze}
+          disabled={!canBuild}
           onClick={() => void props.analyzeTask()}
+          style={{ padding: '4px 14px' }}
         >
-          {props.isAnalyzing && <span className="inline-spinner" />}
-          {props.isAnalyzing ? 'Analyzing...' : 'Build Context'}
-        </button>
-        <button disabled={isBusy} onClick={() => void props.clearSearch()} style={{ marginLeft: '8px' }}>
-          Clear
+          {props.isAnalyzing ? 'Building Pack...' : 'Build Context Pack'}
         </button>
       </div>
+
+      {props.packManifest && (
+        <ContextPackViewer
+          manifest={props.packManifest}
+          manifestMarkdown={props.preview}
+          packContent={props.packContent}
+          resolvedStrategy={props.resolvedStrategy}
+          activeTab={props.activePreviewTab ?? 'manifest'}
+          isBusy={isBusy}
+          onTabChange={(t) => props.setActivePreviewTab?.(t)}
+          onCopy={() => void props.copyPackContent?.()}
+          onReset={() => props.resetTaskContext?.()}
+        />
+      )}
     </div>
   );
 };

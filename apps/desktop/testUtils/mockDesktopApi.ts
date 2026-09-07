@@ -24,7 +24,7 @@ const createContextMocks = () => ({
   generateOutput: vi.fn(async () => ({ preview: 'mock preview' })),
   copyOutput: vi.fn(async () => undefined),
   saveOutput: vi.fn(async () => ({ status: 'saved' as const, filePath: '/mock/path.md' })),
-  buildTaskContext: vi.fn(async () => ({ manifest: defaultManifest, markdown: '', candidates: [], warnings: [] })),
+  buildTaskContext: vi.fn(async () => ({ manifest: defaultManifest, markdown: '', content: '', resolvedStrategy: 'standard' as const, candidates: [], warnings: [] })),
   discoverEntryPointCandidates: vi.fn(async () => ({ candidates: [], terms: [], warnings: [] })),
 });
 
@@ -49,7 +49,7 @@ const defaultFallbackApi: DesktopApi = {
   copyOutput: async () => undefined,
   saveOutput: async () => ({ status: 'cancelled' as const }),
   readFileContent: async () => '',
-  buildTaskContext: async () => ({ manifest: defaultManifest, markdown: '', candidates: [], warnings: [] }),
+  buildTaskContext: async () => ({ manifest: defaultManifest, markdown: '', content: '', resolvedStrategy: 'standard' as const, candidates: [], warnings: [] }),
   discoverEntryPointCandidates: async () => ({ candidates: [], terms: [], warnings: [] }),
   getRepositoryIndexStatus: async () => ({ status: 'ready' as const, totalFiles: 0 }),
   refreshRepositoryIndex: async () => ({ status: 'ready' as const, rebuilt: false }),

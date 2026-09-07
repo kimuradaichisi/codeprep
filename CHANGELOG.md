@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Phase 6B Desktop Context Workflow — Task入力から候補探索・Structural Evidence・Context Confidence・Human Multi-select・Adaptive Pack生成・Manifest/Context Preview・Copyまでを一連の操作として完結する Desktop UI パイプラインを実装
+- feat: Desktop と MCP で同一の Application UseCases（`BuildTaskContextUseCase`, `DiscoverEntryPointCandidatesUseCase`, `ContextConfidenceEvaluator`, `AdaptiveContextStrategy`）を共有し、UI独自探索ロジックやMCP loopbackを完全排除
+- feat: Desktop UI コンポーネント群（`WorkspaceStatusHeader`, `TaskInputArea`, `ConfidenceSummary`, `CandidateCardList`, `ContextPackViewer`）を整備し、Discovery/Supportスコアの分離表示、Structural Evidenceの折りたたみ、大文字ステータスとDEGRADED警告、Ctrl+Enter誤実行防止を実装
+- test: Desktop と MCP の同一結果を検証する Parity テスト（`DesktopMcpParity.test.ts`）および Task入力からCopyまでの一連操作を検証する E2E テスト（`TaskContextWorkflow.e2e.test.tsx`）を配備
+- docs: [`reports/phase-6b-desktop-context-workflow-report.md`](file:///D:/git/codeprep/reports/phase-6b-desktop-context-workflow-report.md) を生成 — アーキテクチャ、UI構成、Parity検証、E2Eおよび手動UXウォークスルー観察結果を記録
 - feat: Phase 6A Context Confidence & Adaptive Pack Support — 探索結果と Native Evidence の収束度から作業開始地点の確からしさを評価する決定論的 `ContextConfidenceEvaluator`（Zero Generative LLM）を実装
 - feat: Adaptive Pack 戦略（HIGH: Fast Pack 2-4ファイル / MEDIUM: Standard Pack 4-8ファイル / LOW: Expanded Pack 8-15ファイル）を実装し、コンテキストの過不足を自動最適化（明示的 override もサポート）
 - feat: MCP ツール `codeprep_discover_entry_points` に `confidence` / `suggestedPackStrategy` を追加し、`codeprep_build_context_pack` に `strategy` パラメータを追加

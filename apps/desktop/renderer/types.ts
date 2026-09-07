@@ -23,6 +23,13 @@ export type WorkspaceNotice = string | undefined;
 export type ScenarioPresetKind = 'custom' | 'initialShare' | 'debugFix' | 'newFeature';
 export type OutputTab = 'preview' | 'help';
 export type DiscoveryMode = 'search' | 'task';
+export type ContextWorkflowState =
+  | 'idle'
+  | 'discovering'
+  | 'candidatesReady'
+  | 'buildingPack'
+  | 'packReady'
+  | 'error';
 
 export type ProjectPanelProps = Readonly<{
   projects: readonly Project[]; projectNotice: WorkspaceNotice;
@@ -34,6 +41,7 @@ export type ProjectPanelProps = Readonly<{
 }>;
 
 import type { ContextConfidence, AdaptivePackMode, AdaptiveStrategyOverride } from '../../../src/features/repository-context/domain/ContextConfidence';
+import type { ContextManifest } from '../../../src/features/repository-context/domain/ContextManifest';
 
 export type SearchPanelProps = Readonly<{
   discoveryMode: DiscoveryMode; taskInput: string; entryPointInput: string;
@@ -46,6 +54,15 @@ export type SearchPanelProps = Readonly<{
   suggestedPackStrategy?: AdaptivePackMode;
   adaptiveStrategy?: AdaptiveStrategyOverride;
   isDiscoveringEntryPoints?: boolean;
+  workflowState?: ContextWorkflowState;
+  preview?: string;
+  packManifest?: ContextManifest;
+  packContent?: string;
+  resolvedStrategy?: AdaptivePackMode;
+  activePreviewTab?: 'manifest' | 'context';
+  indexStatus?: string;
+  semanticStatus?: string;
+  knowledgeStatus?: string;
   setDiscoveryMode(value: DiscoveryMode): void; setTaskInput(value: string): void; setEntryPointInput(value: string): void;
   setRecipeKind(value: SearchRecipeKind): void; setQuery(value: string): void; setContextLines(value: number): void;
   setPresetKind(value: ScenarioPresetKind): void; setUseGitignore(value: boolean): void;
@@ -53,6 +70,9 @@ export type SearchPanelProps = Readonly<{
   analyzeTask(): Promise<void>; discoverEntryPoints?(): Promise<void>;
   toggleEntryPointCandidate?(relativePath: string): void; clearSearch(): Promise<void>;
   setAdaptiveStrategy?(value: AdaptiveStrategyOverride): void;
+  setActivePreviewTab?(tab: 'manifest' | 'context'): void;
+  copyPackContent?(): Promise<void>;
+  resetTaskContext?(): void;
 }>;
 
 export type CandidateTreeProps = Readonly<{

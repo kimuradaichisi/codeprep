@@ -46,6 +46,8 @@ export type DiscoverEntryPointCandidatesResponse = Readonly<{
 export type DesktopTaskContextResult = Readonly<{
   manifest: ContextManifest;
   markdown: string;
+  content: string;
+  resolvedStrategy: AdaptivePackMode;
   candidates: readonly AnalyzedCandidate[];
   warnings: readonly string[];
 }>;

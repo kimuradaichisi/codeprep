@@ -7,7 +7,8 @@ import type { EnrichedEntryPointCandidate } from '../../../../src/features/repos
 import type { PackMode } from '../../../../src/features/repository-context/domain/PackMode';
 import { defaultRecommendationSettings, type RecommendationSettings } from '../../../../src/features/repository-context/domain/Recommendation';
 import type { SearchRecipeKind } from '../../../../src/features/repository-context/domain/SearchRecipe';
-import type { DesktopWorkspace, DiscoveryMode, OutputTab, ScenarioPresetKind } from '../types';
+import type { DesktopWorkspace, DiscoveryMode, OutputTab, ScenarioPresetKind, ContextWorkflowState } from '../types';
+import type { ContextManifest } from '../../../../src/features/repository-context/domain/ContextManifest';
 
 export type WorkspaceState = Readonly<{
   projects: DesktopWorkspace['projects'];
@@ -43,6 +44,11 @@ export type WorkspaceState = Readonly<{
   suggestedPackStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode;
   adaptiveStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptiveStrategyOverride;
   isDiscoveringEntryPoints?: boolean;
+  workflowState: ContextWorkflowState;
+  packManifest?: ContextManifest;
+  packContent?: string;
+  resolvedStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode;
+  activePreviewTab: 'manifest' | 'context';
 }>;
 
 export type SetWorkspace = Dispatch<SetStateAction<WorkspaceState>>;
@@ -99,4 +105,6 @@ export const initialWorkspaceState: WorkspaceState = {
   searchNotice: undefined,
   outputNotice: undefined,
   adaptiveStrategy: 'auto',
+  workflowState: 'idle',
+  activePreviewTab: 'manifest',
 };

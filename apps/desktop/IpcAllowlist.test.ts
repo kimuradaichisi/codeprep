@@ -12,10 +12,11 @@ describe('IPC allowlist', () => {
   });
 
   it('invokes buildTaskContext through the safe channel with request', async () => {
-    const invoke = vi.fn(async () => ({ manifest: {}, markdown: '', candidates: [], warnings: [] }));
+    const expected = { manifest: {}, markdown: '', content: '', resolvedStrategy: 'standard', candidates: [], warnings: [] };
+    const invoke = vi.fn(async () => expected);
     const api = createDesktopApi(createSafeIpcInvoker(invoke));
     const req = { projectId: 'p1', task: 'Task 1', entryPoints: ['src/a.ts'] };
-    await expect(api.buildTaskContext(req)).resolves.toEqual({ manifest: {}, markdown: '', candidates: [], warnings: [] });
+    await expect(api.buildTaskContext(req)).resolves.toEqual(expected);
     expect(invoke).toHaveBeenCalledWith('buildTaskContext', req);
   });
 

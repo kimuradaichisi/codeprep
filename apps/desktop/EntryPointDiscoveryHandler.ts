@@ -57,19 +57,7 @@ const tryEnrichCandidates = async (
   projectId: string
 ): Promise<readonly EnrichedEntryPointCandidate[] | undefined> => {
   try {
-    const filePort = createFilePort();
-    const fileContent = { read: readProjectFile, canRead: canReadProjectFile };
-    const ports: CandidateEvidencePorts = {
-      projects: registry,
-      files: filePort,
-      fileContent,
-      dependencyScanner: new DependencyScanner(),
-      recommendations: {
-        gitCoChange: new GitCoChangeClient(),
-        directoryProximity: new DirectoryProximityClient(filePort),
-        markdownLink: new MarkdownRecommendationClient(fileContent, filePort, 'markdownLink'),
-      },
-    };
+    const ports = createEnrichmentPorts(registry);
     return await new EnrichEntryPointCandidatesUseCase(ports).execute({
       task,
       projectIds: [projectId],
@@ -87,9 +75,25 @@ const createFilePort = () => ({
   },
 });
 
-const createDiscoveryPorts = (registry: ProjectRegistryStore): DiscoverEntryPointCandidatesPorts => ({
+export const createDiscoveryPorts = (registry: ProjectRegistryStore): DiscoverEntryPointCandidatesPorts => ({
   projects: registry,
   files: createFilePort(),
   ripgrep: new RipgrepClient(),
   fileContent: { read: readProjectFile, canRead: canReadProjectFile },
 });
+
+export const createEnrichmentPorts = (registry: ProjectRegistryStore): CandidateEvidencePorts => {
+  const filePort = createFilePort();
+  const fileContent = { read: readProjectFile, canRead: canReadProjectFile };
+  return {
+    projects: registry,
+    files: filePort,
+    fileContent,
+    dependencyScanner: new DependencyScanner(),
+    recommendations: {
+      gitCoChange: new GitCoChangeClient(),
+      directoryProximity: new DirectoryProximityClient(filePort),
+      markdownLink: new MarkdownRecommendationClient(fileContent, filePort, 'markdownLink'),
+    },
+  };
+};

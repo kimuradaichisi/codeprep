@@ -12,8 +12,11 @@ import type { ProjectRegistryStore } from '../../src/features/repository-context
 import type { AnalyzedCandidate } from '../../src/features/repository-context/application/ports';
 import type { ContextEntry } from '../../src/features/repository-context/domain/ContextEntry';
 import type { Project } from '../../src/features/repository-context/domain/Project';
+import type { AdaptivePackMode } from '../../src/features/repository-context/domain/ContextConfidence';
 import type { BuildTaskContextRequest, DesktopTaskContextResult } from './DesktopApi';
 import { toBuildTaskContextRequest } from './TaskContextRequestParser';
+import { resolveTaskContextStrategy } from './TaskContextStrategyResolver';
+import { loadPackContent } from './TaskContextPackLoader';
 
 export const handleBuildTaskContext = async (
   registry: ProjectRegistryStore,
@@ -21,8 +24,10 @@ export const handleBuildTaskContext = async (
 ): Promise<DesktopTaskContextResult> => {
   const request = toBuildTaskContextRequest(value);
   const project = await findProject(registry, request.projectId);
-  const result = await executeUseCase(project, registry, request);
-  return formatResult(result);
+  const resolvedStrategy = await resolveTaskContextStrategy(registry, project, request.task, request.strategy);
+  const result = await executeUseCase(project, registry, request, resolvedStrategy);
+  const content = await loadPackContent(project, result.manifest.entries);
+  return formatResult(result, content, resolvedStrategy);
 };
 
 const findProject = async (registry: ProjectRegistryStore, projectId: string): Promise<Project> => {
@@ -36,26 +41,29 @@ const executeUseCase = async (
   project: Project,
   registry: ProjectRegistryStore,
   request: BuildTaskContextRequest,
+  strategy: AdaptivePackMode,
 ): Promise<BuildTaskContextResult> => {
   const ports = createTaskContextPorts(registry);
   const useCase = new BuildTaskContextUseCase(ports);
-  const strat = request.strategy && request.strategy !== 'auto' ? request.strategy : undefined;
   return useCase.execute({
     taskContext: { projectId: project.id, task: request.task, entryPoints: request.entryPoints },
     tokenLimit: request.tokenLimit,
-    strategy: strat,
+    strategy,
   });
 };
 
-const formatResult = (result: BuildTaskContextResult): DesktopTaskContextResult => {
-  const markdown = formatContextManifest(result.manifest);
-  return Object.freeze({
-    manifest: result.manifest,
-    markdown,
-    candidates: Object.freeze(result.manifest.entries.map(toAnalyzedCandidate)),
-    warnings: Object.freeze(result.warnings.map(w => w.message)),
-  });
-};
+const formatResult = (
+  result: BuildTaskContextResult,
+  content: string,
+  resolvedStrategy: AdaptivePackMode,
+): DesktopTaskContextResult => ({
+  manifest: result.manifest,
+  markdown: formatContextManifest(result.manifest),
+  content,
+  resolvedStrategy,
+  candidates: Object.freeze(result.manifest.entries.map(toAnalyzedCandidate)),
+  warnings: Object.freeze(result.warnings.map(w => w.message)),
+});
 
 const toAnalyzedCandidate = (entry: ContextEntry): AnalyzedCandidate => ({
   projectId: entry.projectId,
