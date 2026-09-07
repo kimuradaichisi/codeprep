@@ -45,3 +45,16 @@ export type McpBuildContextPackResult = Readonly<{
   content: string;
   warnings: readonly string[];
 }>;
+
+export type McpPrepareContextResult = Readonly<{
+  task: string;
+  candidates: readonly McpDiscoveredCandidateDto[];
+  confidence: ContextConfidence;
+  decision: 'AUTO_FAST_PACK' | 'MANUAL_SELECTION_REQUIRED';
+  requiresSelection: boolean;
+  strategy: AdaptivePackMode;
+  autoSelectedEntryPoints: readonly string[];
+  contextPack?: McpBuildContextPackResult;
+  warnings: readonly string[];
+}>;
+

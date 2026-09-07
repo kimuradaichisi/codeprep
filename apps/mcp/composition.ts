@@ -4,6 +4,7 @@ import type { Project } from '../../src/features/repository-context/domain/Proje
 import { DiscoverEntryPointCandidatesUseCase } from '../../src/features/repository-context/application/DiscoverEntryPointCandidatesUseCase';
 import { EnrichEntryPointCandidatesUseCase } from '../../src/features/repository-context/application/EnrichEntryPointCandidatesUseCase';
 import { BuildTaskContextUseCase } from '../../src/features/repository-context/application/BuildTaskContextUseCase';
+import { PrepareTaskContextUseCase } from '../../src/features/repository-context/application/PrepareTaskContextUseCase';
 import { SemanticEntryPointCandidateSource } from '../../src/features/repository-context/application/SemanticEntryPointCandidateSource';
 import { SemanticSearchUseCase } from '../../src/features/repository-context/application/SemanticSearchUseCase';
 import { HttpEmbeddingAdapter } from '../../src/features/repository-context/infrastructure/embedding/HttpEmbeddingAdapter';
@@ -25,10 +26,12 @@ export interface McpContextContainer {
   readonly discoverUseCase: DiscoverEntryPointCandidatesUseCase;
   readonly enrichUseCase: EnrichEntryPointCandidatesUseCase;
   readonly buildContextUseCase: BuildTaskContextUseCase;
+  readonly prepareContextUseCase: PrepareTaskContextUseCase;
   readonly formatter: DesktopContextFormatter;
   readonly fileContentPort: FileContentPort;
   checkStatus(): Promise<McpWorkspaceStatusResult>;
 }
+
 
 function createFsPorts(): { files: ProjectFilePort; content: FileContentPort } {
   return {
@@ -50,12 +53,27 @@ function createUseCases(p: Project, reg: ProjectRegistryPort, f: ProjectFilePort
   return { kStore, sStore, embedAdapter, discoverUseCase, enrichUseCase, buildContextUseCase };
 }
 
+function createPrepareUseCase(p: Project, u: ReturnType<typeof createUseCases>, c: FileContentPort, fmt: DesktopContextFormatter) {
+  return new PrepareTaskContextUseCase({
+    project: p,
+    discoverUseCase: u.discoverUseCase,
+    enrichUseCase: u.enrichUseCase,
+    buildContextUseCase: u.buildContextUseCase,
+    fileContentPort: c,
+    formatter: fmt,
+  });
+}
+
 export function createMcpContainer(workspaceRootRaw: string): McpContextContainer {
   const root = sanitizeWorkspacePath(workspaceRootRaw);
   const project: Project = { id: 'mcp-workspace', name: 'MCP Bound Workspace', rootPath: root, excludePatterns: ['.git', 'node_modules', 'dist', 'out'] };
   const registry: ProjectRegistryPort = { getByIds: async (ids) => ids.includes(project.id) ? [project] : [] };
   const { files, content } = createFsPorts();
-  const { kStore, sStore, embedAdapter, discoverUseCase, enrichUseCase, buildContextUseCase } = createUseCases(project, registry, files, content, join(root, '.codeprep'));
-  const checkStatus = () => checkMcpStatus({ project, files, knowledgeStore: kStore, semanticStore: sStore, embeddingPort: embedAdapter });
-  return { project, discoverUseCase, enrichUseCase, buildContextUseCase, formatter: new DesktopContextFormatter(), fileContentPort: content, checkStatus };
+  const uc = createUseCases(project, registry, files, content, join(root, '.codeprep'));
+  const formatter = new DesktopContextFormatter();
+  const prepareContextUseCase = createPrepareUseCase(project, uc, content, formatter);
+  const checkStatus = () => checkMcpStatus({ project, files, knowledgeStore: uc.kStore, semanticStore: uc.sStore, embeddingPort: uc.embedAdapter });
+  return { project, discoverUseCase: uc.discoverUseCase, enrichUseCase: uc.enrichUseCase, buildContextUseCase: uc.buildContextUseCase, prepareContextUseCase, formatter, fileContentPort: content, checkStatus };
 }
+
+

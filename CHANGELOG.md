@@ -3,7 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Phase 6D Zero-LLM Fast Path & Context Delivery Optimization — Generative LLM を CodePrep 内部に追加せず（Zero-LLM 原則）、2-step MCP の Handshake 遅延および Post-pack Duplicate Read を削減する One-Shot ツール `codeprep_prepare_context` を実装
+- feat: Gate 0 原因分解解析（`evaluation/agent-context/analyzeGate0.ts`）により、エージェント思考・ToolSearch に伴う Handshake 遅延（10.8s〜13.2s）と重複手動Read（2〜4件）の定量的実態を解明
+- feat: `AutoPackDecision` および `PrepareTaskContextUseCase` を Clean Architecture / DDD で設計 — HIGH confidence 時は `AUTO_FAST_PACK`（完全展開済みヘッダー付与、`requiresSelection: false`）、MEDIUM/LOW 時は `MANUAL_SELECTION_REQUIRED`（候補・証拠のみ返却、`requiresSelection: true`）
+- feat: ディレクトリ分散（`dirSpread > 1`）やスコア僅差を厳格に除外することで、False HIGH 0件（安全性 100%）を担保
+- feat: 外部 MCP Client 向けに新ツール `codeprep_prepare_context` を公開し、既存 3 MCP ツールとの完全な下位互換性を維持
+- test: `prepareContextTool.test.ts` および `McpIntegration.e2e.test.ts` を拡充、実 Agent (Haiku) による再評価 4 タスクで品質ゲート 100% 通過を実証
+- docs: [`reports/phase-6d-zero-llm-fast-path-report.md`](file:///D:/git/codeprep/reports/phase-6d-zero-llm-fast-path-report.md) を生成 — Gate 0 解析、One-Shot 設計、False HIGH 安全性、Haiku 再評価結果、4層品質ゲート自己評価を記録
 - feat: Phase 6C Haiku + CodePrep Context Efficiency Evaluation — 小型・低コスト外部 LLM（Claude Code Haiku: `claude-haiku-4-5-20251001`）による 6 タスク（12 トライアル）の A/B 比較評価を完走
+
 - feat: 手動ファイル閲覧総数を 48 → 24 ファイル（**-50.0% 削減・完全半減**）、総所要時間を 892.6s → 708.5s（**-20.6% 短縮**）、総コストを $1.280 → $1.091（**-14.8% 削減**）、キャッシュ読み込みトークンを 6.99M → 4.82M（**-31.0% 削減**）達成
 - feat: 複数レイヤー変更や未知語彙タスクにおいて小型モデル特有の「探索暴走（Exploration Cascade）」を CodePrep の構造化コンテキスト供給により完全に抑止し、全 12 トライアルで Quality Gate Pass 率 100% を実証
 - feat: 評価ハーネス（`claudeTrialRunner.ts`, `parseClaudeTrace.ts`, `runHaikuEvaluation.ts`）を配備し、セッション完全隔離・パイプライン stdin・失敗分類分離（ENTRY_POINT_MISS / CONTEXT_GAP / MODEL_REASONING_LIMIT）を実装

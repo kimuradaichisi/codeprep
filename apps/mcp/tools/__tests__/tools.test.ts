@@ -35,9 +35,11 @@ describe('MCP Tools', () => {
         warnings: [],
       }),
     } as any,
+    prepareContextUseCase: { execute: vi.fn() } as any,
     formatter: {
       format: vi.fn().mockReturnValue('# Packaged Code Context'),
     } as any,
+
     fileContentPort: {
       canRead: vi.fn().mockResolvedValue(true),
       read: vi.fn().mockResolvedValue('export class Order {}'),

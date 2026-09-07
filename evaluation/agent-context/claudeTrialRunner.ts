@@ -27,8 +27,9 @@ export function runValidation(commands: readonly string[]): boolean {
 }
 
 function buildArgs(condition: TrialCondition, root: string): readonly string[] {
-  const cfg = condition === 'codeprep' ? 'mcp-codeprep.json' : 'mcp-empty.json';
+  const cfg = condition === 'baseline' ? 'mcp-empty.json' : 'mcp-codeprep.json';
   const mcpPath = join(root, 'evaluation', 'agent-context', cfg);
+
   return [
     '--model', 'claude-haiku-4-5-20251001',
     '--strict-mcp-config',
@@ -96,8 +97,9 @@ function assembleResult(
     totalToolCalls: tc.total, mcpToolCalls: tc.mcp, editCalls: tc.edit, testCalls: tc.test,
     correctEntryPointInFirst1: ef.inFirst1, correctEntryPointInFirst3: ef.inFirst3, correctEntryPointBeforeEdit: ef.beforeEdit,
     reworkCount: 0, timeToFirstEditMs: Math.round(m.durationMs * 0.4), totalDurationMs: m.durationMs,
-    qualityGatePassed: p.passed, compliance: !p.cond || p.cond !== 'codeprep' || tc.mcp > 0 ? 'COMPLIANT' : 'NON_COMPLIANT',
+    qualityGatePassed: p.passed, compliance: p.cond === 'baseline' || tc.mcp > 0 ? 'COMPLIANT' : 'NON_COMPLIANT',
     costUsd: m.costUsd, inputTokens: m.inputTokens, outputTokens: m.outputTokens, cacheReadTokens: m.cacheReadTokens, failureClass: fc,
+
   };
 }
 

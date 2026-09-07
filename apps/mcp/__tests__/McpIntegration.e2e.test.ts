@@ -7,8 +7,10 @@ import { createMcpContainer } from '../composition';
 import { handleWorkspaceStatus } from '../tools/workspaceStatusTool';
 import { handleDiscoverEntryPoints } from '../tools/discoverEntryPointsTool';
 import { handleBuildContextPack } from '../tools/buildContextPackTool';
+import { handlePrepareContext } from '../tools/prepareContextTool';
 
 describe('MCP Integration E2E Pipeline', () => {
+
   let tempDir: string;
 
   beforeEach(async () => {
@@ -67,4 +69,20 @@ describe('MCP Integration E2E Pipeline', () => {
     expect(pack.manifest.budget.withinLimit).toBe(true);
     expect(pack.content).toContain('OrderService');
   }, 20000);
+
+  it('executes single-entry prepare context workflow: returns selection required when ambiguous', async () => {
+    const container = createMcpContainer(tempDir);
+    const result = await handlePrepareContext(container, {
+      task: 'Fix duplicate refund in order service',
+      tokenLimit: 20000,
+    });
+
+    expect(result.task).toBe('Fix duplicate refund in order service');
+    expect(result.candidates.length).toBeGreaterThan(0);
+    expect(result.decision).toBe('MANUAL_SELECTION_REQUIRED');
+    expect(result.requiresSelection).toBe(true);
+    expect(result.contextPack).toBeUndefined();
+  }, 20000);
 });
+
+

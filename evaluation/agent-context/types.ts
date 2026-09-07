@@ -16,7 +16,8 @@ export type TaskDefinition = Readonly<{
   validationCommands: readonly string[];
 }>;
 
-export type TrialCondition = 'baseline' | 'codeprep';
+export type TrialCondition = 'baseline' | 'codeprep' | 'codeprep-fastpath';
+
 
 export type ToolCallKind =
   | 'mcp'

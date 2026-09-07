@@ -5,12 +5,14 @@ import type { McpContextContainer } from './composition';
 import { WORKSPACE_STATUS_TOOL_NAME, workspaceStatusToolDefinition, handleWorkspaceStatus } from './tools/workspaceStatusTool';
 import { DISCOVER_ENTRY_POINTS_TOOL_NAME, discoverEntryPointsToolDefinition, handleDiscoverEntryPoints } from './tools/discoverEntryPointsTool';
 import { BUILD_CONTEXT_PACK_TOOL_NAME, buildContextPackToolDefinition, handleBuildContextPack } from './tools/buildContextPackTool';
+import { PREPARE_CONTEXT_TOOL_NAME, prepareContextToolDefinition, handlePrepareContext } from './tools/prepareContextTool';
 import { stderrError } from './logger';
 
 export const ALL_TOOLS = [
   workspaceStatusToolDefinition,
   discoverEntryPointsToolDefinition,
   buildContextPackToolDefinition,
+  prepareContextToolDefinition,
 ] as const;
 
 export function registerTools(server: Server, container: McpContextContainer): void {
@@ -34,5 +36,7 @@ async function dispatchTool(name: string, args: unknown, container: McpContextCo
   if (name === WORKSPACE_STATUS_TOOL_NAME) return handleWorkspaceStatus(container);
   if (name === DISCOVER_ENTRY_POINTS_TOOL_NAME) return handleDiscoverEntryPoints(container, args);
   if (name === BUILD_CONTEXT_PACK_TOOL_NAME) return handleBuildContextPack(container, args);
+  if (name === PREPARE_CONTEXT_TOOL_NAME) return handlePrepareContext(container, args);
   throw new Error('Unknown tool: ' + name);
 }
+
