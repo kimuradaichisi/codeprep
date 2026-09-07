@@ -121,7 +121,7 @@ ode
 - **Input Schema:**
   - 	ask (string, required): Task prompt / instruction.
   - selectedEntryPoints (array of strings, required): Chosen relative paths.
-  - 	okenLimit (number, optional, default: 40000): Token limit budget.
+  - tokenLimit (number, optional, default: 40000): Token limit budget.
 - **Output:**
 `json
 {
