@@ -1,4 +1,7 @@
 // evaluation/agent-context/types.ts
+import type { RepositoryFileKind } from '../../src/features/repository-context/domain/RepositoryIndex';
+
+export type { RepositoryFileKind };
 
 export type TaskCategory = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
 
@@ -77,7 +80,25 @@ export type AgentTrialResult = Readonly<{
   qualityGatePassed: boolean;
   compliance: 'COMPLIANT' | 'NON_COMPLIANT';
   failureReason?: string;
+
+  costUsd?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheReadTokens?: number;
+  failureClass?: FailureClass;
+  confidenceLevel?: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidenceScore?: number;
+  adaptiveStrategy?: 'FAST' | 'STANDARD' | 'EXPANDED';
 }>;
+
+export type FailureClass =
+  | 'SUCCESS'
+  | 'ENTRY_POINT_MISS'
+  | 'CONTEXT_GAP'
+  | 'MODEL_REASONING_LIMIT'
+  | 'IMPLEMENTATION_ERROR'
+  | 'COMPLIANCE_ERROR'
+  | 'TIMEOUT';
 
 export type EvaluationSummary = Readonly<{
   evaluatorInfo: {
@@ -94,3 +115,4 @@ export type EvaluationSummary = Readonly<{
   taskCount: number;
   results: readonly AgentTrialResult[];
 }>;
+

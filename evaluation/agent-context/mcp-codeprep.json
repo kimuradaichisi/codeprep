@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "codeprep": {
+      "command": "node",
+      "args": ["D:/git/codeprep/dist-mcp/index.js", "--workspace", "D:/git/codeprep"]
+    }
+  }
+}

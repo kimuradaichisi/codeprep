@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Phase 6C Haiku + CodePrep Context Efficiency Evaluation — 小型・低コスト外部 LLM（Claude Code Haiku: `claude-haiku-4-5-20251001`）による 6 タスク（12 トライアル）の A/B 比較評価を完走
+- feat: 手動ファイル閲覧総数を 48 → 24 ファイル（**-50.0% 削減・完全半減**）、総所要時間を 892.6s → 708.5s（**-20.6% 短縮**）、総コストを $1.280 → $1.091（**-14.8% 削減**）、キャッシュ読み込みトークンを 6.99M → 4.82M（**-31.0% 削減**）達成
+- feat: 複数レイヤー変更や未知語彙タスクにおいて小型モデル特有の「探索暴走（Exploration Cascade）」を CodePrep の構造化コンテキスト供給により完全に抑止し、全 12 トライアルで Quality Gate Pass 率 100% を実証
+- feat: 評価ハーネス（`claudeTrialRunner.ts`, `parseClaudeTrace.ts`, `runHaikuEvaluation.ts`）を配備し、セッション完全隔離・パイプライン stdin・失敗分類分離（ENTRY_POINT_MISS / CONTEXT_GAP / MODEL_REASONING_LIMIT）を実装
+- docs: [`reports/phase-6c-haiku-evaluation.md`](file:///D:/git/codeprep/reports/phase-6c-haiku-evaluation.md) を生成 — 目的、実験条件、サマリー表、カテゴリ別分析、失敗分類、LLM Residual、決定的改善機会（One-Shot Auto-Pack 等）を記録
 - feat: Phase 6B Desktop Context Workflow — Task入力から候補探索・Structural Evidence・Context Confidence・Human Multi-select・Adaptive Pack生成・Manifest/Context Preview・Copyまでを一連の操作として完結する Desktop UI パイプラインを実装
 - feat: Desktop と MCP で同一の Application UseCases（`BuildTaskContextUseCase`, `DiscoverEntryPointCandidatesUseCase`, `ContextConfidenceEvaluator`, `AdaptiveContextStrategy`）を共有し、UI独自探索ロジックやMCP loopbackを完全排除
 - feat: Desktop UI コンポーネント群（`WorkspaceStatusHeader`, `TaskInputArea`, `ConfidenceSummary`, `CandidateCardList`, `ContextPackViewer`）を整備し、Discovery/Supportスコアの分離表示、Structural Evidenceの折りたたみ、大文字ステータスとDEGRADED警告、Ctrl+Enter誤実行防止を実装

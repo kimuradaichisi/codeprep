@@ -8,9 +8,9 @@
     "src/features/repository-context/domain/CandidateEvidence.ts"
   ],
   "requiredTests": [
-    "src/features/repository-context/domain/__tests__/CandidateEvidence.test.ts"
+    "src/features/repository-context/domain/__tests__/CandidateSupportScorer.test.ts"
   ],
   "validationCommands": [
-    "npm run test:file -- src/features/repository-context/domain/__tests__/CandidateEvidence.test.ts"
+    "npm run test:file -- src/features/repository-context/domain/__tests__/CandidateSupportScorer.test.ts"
   ]
 }

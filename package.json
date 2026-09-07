@@ -447,6 +447,7 @@
     "eval:semantic": "ts-node scripts/evaluate-semantic-entry-points.ts",
     "eval:native-evidence": "ts-node scripts/evaluate-native-evidence.ts",
     "eval:agent-context": "ts-node evaluation/agent-context/runEvaluation.ts",
+    "eval:haiku": "ts-node evaluation/agent-context/runHaikuEvaluation.ts",
     "claude:haiku": "node scripts/claude-haiku.mjs",
     "check": "npm run compile && npm run mcp:build && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
   },
