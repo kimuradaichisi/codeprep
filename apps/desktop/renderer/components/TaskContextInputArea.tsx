@@ -1,5 +1,6 @@
 import type { SearchPanelProps } from '../types';
 import { EntryPointCandidateList } from './EntryPointCandidateList';
+import { ConfidenceBadge } from './ConfidenceBadge';
 
 type TaskContextInputAreaProps = Pick<
   SearchPanelProps,
@@ -12,6 +13,10 @@ type TaskContextInputAreaProps = Pick<
   | 'isAnalyzing'
   | 'entryPointCandidates'
   | 'enrichedCandidates'
+  | 'confidence'
+  | 'suggestedPackStrategy'
+  | 'adaptiveStrategy'
+  | 'setAdaptiveStrategy'
   | 'isDiscoveringEntryPoints'
   | 'discoverEntryPoints'
   | 'toggleEntryPointCandidate'
@@ -55,6 +60,12 @@ export const TaskContextInputArea = (props: TaskContextInputAreaProps) => {
           onToggle={(path) => props.toggleEntryPointCandidate?.(path)}
         />
       )}
+      <ConfidenceBadge
+        confidence={props.confidence}
+        suggestedStrategy={props.suggestedPackStrategy}
+        selectedStrategy={props.adaptiveStrategy}
+        onStrategyChange={props.setAdaptiveStrategy}
+      />
       <div>
         <label style={{ fontSize: '11px', color: '#9eafc8', display: 'block', marginBottom: '4px' }}>
           Selected Entry Points (comma separated)

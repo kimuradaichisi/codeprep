@@ -90,6 +90,8 @@ describe('MCP Tools', () => {
       expect(res.candidates[0].relativePath).toBe('src/order.ts');
       expect(res.candidates[0].supportScore).toBe(20);
       expect(res.candidates[0].evidence[0].kind).toBe('dependency');
+      expect(res.confidence).toBeDefined();
+      expect(res.suggestedPackStrategy).toBeDefined();
     });
 
     it('succeeds gracefully with deterministic candidates when semantic search degrades', async () => {

@@ -27,7 +27,8 @@ export const validateAndGetFiles = async (
 export const findRelatedTests = (
   project: Project,
   entryPoints: readonly string[],
-  allFiles: readonly Readonly<{ relativePath: string; size: number }>[]
+  allFiles: readonly Readonly<{ relativePath: string; size: number }>[],
+  maxTests = 10
 ): readonly DiscoveredContextItem[] => {
   const testItems: DiscoveredContextItem[] = [];
   for (const ep of entryPoints) {
@@ -41,7 +42,7 @@ export const findRelatedTests = (
       });
     }
   }
-  return testItems;
+  return testItems.slice(0, maxTests);
 };
 
 const isMatchingTest = (path: string, base: string): boolean => {
@@ -67,7 +68,8 @@ export const findDependencies = async (
   project: Project,
   entryPoints: readonly string[],
   fileContent: FileContentPort,
-  scanner?: DependencyScanner
+  scanner?: DependencyScanner,
+  maxDeps = 10
 ): Promise<readonly DiscoveredContextItem[]> => {
   if (!scanner) return [];
   const items: DiscoveredContextItem[] = [];
@@ -86,7 +88,7 @@ export const findDependencies = async (
       // Ignore unreadable entry point content in scanner
     }
   }
-  return items;
+  return items.slice(0, maxDeps);
 };
 
 export const collectRecommendations = async (

@@ -2,6 +2,7 @@
 import type { CandidateEvidenceKind } from '../../src/features/repository-context/domain/CandidateEvidence';
 import type { EntryPointCandidateReason } from '../../src/features/repository-context/domain/EntryPointCandidate';
 import type { ContextManifest } from '../../src/features/repository-context/domain/ContextManifest';
+import type { ContextConfidence, AdaptivePackMode } from '../../src/features/repository-context/domain/ContextConfidence';
 
 export type McpIndexState = 'ready' | 'missing' | 'error' | 'degraded';
 
@@ -34,6 +35,8 @@ export type McpDiscoveredCandidateDto = Readonly<{
 export type McpDiscoverEntryPointsResult = Readonly<{
   task: string;
   candidates: readonly McpDiscoveredCandidateDto[];
+  confidence: ContextConfidence;
+  suggestedPackStrategy: AdaptivePackMode;
   warnings: readonly string[];
 }>;
 

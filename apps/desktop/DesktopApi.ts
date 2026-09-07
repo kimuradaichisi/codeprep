@@ -11,6 +11,8 @@ import type { EntryPointCandidate } from '../../src/features/repository-context/
 import type { EnrichedEntryPointCandidate } from '../../src/features/repository-context/domain/CandidateEvidence';
 import type { Project } from '../../src/features/repository-context/domain/Project';
 
+import type { ContextConfidence, AdaptivePackMode } from '../../src/features/repository-context/domain/ContextConfidence';
+
 export type DesktopOutput = Readonly<{
   preview: string;
   warning?: string;
@@ -22,6 +24,7 @@ export type BuildTaskContextRequest = Readonly<{
   task: string;
   entryPoints: readonly string[];
   tokenLimit?: number;
+  strategy?: AdaptivePackMode | 'auto';
 }>;
 
 export type DiscoverEntryPointCandidatesRequest = Readonly<{
@@ -34,6 +37,8 @@ export type DiscoverEntryPointCandidatesRequest = Readonly<{
 export type DiscoverEntryPointCandidatesResponse = Readonly<{
   candidates: readonly EntryPointCandidate[];
   enrichedCandidates?: readonly EnrichedEntryPointCandidate[];
+  confidence?: ContextConfidence;
+  suggestedPackStrategy?: AdaptivePackMode;
   terms: readonly string[];
   warnings: readonly string[];
 }>;

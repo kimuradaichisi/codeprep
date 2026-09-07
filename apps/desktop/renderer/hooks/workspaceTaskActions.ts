@@ -9,7 +9,7 @@ import { update } from './workspaceState';
 export const analyzeTask = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {
   update(set, { isAnalyzing: true, searchNotice: undefined });
   try {
-    const result = await analyzeTaskWorkspace(api, state.taskInput, state.entryPointInput, state.projects, state.tokenLimit);
+    const result = await analyzeTaskWorkspace(api, state.taskInput, state.entryPointInput, state.projects, state.tokenLimit, state.adaptiveStrategy);
     update(set, result);
   } finally {
     update(set, { isAnalyzing: false });
@@ -24,6 +24,8 @@ export const discoverEntryPoints = async (api: DesktopApi, set: SetWorkspace, st
     update(set, {
       entryPointCandidates: result.candidates,
       enrichedCandidates: result.enrichedCandidates,
+      confidence: result.confidence,
+      suggestedPackStrategy: result.suggestedPackStrategy,
       searchNotice: result.searchNotice,
     });
   } finally {

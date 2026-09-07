@@ -27,13 +27,20 @@ const parseTokenLimit = (value: unknown): number | undefined => {
   return value;
 };
 
+const parseStrategy = (value: unknown): import('./DesktopApi').BuildTaskContextRequest['strategy'] => {
+  if (value === undefined) return undefined;
+  if (value === 'auto' || value === 'fast' || value === 'standard' || value === 'expanded') return value;
+  throw new Error('Invalid strategy.');
+};
+
 export const toBuildTaskContextRequest = (value: unknown): BuildTaskContextRequest => {
   if (!isRecord(value)) throw new Error('Invalid task context request.');
   const projectId = requiredString(value.projectId, 'Project ID');
   const task = requiredString(value.task, 'Task');
   const entryPoints = parseEntryPoints(value.entryPoints);
   const tokenLimit = parseTokenLimit(value.tokenLimit);
-  return Object.freeze({ projectId, task, entryPoints, tokenLimit });
+  const strategy = parseStrategy(value.strategy);
+  return Object.freeze({ projectId, task, entryPoints, tokenLimit, strategy });
 };
 
 export const toDiscoverEntryPointCandidatesRequest = (

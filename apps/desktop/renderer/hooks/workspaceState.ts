@@ -39,6 +39,9 @@ export type WorkspaceState = Readonly<{
   activePreviewFile?: Readonly<{ projectId: string; relativePath: string }>;
   entryPointCandidates?: readonly EntryPointCandidate[];
   enrichedCandidates?: readonly EnrichedEntryPointCandidate[];
+  confidence?: import('../../../../src/features/repository-context/domain/ContextConfidence').ContextConfidence;
+  suggestedPackStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode;
+  adaptiveStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptiveStrategyOverride;
   isDiscoveringEntryPoints?: boolean;
 }>;
 
@@ -95,4 +98,5 @@ export const initialWorkspaceState: WorkspaceState = {
   projectNotice: undefined,
   searchNotice: undefined,
   outputNotice: undefined,
+  adaptiveStrategy: 'auto',
 };

@@ -39,9 +39,11 @@ const executeUseCase = async (
 ): Promise<BuildTaskContextResult> => {
   const ports = createTaskContextPorts(registry);
   const useCase = new BuildTaskContextUseCase(ports);
+  const strat = request.strategy && request.strategy !== 'auto' ? request.strategy : undefined;
   return useCase.execute({
     taskContext: { projectId: project.id, task: request.task, entryPoints: request.entryPoints },
     tokenLimit: request.tokenLimit,
+    strategy: strat,
   });
 };
 

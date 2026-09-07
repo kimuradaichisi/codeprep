@@ -33,6 +33,8 @@ export type ProjectPanelProps = Readonly<{
   refreshIndex?(): Promise<void>;
 }>;
 
+import type { ContextConfidence, AdaptivePackMode, AdaptiveStrategyOverride } from '../../../src/features/repository-context/domain/ContextConfidence';
+
 export type SearchPanelProps = Readonly<{
   discoveryMode: DiscoveryMode; taskInput: string; entryPointInput: string;
   recipeKind: SearchRecipeKind; query: string; contextLines: number; searchNotice: WorkspaceNotice;
@@ -40,6 +42,9 @@ export type SearchPanelProps = Readonly<{
   isAnalyzing?: boolean;
   entryPointCandidates?: readonly EntryPointCandidate[];
   enrichedCandidates?: readonly EnrichedEntryPointCandidate[];
+  confidence?: ContextConfidence;
+  suggestedPackStrategy?: AdaptivePackMode;
+  adaptiveStrategy?: AdaptiveStrategyOverride;
   isDiscoveringEntryPoints?: boolean;
   setDiscoveryMode(value: DiscoveryMode): void; setTaskInput(value: string): void; setEntryPointInput(value: string): void;
   setRecipeKind(value: SearchRecipeKind): void; setQuery(value: string): void; setContextLines(value: number): void;
@@ -47,6 +52,7 @@ export type SearchPanelProps = Readonly<{
   setRecommendationSettings(value: RecommendationSettings): void; analyze(query?: string): Promise<void>;
   analyzeTask(): Promise<void>; discoverEntryPoints?(): Promise<void>;
   toggleEntryPointCandidate?(relativePath: string): void; clearSearch(): Promise<void>;
+  setAdaptiveStrategy?(value: AdaptiveStrategyOverride): void;
 }>;
 
 export type CandidateTreeProps = Readonly<{

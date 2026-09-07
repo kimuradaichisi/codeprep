@@ -24,6 +24,7 @@ export const analyzeTaskWorkspace = async (
   entryPointInput: string,
   projects: readonly Project[],
   tokenLimit: number,
+  strategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptiveStrategyOverride,
 ): Promise<TaskAnalysisResultUpdate> => {
   const primaryProject = projects[0];
   if (!primaryProject) return { searchNotice: 'No project selected.' };
@@ -37,6 +38,7 @@ export const analyzeTaskWorkspace = async (
       task: task.trim(),
       entryPoints,
       tokenLimit,
+      strategy,
     });
     return toSuccessUpdate(result, projects);
   } catch (error) {
@@ -61,6 +63,8 @@ export const discoverEntryPointsWorkspace = async (
 ): Promise<Readonly<{
   candidates?: readonly EntryPointCandidate[];
   enrichedCandidates?: readonly import('../../../../src/features/repository-context/domain/CandidateEvidence').EnrichedEntryPointCandidate[];
+  confidence?: import('../../../../src/features/repository-context/domain/ContextConfidence').ContextConfidence;
+  suggestedPackStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode;
   searchNotice?: string;
 }>> => {
   const primaryProject = projects[0];
@@ -75,6 +79,8 @@ export const discoverEntryPointsWorkspace = async (
     return {
       candidates: result.candidates,
       enrichedCandidates: result.enrichedCandidates,
+      confidence: result.confidence,
+      suggestedPackStrategy: result.suggestedPackStrategy,
       searchNotice: result.warnings.join('\n') || undefined,
     };
   } catch (error) {

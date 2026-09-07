@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Phase 6A Context Confidence & Adaptive Pack Support — 探索結果と Native Evidence の収束度から作業開始地点の確からしさを評価する決定論的 `ContextConfidenceEvaluator`（Zero Generative LLM）を実装
+- feat: Adaptive Pack 戦略（HIGH: Fast Pack 2-4ファイル / MEDIUM: Standard Pack 4-8ファイル / LOW: Expanded Pack 8-15ファイル）を実装し、コンテキストの過不足を自動最適化（明示的 override もサポート）
+- feat: MCP ツール `codeprep_discover_entry_points` に `confidence` / `suggestedPackStrategy` を追加し、`codeprep_build_context_pack` に `strategy` パラメータを追加
+- feat: Desktop UI に `ConfidenceBadge` および Strategy セレクター（Auto / Fast / Standard / Expanded）を追加、ユーザーの Human Selection を最優先維持
+- feat: Phase 5B 実トレース（全8タスク）を用いたオフラインシミュレーション（`scripts/simulate-phase5b-confidence.ts`）を実施し、不確実タスクにおける False HIGH 0件 (0/8, 0.0%) を実証
+- feat: 外部 Consumer として Claude Code Haiku (`claude-haiku-4-5-20251001`) の第一級サポートを追加（`scripts/claude-haiku.ts` / `.mjs`、`npm run claude:haiku`、`CLAUDE.md`）
+- docs: [`reports/phase-6a-context-confidence-report.md`](file:///D:/git/codeprep/reports/phase-6a-context-confidence-report.md) を生成 — 決定論的信頼度モデル、適応パック仕様、シミュレーション結果、品質ゲート通過を記録
 - feat: Phase 5B Real Agent A/B Evaluation (Cost Correction & Full Run) — 評価モデルを高コストな GPT-5.6 Sol から **GPT-5.6 Luna (high reasoning effort)** へ切り替え、8 タスク（計16 trials）のプライマリ評価を完走
 - docs: 従来の GPT-5.6 Sol による予備試行データを `PRELIMINARY / EXCLUDED_FROM_PRIMARY_ANALYSIS` として隔離・マークし、[`reports/phase-5b-preliminary-sol.md`](file:///D:/git/codeprep/reports/phase-5b-preliminary-sol.md) に記録
 - feat: ポーリングループ（Schedule/Get-Process）を完全撤廃し、1試行完了ごとの即時ディスク永続化、4タスク中間チェックポイント算出、および Reactive Wakeup 運用へ刷新

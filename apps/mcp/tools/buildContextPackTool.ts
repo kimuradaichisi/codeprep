@@ -4,6 +4,9 @@ import type { McpBuildContextPackResult } from '../types';
 import type { DesktopContextFile } from '../../../src/features/repository-context/application/ports';
 import { validateSafeRelativePaths } from '../security';
 import { stderrLog, stderrError } from '../logger';
+import type { AdaptiveStrategyOverride, AdaptivePackMode } from '../../../src/features/repository-context/domain/ContextConfidence';
+import { evaluateContextConfidence } from '../../../src/features/repository-context/domain/ContextConfidenceEvaluator';
+import { resolveAdaptivePackMode } from '../../../src/features/repository-context/application/AdaptiveContextStrategy';
 
 export const BUILD_CONTEXT_PACK_TOOL_NAME = 'codeprep_build_context_pack';
 
@@ -16,13 +19,23 @@ export const buildContextPackToolDefinition = {
       task: { type: 'string', description: 'Task or instruction for context pack.' },
       selectedEntryPoints: { type: 'array', items: { type: 'string' }, description: 'List of relative paths to entry points chosen by caller/human.' },
       tokenLimit: { type: 'number', description: 'Budget limit in estimated tokens (default: 40000).' },
+      strategy: {
+        type: 'string',
+        enum: ['auto', 'fast', 'standard', 'expanded'],
+        description: 'Adaptive context pack strategy (default: auto).',
+      },
     },
     required: ['task', 'selectedEntryPoints'],
     additionalProperties: false,
   },
 } as const;
 
-export type BuildContextPackInput = { task: string; selectedEntryPoints: readonly string[]; tokenLimit?: number };
+export type BuildContextPackInput = {
+  task: string;
+  selectedEntryPoints: readonly string[];
+  tokenLimit?: number;
+  strategy?: AdaptiveStrategyOverride;
+};
 
 async function validateInput(root: string, raw: unknown): Promise<BuildContextPackInput> {
   if (!raw || typeof raw !== 'object') throw new Error('Input must be an object');
@@ -30,10 +43,12 @@ async function validateInput(root: string, raw: unknown): Promise<BuildContextPa
   if (typeof val.task !== 'string' || !val.task.trim()) throw new Error('Field task must be a non-empty string');
   if (!Array.isArray(val.selectedEntryPoints) || val.selectedEntryPoints.length === 0) throw new Error('Field selectedEntryPoints must be a non-empty array of strings');
   const safePaths = await validateSafeRelativePaths(root, val.selectedEntryPoints as string[]);
+  const strat = typeof val.strategy === 'string' ? val.strategy : 'auto';
   return {
     task: val.task.trim(),
     selectedEntryPoints: safePaths,
     tokenLimit: typeof val.tokenLimit === 'number' ? Math.max(val.tokenLimit, 1000) : 40000,
+    strategy: strat === 'fast' || strat === 'standard' || strat === 'expanded' ? strat : 'auto',
   };
 }
 
@@ -46,10 +61,20 @@ async function loadFiles(container: McpContextContainer, relativePaths: readonly
   return files;
 }
 
+async function resolveStrategyMode(container: McpContextContainer, task: string, strategy?: AdaptiveStrategyOverride): Promise<AdaptivePackMode> {
+  if (strategy && strategy !== 'auto') return strategy;
+  const pid = container.project.id;
+  const disc = await container.discoverUseCase.execute({ task, projectIds: [pid], maxCandidates: 10 });
+  const enriched = await container.enrichUseCase.execute({ task, projectIds: [pid], candidates: disc.candidates, options: { enrichTopN: 5 } });
+  return resolveAdaptivePackMode(evaluateContextConfidence({ candidates: enriched }));
+}
+
 async function executeBuild(container: McpContextContainer, input: BuildContextPackInput): Promise<McpBuildContextPackResult> {
+  const mode = await resolveStrategyMode(container, input.task, input.strategy);
   const result = await container.buildContextUseCase.execute({
     taskContext: { projectId: container.project.id, task: input.task, entryPoints: input.selectedEntryPoints },
     tokenLimit: input.tokenLimit,
+    strategy: mode,
   });
   const includedPaths = result.manifest.entries.map((e) => e.relativePath);
   const files = await loadFiles(container, includedPaths);

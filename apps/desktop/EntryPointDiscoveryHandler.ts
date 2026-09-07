@@ -16,6 +16,8 @@ import { MarkdownRecommendationClient } from '../../src/features/repository-cont
 import type { Project } from '../../src/features/repository-context/domain/Project';
 import type { DiscoverEntryPointCandidatesResponse } from './DesktopApi';
 import { toDiscoverEntryPointCandidatesRequest } from './TaskContextRequestParser';
+import { evaluateContextConfidence } from '../../src/features/repository-context/domain/ContextConfidenceEvaluator';
+import { resolveAdaptivePackMode } from '../../src/features/repository-context/application/AdaptiveContextStrategy';
 
 export const handleDiscoverEntryPointCandidates = async (
   registry: ProjectRegistryStore,
@@ -35,10 +37,14 @@ export const handleDiscoverEntryPointCandidates = async (
   });
 
   const enriched = await tryEnrichCandidates(registry, result.candidates, request.task, request.projectId);
+  const confidence = enriched ? evaluateContextConfidence({ candidates: enriched }) : undefined;
+  const suggestedPackStrategy = confidence ? resolveAdaptivePackMode(confidence) : undefined;
 
   return Object.freeze({
     candidates: result.candidates,
     enrichedCandidates: enriched,
+    confidence,
+    suggestedPackStrategy,
     terms: result.terms,
     warnings: Object.freeze(result.warnings.map((w) => w.message)),
   });

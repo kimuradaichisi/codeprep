@@ -3,6 +3,8 @@ import type { McpContextContainer } from '../composition';
 import type { McpDiscoverEntryPointsResult } from '../types';
 import { transformCandidates } from './candidateTransformer';
 import { stderrLog, stderrError } from '../logger';
+import { evaluateContextConfidence } from '../../../src/features/repository-context/domain/ContextConfidenceEvaluator';
+import { resolveAdaptivePackMode } from '../../../src/features/repository-context/application/AdaptiveContextStrategy';
 
 export const DISCOVER_ENTRY_POINTS_TOOL_NAME = 'codeprep_discover_entry_points';
 
@@ -38,7 +40,15 @@ async function executeDiscovery(container: McpContextContainer, input: DiscoverE
   const pid = container.project.id;
   const disc = await container.discoverUseCase.execute({ task: input.task, projectIds: [pid], maxCandidates: input.maxCandidates });
   const enriched = await container.enrichUseCase.execute({ task: input.task, projectIds: [pid], candidates: disc.candidates, options: { enrichTopN: input.enrichTopN } });
-  return { task: input.task, candidates: transformCandidates(enriched), warnings: disc.warnings.map((w) => w.message) };
+  const confidence = evaluateContextConfidence({ candidates: enriched });
+  const suggestedPackStrategy = resolveAdaptivePackMode(confidence);
+  return {
+    task: input.task,
+    candidates: transformCandidates(enriched),
+    confidence,
+    suggestedPackStrategy,
+    warnings: disc.warnings.map((w) => w.message),
+  };
 }
 
 export async function handleDiscoverEntryPoints(container: McpContextContainer, rawInput: unknown): Promise<McpDiscoverEntryPointsResult> {

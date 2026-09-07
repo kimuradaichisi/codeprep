@@ -27,6 +27,14 @@ describe('toBuildTaskContextRequest', () => {
     expect(parsed.tokenLimit).toBeUndefined();
   });
 
+  it('parses valid strategy correctly and throws on invalid strategy', () => {
+    const raw = { projectId: 'p1', task: 'Task', entryPoints: ['src/a.ts'], strategy: 'fast' };
+    expect(toBuildTaskContextRequest(raw).strategy).toBe('fast');
+    const autoRaw = { projectId: 'p1', task: 'Task', entryPoints: ['src/a.ts'], strategy: 'auto' };
+    expect(toBuildTaskContextRequest(autoRaw).strategy).toBe('auto');
+    expect(() => toBuildTaskContextRequest({ projectId: 'p1', task: 'Task', entryPoints: ['src/a.ts'], strategy: 'invalid' })).toThrow('Invalid strategy.');
+  });
+
   it('throws on non-object', () => {
     expect(() => toBuildTaskContextRequest(null)).toThrow('Invalid task context request.');
     expect(() => toBuildTaskContextRequest('string')).toThrow('Invalid task context request.');

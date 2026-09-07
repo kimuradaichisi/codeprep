@@ -442,11 +442,12 @@
     "lint:standards:changed": "ts-node scripts/check-standards.ts --changed",
     "lint:standards:file": "ts-node scripts/check-standards.ts",
     "mcp": "ts-node apps/mcp/index.ts",
-    "mcp:build": "esbuild apps/mcp/index.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist-mcp/index.js",
+    "mcp:build": "esbuild apps/mcp/index.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist-mcp/index.js && esbuild scripts/claude-haiku.ts --bundle --platform=node --format=esm --outfile=scripts/claude-haiku.mjs",
     "mcp:test": "vitest run apps/mcp",
     "eval:semantic": "ts-node scripts/evaluate-semantic-entry-points.ts",
     "eval:native-evidence": "ts-node scripts/evaluate-native-evidence.ts",
     "eval:agent-context": "ts-node evaluation/agent-context/runEvaluation.ts",
+    "claude:haiku": "node scripts/claude-haiku.mjs",
     "check": "npm run compile && npm run mcp:build && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit"
   },
   "devDependencies": {
