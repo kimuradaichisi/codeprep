@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "desktop-v*"
+      - "v*"
 
 jobs:
   package-and-upload:
