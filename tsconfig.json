@@ -26,7 +26,8 @@
   "include": [
     "src/**/*",
     "apps/**/*",
-    "scripts/**/*"            // 2. scripts を含める
+    "scripts/**/*",
+    "evaluation/**/*"
   ],
   "exclude": [
     "node_modules",

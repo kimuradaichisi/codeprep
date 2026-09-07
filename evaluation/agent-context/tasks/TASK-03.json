@@ -1,0 +1,16 @@
+{
+  "id": "TASK-03",
+  "category": "C",
+  "categoryName": "test update",
+  "task": "Add test coverage verifying that candidate supportScore properly caps scores when category reaches maxCategoryScore.",
+  "primaryEntryPoint": "src/features/repository-context/domain/CandidateEvidence.ts",
+  "requiredRelatedFiles": [
+    "src/features/repository-context/domain/CandidateEvidence.ts"
+  ],
+  "requiredTests": [
+    "src/features/repository-context/domain/__tests__/CandidateEvidence.test.ts"
+  ],
+  "validationCommands": [
+    "npm run test:file -- src/features/repository-context/domain/__tests__/CandidateEvidence.test.ts"
+  ]
+}

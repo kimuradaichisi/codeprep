@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: Phase 5B Real Agent A/B Evaluation (Cost Correction & Full Run) — 評価モデルを高コストな GPT-5.6 Sol から **GPT-5.6 Luna (high reasoning effort)** へ切り替え、8 タスク（計16 trials）のプライマリ評価を完走
+- docs: 従来の GPT-5.6 Sol による予備試行データを `PRELIMINARY / EXCLUDED_FROM_PRIMARY_ANALYSIS` として隔離・マークし、[`reports/phase-5b-preliminary-sol.md`](file:///D:/git/codeprep/reports/phase-5b-preliminary-sol.md) に記録
+- feat: ポーリングループ（Schedule/Get-Process）を完全撤廃し、1試行完了ごとの即時ディスク永続化、4タスク中間チェックポイント算出、および Reactive Wakeup 運用へ刷新
+- feat: [`reports/phase-5b-agent-evaluation.md`](file:///D:/git/codeprep/reports/phase-5b-agent-evaluation.md) を生成 — エントリポイント特定率が Baseline (62.5%) に対し CodePrep は **100% (8/8)** を達成、大規模探索タスク（TASK-01, 05, 07）で初動探索が 27〜67% 削減、品質ゲート通過率 88% (7/8) を実証
+- docs: confirm order/refund workflow exists only in MCP synthetic fixtures; no production settlement service found
+- test: cover DocGraphClient fallback when the external docgraph command is unavailable
+- docs: MCP Context Pack の tokenLimit 既定値 40000 と最小値 1000 を実装仕様に同期して明記
+- feat: `ContextBudget` にシステムトークン用の予約枠を追加し、推定トークンとの合計で予算内判定を行うよう対応
+- test: candidate supportScore がカテゴリ上限到達時に maxCategoryScore で打ち止めになる境界テストを追加
 - feat: MCP Tool Surface & External Agent Integration (Phase 5A) を実装 — Claude / Coding Agent / 外部 MCP Client から CodePrep の候補探索・Native Evidence・Context Pack パイプラインを利用可能な stdio transport MCP サーバー（`@modelcontextprotocol/sdk`）を構築
 - feat: `codeprep_workspace_status` ツールを実装 — Workspace バインド状態、Repository / Knowledge / Semantic 各インデックスの準備状態（ready/missing/degraded/error）および診断情報を取得
 - feat: `codeprep_discover_entry_points` ツールを実装 — タスク指示文からの決定論的・セマンティック候補探索および Native Structural Evidence（依存関係・テスト・共変更など）が付与された候補一覧を提供（Embedding未接続時は degraded 診断を付与し deterministic 継続）

@@ -1,0 +1,17 @@
+{
+  "id": "TASK-01",
+  "category": "A",
+  "categoryName": "small bug fix",
+  "task": "Fix the Windows stdin hang issue in RipgrepClient by ensuring stdio ignore on stdin when spawning ripgrep.",
+  "primaryEntryPoint": "src/features/repository-context/infrastructure/search/RipgrepClient.ts",
+  "requiredRelatedFiles": [
+    "src/features/repository-context/infrastructure/search/RipgrepClient.ts",
+    "src/features/repository-context/infrastructure/search/RipgrepJsonParser.ts"
+  ],
+  "requiredTests": [
+    "src/features/repository-context/infrastructure/search/__tests__/RipgrepClient.test.ts"
+  ],
+  "validationCommands": [
+    "npm run test:file -- src/features/repository-context/infrastructure/search/__tests__/RipgrepClient.test.ts"
+  ]
+}

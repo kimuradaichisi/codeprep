@@ -1,0 +1,17 @@
+{
+  "id": "TASK-07",
+  "category": "G",
+  "categoryName": "unfamiliar terminology",
+  "task": "Check DocGraphClient capability audit implementation when external docgraph command is missing or unavailable.",
+  "primaryEntryPoint": "src/features/repository-context/infrastructure/recommendation/DocGraphClient.ts",
+  "requiredRelatedFiles": [
+    "src/features/repository-context/infrastructure/recommendation/DocGraphClient.ts",
+    "src/features/repository-context/domain/ports.ts"
+  ],
+  "requiredTests": [
+    "src/features/repository-context/infrastructure/recommendation/__tests__/DocGraphClient.test.ts"
+  ],
+  "validationCommands": [
+    "npm run test:file -- src/features/repository-context/infrastructure/recommendation/__tests__/DocGraphClient.test.ts"
+  ]
+}

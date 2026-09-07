@@ -1,0 +1,17 @@
+{
+  "id": "TASK-08",
+  "category": "H",
+  "categoryName": "ambiguous business-language task",
+  "task": "Investigate potential double refund processing by finding the service responsible for order settlement and refund workflow.",
+  "primaryEntryPoint": "src/features/repository-context/domain/TaskSearchTermExtractor.ts",
+  "requiredRelatedFiles": [
+    "src/features/repository-context/domain/TaskSearchTermExtractor.ts",
+    "src/features/repository-context/application/DiscoverFilesUseCase.ts"
+  ],
+  "requiredTests": [
+    "src/features/repository-context/domain/__tests__/TaskSearchTermExtractor.test.ts"
+  ],
+  "validationCommands": [
+    "npm run test:file -- src/features/repository-context/domain/__tests__/TaskSearchTermExtractor.test.ts"
+  ]
+}

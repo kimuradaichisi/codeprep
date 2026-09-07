@@ -1,0 +1,17 @@
+{
+  "id": "TASK-06",
+  "category": "F",
+  "categoryName": "documentation + code relation",
+  "task": "Synchronize the token budget documentation in docs/mcp.md with the default token limit constant in buildContextPackTool.ts.",
+  "primaryEntryPoint": "docs/mcp.md",
+  "requiredRelatedFiles": [
+    "docs/mcp.md",
+    "apps/mcp/tools/buildContextPackTool.ts"
+  ],
+  "requiredTests": [
+    "apps/mcp/tools/__tests__/tools.test.ts"
+  ],
+  "validationCommands": [
+    "npm run mcp:test"
+  ]
+}

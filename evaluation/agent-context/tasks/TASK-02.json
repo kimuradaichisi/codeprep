@@ -1,0 +1,17 @@
+{
+  "id": "TASK-02",
+  "category": "B",
+  "categoryName": "behavior change",
+  "task": "Add token margin reserve support to ContextBudget calculations so that caller can reserve system tokens from budget.",
+  "primaryEntryPoint": "src/features/repository-context/domain/ContextBudget.ts",
+  "requiredRelatedFiles": [
+    "src/features/repository-context/domain/ContextBudget.ts",
+    "src/features/token/domain/TokenBudget.ts"
+  ],
+  "requiredTests": [
+    "src/features/repository-context/domain/__tests__/ContextBudget.test.ts"
+  ],
+  "validationCommands": [
+    "npm run test:file -- src/features/repository-context/domain/__tests__/ContextBudget.test.ts"
+  ]
+}

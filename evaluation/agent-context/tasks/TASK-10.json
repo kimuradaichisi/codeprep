@@ -1,0 +1,16 @@
+{
+  "id": "TASK-10",
+  "category": "A",
+  "categoryName": "small bug fix",
+  "task": "Ensure relative path validation in MCP security module normalizes backslashes to forward slashes for cross-platform consistency.",
+  "primaryEntryPoint": "apps/mcp/security.ts",
+  "requiredRelatedFiles": [
+    "apps/mcp/security.ts"
+  ],
+  "requiredTests": [
+    "apps/mcp/security.test.ts"
+  ],
+  "validationCommands": [
+    "npm run test:file -- apps/mcp/security.test.ts"
+  ]
+}

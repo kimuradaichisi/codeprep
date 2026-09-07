@@ -1,0 +1,17 @@
+{
+  "id": "TASK-04",
+  "category": "D",
+  "categoryName": "repository/config change",
+  "task": "Verify the build script for the standalone MCP bundle in package.json and ensure output directory dist-mcp is created properly.",
+  "primaryEntryPoint": "package.json",
+  "requiredRelatedFiles": [
+    "package.json",
+    "apps/mcp/index.ts"
+  ],
+  "requiredTests": [
+    "apps/mcp/tools/__tests__/tools.test.ts"
+  ],
+  "validationCommands": [
+    "npm run mcp:test"
+  ]
+}

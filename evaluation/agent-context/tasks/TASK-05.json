@@ -1,0 +1,18 @@
+{
+  "id": "TASK-05",
+  "category": "E",
+  "categoryName": "cross-layer change",
+  "task": "Expose file category kind classification (code/test/doc/config) in candidate transformer and MCP types.",
+  "primaryEntryPoint": "apps/mcp/tools/candidateTransformer.ts",
+  "requiredRelatedFiles": [
+    "apps/mcp/tools/candidateTransformer.ts",
+    "apps/mcp/types.ts",
+    "src/features/repository-context/domain/FileKindClassifier.ts"
+  ],
+  "requiredTests": [
+    "apps/mcp/tools/__tests__/tools.test.ts"
+  ],
+  "validationCommands": [
+    "npm run mcp:test"
+  ]
+}

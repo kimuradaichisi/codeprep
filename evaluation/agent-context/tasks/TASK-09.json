@@ -1,0 +1,17 @@
+{
+  "id": "TASK-09",
+  "category": "B",
+  "categoryName": "behavior change",
+  "task": "Update workspace status checker to report degraded semantic status with ping latency in diagnostics when embedding provider is slow or offline.",
+  "primaryEntryPoint": "apps/mcp/statusChecker.ts",
+  "requiredRelatedFiles": [
+    "apps/mcp/statusChecker.ts",
+    "apps/mcp/types.ts"
+  ],
+  "requiredTests": [
+    "apps/mcp/tools/__tests__/tools.test.ts"
+  ],
+  "validationCommands": [
+    "npm run mcp:test"
+  ]
+}
