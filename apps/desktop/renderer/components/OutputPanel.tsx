@@ -25,60 +25,46 @@ export const OutputPanel = (props: OutputPanelProps) => (
 );
 
 const OutputConfig = (props: OutputPanelProps) => (
-  <>
-    <label className="field-label" htmlFor="output-format">Format</label>
-    <select id="output-format" value={props.format} onChange={event => props.setFormat(event.target.value as OutputPanelProps['format'])}>
-      <option value="markdown">Markdown</option>
-      <option value="xml">XML</option>
-      <option value="json">JSON</option>
-    </select>
-    <label className="field-label" htmlFor="pack-mode">Pack mode</label>
-    <select id="pack-mode" value={props.packMode} onChange={event => props.setPackMode(event.target.value as OutputPanelProps['packMode'])}>
-      <option value="full">Full content</option>
-      <option value="skeleton">Skeleton</option>
-      <option value="directoryTree">Directory tree</option>
-      <option value="diffOnly">Diff only</option>
-      <option value="matchedSnippets">Matched snippets</option>
-    </select>
-    <label className="field-label" htmlFor="token-limit">Token limit</label>
-    <input id="token-limit" type="number" min="1" value={props.tokenLimit} onChange={event => props.setTokenLimit(Number(event.target.value))} />
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '18px 0 6px' }}>
-      <input
-        id="include-deps"
-        type="checkbox"
-        style={{ width: 'auto', margin: 0 }}
-        checked={props.includeDependencies}
-        onChange={event => props.setIncludeDependencies(event.target.checked)}
-      />
-      <label htmlFor="include-deps" style={{ color: '#9eafc8', fontSize: '12px', cursor: 'pointer' }}>
-        Include dependencies
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ flex: 1 }}>
+        <label className="field-label" htmlFor="output-format" style={{ margin: '2px 0 2px' }}>Format</label>
+        <select id="output-format" value={props.format} onChange={event => props.setFormat(event.target.value as OutputPanelProps['format'])}>
+          <option value="markdown">Markdown</option>
+          <option value="xml">XML</option>
+          <option value="json">JSON</option>
+        </select>
+      </div>
+      <div style={{ flex: 1 }}>
+        <label className="field-label" htmlFor="pack-mode" style={{ margin: '2px 0 2px' }}>Pack mode</label>
+        <select id="pack-mode" value={props.packMode} onChange={event => props.setPackMode(event.target.value as OutputPanelProps['packMode'])}>
+          <option value="full">Full content</option>
+          <option value="skeleton">Skeleton</option>
+          <option value="directoryTree">Directory tree</option>
+          <option value="diffOnly">Diff only</option>
+          <option value="matchedSnippets">Matched snippets</option>
+        </select>
+      </div>
+      <div style={{ width: '90px' }}>
+        <label className="field-label" htmlFor="token-limit" style={{ margin: '2px 0 2px' }}>Tokens</label>
+        <input id="token-limit" type="number" min="1" value={props.tokenLimit} onChange={event => props.setTokenLimit(Number(event.target.value))} />
+      </div>
+    </div>
+    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '11px', color: '#9eafc8' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+        <input id="include-deps" type="checkbox" checked={props.includeDependencies} onChange={event => props.setIncludeDependencies(event.target.checked)} />
+        Deps
+      </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+        <input id="include-related-docs" type="checkbox" checked={props.includeRelatedDocs} onChange={event => props.setIncludeRelatedDocs(event.target.checked)} />
+        Docs
+      </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+        <input id="auto-optimize" type="checkbox" checked={props.autoOptimize} onChange={event => props.setAutoOptimize(event.target.checked)} />
+        Auto-optimize
       </label>
     </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0 6px' }}>
-      <input
-        id="include-related-docs"
-        type="checkbox"
-        style={{ width: 'auto', margin: 0 }}
-        checked={props.includeRelatedDocs}
-        onChange={event => props.setIncludeRelatedDocs(event.target.checked)}
-      />
-      <label htmlFor="include-related-docs" style={{ color: '#9eafc8', fontSize: '12px', cursor: 'pointer' }}>
-        Include related docs (DocGraph)
-      </label>
-    </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0 6px' }}>
-      <input
-        id="auto-optimize"
-        type="checkbox"
-        style={{ width: 'auto', margin: 0 }}
-        checked={props.autoOptimize}
-        onChange={event => props.setAutoOptimize(event.target.checked)}
-      />
-      <label htmlFor="auto-optimize" style={{ color: '#9eafc8', fontSize: '12px', cursor: 'pointer' }}>
-        Auto-optimize by budget
-      </label>
-    </div>
-  </>
+  </div>
 );
 
 const OutputActions = ({

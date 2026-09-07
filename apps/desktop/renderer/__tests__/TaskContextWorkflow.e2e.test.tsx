@@ -125,7 +125,7 @@ describe('Desktop Context Workflow E2E', () => {
     expect(container.textContent).toContain('Suggested: FAST');
 
     // 7 & 8: Select candidate
-    const checkbox = container.querySelector('input[type="checkbox"]');
+    const checkbox = container.querySelector('.candidate-card-list input[type="checkbox"]');
     act(() => { (checkbox as HTMLInputElement)?.click(); });
 
     // 9: Build Context Pack

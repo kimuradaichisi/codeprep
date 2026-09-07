@@ -10,6 +10,9 @@ const createWindow = (): BrowserWindow => {
     height: 800,
     webPreferences: { contextIsolation: true, nodeIntegration: false, preload: join(__dirname, 'preload.js') },
   });
+  if (process.env.NODE_ENV === 'development' || process.argv.includes('--debug')) {
+    window.webContents.openDevTools();
+  }
   void window.loadFile(join(__dirname, 'renderer', 'index.html'));
   return window;
 };

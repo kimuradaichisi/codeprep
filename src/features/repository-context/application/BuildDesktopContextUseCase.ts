@@ -12,6 +12,7 @@ import type {
   BuildDesktopContextResult,
   DesktopContextFile,
 } from './ports';
+import { buildSearchPromptHeader } from './DesktopSearchPromptHeader';
 
 export class BuildDesktopContextUseCase {
   constructor(private readonly ports: BuildDesktopContextPorts) {}
@@ -49,10 +50,13 @@ const getPreview = (
   files: readonly DesktopContextFile[],
   formatter: BuildDesktopContextPorts['formatter'],
   mode: PackMode
-): string =>
-  mode === 'directoryTree'
-    ? input.candidates.map(c => c.relativePath).join('\n')
-    : formatter.format({ format: input.format, files });
+): string => {
+  if (mode === 'directoryTree') return input.candidates.map(c => c.relativePath).join('\n');
+  const base = formatter.format({ format: input.format, files });
+  if (input.format !== 'markdown') return base;
+  const header = buildSearchPromptHeader(input.query, input.presetKind, files.length);
+  return header ? header + base : base;
+};
 
 const projectIds = (candidates: readonly CandidateFile[]): readonly string[] =>
   [...new Set(candidates.map(candidate => candidate.projectId))];

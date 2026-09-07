@@ -5,12 +5,16 @@ type Props = Readonly<{
   indexStatus?: string;
   knowledgeStatus?: string;
   semanticStatus?: string;
+  onRefreshIndex?(): void;
+  onOpenSettings?(): void;
 }>;
 
 export const WorkspaceStatusHeader: React.FC<Props> = ({
   indexStatus = 'ready',
   knowledgeStatus = 'ready',
   semanticStatus = 'ready',
+  onRefreshIndex,
+  onOpenSettings,
 }) => {
   const isSemanticDegraded = semanticStatus.toLowerCase() === 'degraded' || semanticStatus.toLowerCase() === 'not_built';
 
@@ -25,10 +29,21 @@ export const WorkspaceStatusHeader: React.FC<Props> = ({
         fontSize: '11px',
       }}
     >
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <StatusPill label="Repository Index" status={indexStatus} />
-        <StatusPill label="Knowledge Index" status={knowledgeStatus} />
-        <StatusPill label="Semantic Index" status={semanticStatus} isDegraded={isSemanticDegraded} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <StatusPill label="Repository Index" status={indexStatus} />
+          <StatusPill label="Knowledge Index" status={knowledgeStatus} />
+          <StatusPill label="Semantic Index" status={semanticStatus} isDegraded={isSemanticDegraded} />
+        </div>
+        {onRefreshIndex && (
+          <button
+            onClick={onRefreshIndex}
+            style={{ fontSize: '10px', padding: '2px 8px', height: '22px' }}
+            title="Sync all indexes including semantic embeddings"
+          >
+            Sync / Refresh
+          </button>
+        )}
       </div>
       {isSemanticDegraded && (
         <div
@@ -37,9 +52,20 @@ export const WorkspaceStatusHeader: React.FC<Props> = ({
             color: '#fb923c',
             fontSize: '10px',
             lineHeight: 1.3,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          Semantic search is unavailable. Deterministic discovery and structural evidence remain available.
+          <span>Semantic search is unavailable. Deterministic discovery and structural evidence remain available.</span>
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              style={{ fontSize: '10px', padding: '1px 6px', background: 'transparent', border: '1px solid #fb923c', color: '#fb923c', cursor: 'pointer', borderRadius: '3px' }}
+            >
+              ⚙ Setup Ollama
+            </button>
+          )}
         </div>
       )}
     </div>

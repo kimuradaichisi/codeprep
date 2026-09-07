@@ -3,7 +3,7 @@
   "displayName": "CodePrep",
   "description": "VSCode-first context preparation and safe patch preview workflow for browser-based AI coding.",
   "icon": "assets/icon.png",
-  "version": "0.8.9",
+  "version": "0.8.10",
   "publisher": "codeprep",
   "repository": {
     "type": "git",

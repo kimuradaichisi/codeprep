@@ -51,22 +51,34 @@ export const ContextPackViewer: React.FC<Props> = ({
           <span>Files: {manifest.entries.length}</span>
           <span>Estimated Tokens: {manifest.budget.estimatedTokens.toLocaleString()}</span>
         </div>
-        <div style={{ display: 'flex', gap: '4px' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button
+              type="button"
+              className={activeTab === 'manifest' ? 'primary-button' : ''}
+              style={{ fontSize: '10px', padding: '2px 6px' }}
+              onClick={() => onTabChange('manifest')}
+            >
+              Manifest
+            </button>
+            <button
+              type="button"
+              className={activeTab === 'context' ? 'primary-button' : ''}
+              style={{ fontSize: '10px', padding: '2px 6px' }}
+              onClick={() => onTabChange('context')}
+            >
+              Context
+            </button>
+          </div>
           <button
             type="button"
-            className={activeTab === 'manifest' ? 'primary-button' : ''}
-            style={{ fontSize: '10px', padding: '2px 6px' }}
-            onClick={() => onTabChange('manifest')}
+            className="primary-button"
+            disabled={isBusy}
+            onClick={onCopy}
+            style={{ fontSize: '10px', padding: '2px 8px' }}
+            title="Copy pack content to clipboard"
           >
-            Manifest
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'context' ? 'primary-button' : ''}
-            style={{ fontSize: '10px', padding: '2px 6px' }}
-            onClick={() => onTabChange('context')}
-          >
-            Context
+            📋 Copy
           </button>
         </div>
       </div>
@@ -85,7 +97,8 @@ export const ContextPackViewer: React.FC<Props> = ({
         aria-label="Context Pack Preview"
         style={{
           margin: 0,
-          maxHeight: '160px',
+          minHeight: '180px',
+          maxHeight: '380px',
           overflowY: 'auto',
           fontSize: '11px',
           fontFamily: 'var(--vscode-editor-font-family, monospace)',

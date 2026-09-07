@@ -1,16 +1,8 @@
+// src/features/repository-context/application/ports.ts
 import type { CandidateFile } from '../domain/CandidateFile';
 import type { Project, ProjectId } from '../domain/Project';
-import type { SearchRecipe } from '../domain/SearchRecipe';
-import { DependencyScanner } from '../../engine/application/DependencyScanner';
-import type { PackMode } from '../domain/PackMode';
-import type { ContextBudget } from '../domain/ContextBudget';
 import type { SourceExcerpt } from '../domain/SourceExcerpt';
-import type {
-  RecommendationRecord,
-  RecommendationReason,
-  RecommendationSettings,
-  RecommendationSource,
-} from '../domain/Recommendation';
+import type { RecommendationReason } from '../domain/Recommendation';
 
 export type AnalysisWarningKind =
   | 'missingRg'
@@ -80,53 +72,8 @@ export type FileContentPort = Readonly<{
   read(project: Project, relativePath: string): Promise<string | undefined>;
 }>;
 
-export type AnalyzeProjectsPorts = Readonly<{
-  projects: ProjectRegistryPort;
-  ripgrep: RipgrepPort;
-  gitMetadata: GitMetadataPort;
-  fileContent: FileContentPort;
-  fileSize: FileSizePort;
-}>;
-
-export type ContextOutputFormat = 'markdown' | 'xml' | 'json';
-
-export type DesktopContextFile = Readonly<{
-  relativePath: string;
-  content: string;
-}>;
-
-export type ContextFormatterPort = Readonly<{
-  format(input: Readonly<{ format: ContextOutputFormat; files: readonly DesktopContextFile[] }>): string;
-}>;
-
-export type BuildDesktopContextInput = Readonly<{
-  candidates: readonly CandidateFile[];
-  format: ContextOutputFormat;
-  maxFileSizeKB: number;
-  packMode?: PackMode;
-  tokenLimit?: number;
-  includeDependencies?: boolean;
-  autoOptimize?: boolean;
-}>;
-
-export type ContextManifestEntry = Readonly<{
-  projectId: ProjectId;
-  relativePath: string;
-  included: boolean;
-  reasons: readonly string[];
-}>;
-
-export type BuildDesktopContextResult = Readonly<{
-  preview: string;
-  warnings: readonly AnalysisWarning[];
-  budget?: ContextBudget;
-  manifest?: readonly ContextManifestEntry[];
-}>;
-
-export type BuildDesktopContextPorts = Readonly<{
-  projects: ProjectRegistryPort;
-  fileContent: FileContentPort;
-  formatter: ContextFormatterPort;
+export type FileSizePort = Readonly<{
+  getSize(project: Project, relativePath: string): Promise<number>;
 }>;
 
 export type ProjectFilePort = Readonly<{
@@ -141,50 +88,13 @@ export type GitHistoryPort = Readonly<{
   getCommitPaths(project: Project, ref: string): Promise<Readonly<{ paths: readonly string[]; warning?: AnalysisWarning }>>;
 }>;
 
-export type DocGraphRelation = Readonly<{
-  path: string;
-  reason: string;
-  confidence: number;
-}>;
-
-export type DocGraphPort = Readonly<{
-  findRelated(project: Project, relativePath: string): Promise<readonly DocGraphRelation[]>;
-}>;
-
-export type RecommendFilesInput = Readonly<{
-  projectIds: readonly ProjectId[];
-  relativePaths: readonly string[];
-  settings: RecommendationSettings;
-}>;
-
-export type RecommendationSourcePort = Readonly<{
-  recommend(project: Project, relativePath: string): Promise<readonly RecommendationRecord[]>;
-}>;
-
-export type RecommendationSourcePorts = Readonly<
-  Partial<Record<RecommendationSource, RecommendationSourcePort>>
->;
-
-export type DiscoverFilesInput = Readonly<{
-  recipe: SearchRecipe;
-  projectIds: readonly ProjectId[];
-  recommendationSettings?: RecommendationSettings;
-}>;
-
-export type DiscoverFilesPorts = Readonly<{
+export type AnalyzeProjectsPorts = Readonly<{
   projects: ProjectRegistryPort;
   ripgrep: RipgrepPort;
   gitMetadata: GitMetadataPort;
-  files: ProjectFilePort;
-  clipboard: ClipboardPathPort;
-  gitHistory: GitHistoryPort;
-  fileSize: FileSizePort;
   fileContent: FileContentPort;
-  dependencyScanner: DependencyScanner;
-  docGraph: DocGraphPort;
-  recommendations?: RecommendationSourcePorts;
+  fileSize: FileSizePort;
 }>;
 
-export type FileSizePort = Readonly<{
-  getSize(project: Project, relativePath: string): Promise<number>;
-}>;
+export * from './buildContextPorts';
+export * from './discoverFilesPorts';

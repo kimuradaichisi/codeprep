@@ -26,7 +26,7 @@ export const handleBuildTaskContext = async (
   const project = await findProject(registry, request.projectId);
   const resolvedStrategy = await resolveTaskContextStrategy(registry, project, request.task, request.strategy);
   const result = await executeUseCase(project, registry, request, resolvedStrategy);
-  const content = await loadPackContent(project, result.manifest.entries);
+  const content = await loadPackContent(project, result.manifest.entries, request.task, resolvedStrategy);
   return formatResult(result, content, resolvedStrategy);
 };
 

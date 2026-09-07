@@ -13,20 +13,68 @@ export const TaskContextInputArea: React.FC<SearchPanelProps> = (props) => {
   const selectedPaths = parseEntryPoints(props.entryPointInput);
   const canBuild = !isBusy && props.taskInput.trim().length > 0 && selectedPaths.length > 0;
 
+  const [isTaskCollapsed, setIsTaskCollapsed] = React.useState(false);
+
   return (
     <div className="task-context-workflow" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <WorkspaceStatusHeader
         indexStatus={props.indexStatus}
         knowledgeStatus={props.knowledgeStatus}
         semanticStatus={props.semanticStatus}
+        onRefreshIndex={props.refreshIndex ? () => void props.refreshIndex?.() : undefined}
+        onOpenSettings={props.openSettings}
       />
 
-      <TaskInputArea
-        taskInput={props.taskInput}
-        isBusy={isBusy}
-        onTaskChange={props.setTaskInput}
-        onFindContext={() => void props.discoverEntryPoints?.()}
-      />
+      {isTaskCollapsed ? (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Expand task input"
+          onClick={() => setIsTaskCollapsed(false)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsTaskCollapsed(false); }}
+          style={{ padding: '6px 8px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '3px', cursor: 'pointer', fontSize: '11px', color: '#38bdf8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            📝 <strong>Task:</strong> {props.taskInput || '(No task entered)'}
+          </span>
+          <span style={{ fontSize: '10px', color: '#9eafc8', flexShrink: 0, marginLeft: '8px' }}>[展開 ▼]</span>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {props.taskInput.trim() && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setIsTaskCollapsed(true)}
+                style={{ fontSize: '10px', padding: '1px 6px', background: 'transparent', border: 'none', color: '#60a5fa', cursor: 'pointer' }}
+              >
+                折りたたむ ▲
+              </button>
+            </div>
+          )}
+          <TaskInputArea
+            taskInput={props.taskInput}
+            isBusy={isBusy}
+            onTaskChange={props.setTaskInput}
+            onFindContext={() => void props.discoverEntryPoints?.()}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#b7c6da', cursor: 'pointer', userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                aria-label="Respect gitignore"
+                checked={props.useGitignore}
+                onChange={(e) => props.setUseGitignore(e.target.checked)}
+                style={{ width: 'auto', margin: 0 }}
+              />
+              <span>Respect <code>.gitignore</code> (exclude build & sensitive files)</span>
+            </label>
+            <span style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground, #888)' }}>
+              💡 Task Context creates prompt packs for LLM
+            </span>
+          </div>
+        </div>
+      )}
 
       <ConfidenceSummary
         confidence={props.confidence}

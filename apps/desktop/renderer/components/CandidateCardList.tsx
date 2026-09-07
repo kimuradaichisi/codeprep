@@ -100,7 +100,7 @@ const CandidateCardItem: React.FC<{
       checked={isSelected}
       onChange={onToggle}
       onClick={(e) => e.stopPropagation()}
-      style={{ marginTop: '2px' }}
+      style={{ marginTop: '2px', width: '14px', height: '14px', flexShrink: 0, cursor: 'pointer' }}
     />
     <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

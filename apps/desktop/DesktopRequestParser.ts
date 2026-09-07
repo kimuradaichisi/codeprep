@@ -111,7 +111,9 @@ export const toBuildInput = (value: unknown): BuildDesktopContextInput => {
     packMode: packMode(value.packMode),
     tokenLimit: tokenLimit(value.tokenLimit),
     includeDependencies: value.includeDependencies === true,
-    autoOptimize: value.autoOptimize === true
+    autoOptimize: value.autoOptimize === true,
+    query: typeof value.query === 'string' ? value.query : undefined,
+    presetKind: typeof value.presetKind === 'string' ? value.presetKind : undefined,
   };
 };
 

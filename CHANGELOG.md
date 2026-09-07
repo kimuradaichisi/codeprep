@@ -2,7 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.10] - 2026-09-08
+- feat(desktop): ノートPC向け画面レイアウト最適化 & アコーディオン・ペイン開閉機能
+  - 条件入力部のアコーディオン化:
+    - Search files: `SearchFormSection.tsx` を新設し、プリセット・レシピ・gitignore・検索入力エリアをワンクリックで 1 行サマリーへ折りたたみ可能にし、CandidateTree の表示高さを大幅確保
+    - Task Context: `TaskContextInputArea.tsx` に折りたたみトグルを新設し、タスク目標バッジを表示しながら候補一覧（EntryPointCandidateList）の表示領域を最大化
+  - 右ペイン（OutputPanel）開閉トグル（Hide / Show Output）:
+    - `AppShell.tsx` ヘッダーに「▶ Hide Output / ◀ Show Output」ボタンを追加。右ペインを非表示にすることで中央ワークスペースを全幅表示でき、横幅の狭いノートPCでも快適な一覧性を実現
+  - ContextPackViewer / OutputPanel のコピー操作性向上:
+    - パックプレビュー領域の縦サイズをノートPC向けに拡張（min: 180px, max: 380px）
+    - 上部タブ横に常時アクセス可能な「📋 Copy」ボタンを配備し、画面をスクロールせずワンクリックでコピー可能化
+  - 既存全機能の完全保持:
+    - 左サイドバー（Projects Drawer）、Search files（Preset / Recipe / Query / .gitignore / CandidateTree トークン予算バー・ソート・⭐お気に入り・個別 Pack mode・ファイルビューアモーダル）、Task Context、OutputPanel の全機能を 100% 維持
+- feat(desktop): LLM 向け構造化プロンプトヘッダー（LLM Instructions / Context Metadata）の自動付与
+  - `TaskContextPromptHeader.ts`: Task Context 出力時に、タスク目標（Goal）、適用戦略（Strategy）、主要エントリーポイント（スコア付き）、関連依存ファイル一覧、LLM 用指示文を自動前置
+  - `DesktopSearchPromptHeader.ts`: 通常検索（Search files）出力時に、検索クエリ、プリセット、同梱ファイル一覧、LLM 用指示文を自動前置
+- fix(desktop): Candidate Entry Points のチェックボックス幅肥大化不具合を修正
+  - `desktop-base.css` の汎用 `input { width: 100% }` がチェックボックスに波及していた問題を修正し、`width: auto; min-width: 14px; flex-shrink: 0;` を明示
+  - `CandidateCardList.tsx` および `EntryPointCandidateList.tsx` のチェックボックスに `width/height: 14px`, `flexShrink: 0` を適用し、ファイルパスやスコア情報が潰れずに完全に表示されるよう改善
+- feat(desktop): LLM / Context 設定モーダル（SettingsModal）を新設
+  - ヘッダー右上および左ツールバー最下部に「⚙ Settings」ボタンを配備
+  - Embedding 設定（Ollama エンドポイント、モデル名、Embedding 次元数）および Ollama 接続テスト機能を実装（`llmSettings.ts`, `EmbeddingSection.tsx`）
+  - Context パックのデフォルトトークン上限設定を集約
+- feat(desktop): Task Context 画面に「Respect .gitignore」チェックボックスを追加
+  - デフォルト有効（checked）として配置し、ビルド成果物や機密ファイル（`.env`, `*.key` 等）の自動除外状態を明示
+- feat(desktop): アプリ内ヘルプ＆ガイドモーダル（HelpModal）を新設
+  - ヘッダー右上および左ツールバーに「❓ Help」ボタンを配備
+  - Task Context の 4 ステップ利用手順、ローカル LLM（Ollama）を使った Semantic 検索の始め方、.gitignore と機密保護の仕組みをタブ形式で分かりやすく解説
+  - セマンティック設定から Settings モーダルへのダイレクト遷移をサポート
+- feat(desktop): WorkspaceStatusHeader の操作性を向上
+  - Semantic Index 未構築時に「⚙ Setup Ollama」ボタンを表示し、ワンクリックで設定可能化
+  - 全インデックスを一括更新する「Sync / Refresh」ボタンをステータスバーにも配置
+- docs: [`docs/guides/task-context-guide.md`](file:///D:/git/codeprep/docs/guides/task-context-guide.md) を作成
+  - Task Context の概念、LLM プロンプト生成の流れ、ローカル Semantic 検索のセットアップ手順を網羅した公式ガイドを配備
 
 ## [0.8.9] - 2026-09-07
 - feat: `.gitignore` 除外機能の全面対応およびデフォルト除外・機密ファイル保護の強化

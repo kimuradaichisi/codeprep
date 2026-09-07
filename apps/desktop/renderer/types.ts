@@ -17,6 +17,8 @@ export type AppProps = Readonly<{ api?: DesktopApi }>;
 export type AppShellProps = Readonly<{
   projects: ReactNode; search: ReactNode; tree: ReactNode; output: ReactNode;
   isProjectsOpen: boolean; toggleProjects(): void;
+  openSettings?(): void;
+  openHelp?(): void;
 }>;
 
 export type WorkspaceNotice = string | undefined;
@@ -73,6 +75,8 @@ export type SearchPanelProps = Readonly<{
   setActivePreviewTab?(tab: 'manifest' | 'context'): void;
   copyPackContent?(): Promise<void>;
   resetTaskContext?(): void;
+  refreshIndex?(): Promise<void>;
+  openSettings?(): void;
 }>;
 
 export type CandidateTreeProps = Readonly<{

@@ -18,6 +18,8 @@ export const generate = async (api: DesktopApi, set: SetWorkspace, state: Worksp
       tokenLimit: state.tokenLimit,
       includeDependencies: state.includeDependencies,
       autoOptimize: state.autoOptimize,
+      query: state.query,
+      presetKind: state.presetKind,
     });
     update(set, { preview: result.preview, outputNotice: result.warning });
   } catch (error) {

@@ -109,6 +109,7 @@ const buildWorkspace = (
     analyze: actions.analyze, analyzeTask: actions.analyzeTask, discoverEntryPoints: actions.discoverEntryPoints,
     toggleEntryPointCandidate: actions.toggleEntryPointCandidate, clearSearch: actions.clearSearch,
     copyPackContent: () => copyPackContent(api, set, state), resetTaskContext: () => resetTaskContext(set),
+    refreshIndex: ctx.indexInfo.refreshIndex,
   };
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, includeRelatedDocs: state.includeRelatedDocs, autoOptimize: state.autoOptimize, activeTab: state.activeTab, isSaving: state.isSaving, isGenerating: state.isGenerating, setFormat: (f: import('../../../../src/features/repository-context/application/ports').ContextOutputFormat) => update(set, { format: f }), setPackMode: (m: PackMode) => update(set, { packMode: m }), setTokenLimit: (l: number) => update(set, { tokenLimit: l }), setIncludeDependencies: (d: boolean) => update(set, { includeDependencies: d }), setIncludeRelatedDocs, setAutoOptimize: (o: boolean) => update(set, { autoOptimize: o }), setActiveTab: (t: OutputTab) => update(set, { activeTab: t }), ...actions.output };
 

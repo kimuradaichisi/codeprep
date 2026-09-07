@@ -41,7 +41,7 @@ button:disabled {
     cursor: not-allowed;
 }
 
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 select {
     width: 100%;
     color: inherit;
@@ -49,6 +49,17 @@ select {
     border: 1px solid #354255;
     border-radius: 6px;
     padding: 5px 8px;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    width: auto;
+    min-width: 14px;
+    height: 14px;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 input:focus-visible,
