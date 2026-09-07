@@ -43,6 +43,7 @@
   "codeprepSelectedFiles": "CodePrep: {0} 件のファイルを選択しました。",
   "optionsUpdated": "CodePrep: 設定を更新しました。",
   "config.exclude.description": "ツリービューおよび選択から除外するグロブパターン。",
+  "config.useGitignore.description": ".gitignore で指定されたファイルやディレクトリを自動的に除外します。",
   "config.customPrompts.description": "カスタムプロンプトをキーと値のペア（ラベル：プロンプト内容）で定義します。",
   "config.visibleButtons.description": "ビューのタイトルバーに表示するボタンを選択します（最大6個推奨）。",
   "config.outputFormat.description": "生成されるコンテンツの出力形式を選択します。",

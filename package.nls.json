@@ -1,6 +1,7 @@
 {
   "config.openAfterGitAction.description": "Open the generated content in a new editor tab after a Git action (like generating a commit prompt).",
   "config.exclude.description": "Glob patterns to exclude from the tree view and selection.",
+  "config.useGitignore.description": "Automatically exclude files and directories specified in .gitignore.",
   "aiVerifyPromptCopied": "AI verify prompt copied.",
   "command.applyAllPatches": "Apply All Patches from Clipboard",
   "config.customPrompts.description": "Define your custom prompts here as key-value pairs (Label: Prompt Content).",

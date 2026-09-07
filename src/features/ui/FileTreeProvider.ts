@@ -15,7 +15,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     private watcher: vscode.FileSystemWatcher | undefined;
     private workspaceRoot: string | undefined;
     private expandAll = false;
-    private config: TreeConfig = { excludePatterns: [], excludedDirNames: new Set(), hideExcludedDirectories: false };
+    private config: TreeConfig = { excludePatterns: [], excludedDirNames: new Set(), hideExcludedDirectories: false, useGitignore: true };
     private readonly iconService = new FileIconService();
     private readonly configLoader: TreeConfigLoader;
     private refreshTimer: NodeJS.Timeout | undefined;

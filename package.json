@@ -276,6 +276,11 @@
           ],
           "description": "%config.exclude.description%"
         },
+        "codeprep.useGitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.useGitignore.description%"
+        },
         "codeprep.hideExcludedDirectories": {
           "type": "boolean",
           "default": false,

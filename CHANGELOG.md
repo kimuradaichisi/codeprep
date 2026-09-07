@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- feat: `.gitignore` 除外機能の全面対応およびデフォルト除外・機密ファイル保護の強化
+  - `GitignoreMatcher`（`src/shared/filesystem/GitignoreMatcher.ts`）の実装: ディレクトリ指定（`venv/`）、ルート相対指定（`/build`）、ワイルドカード（`*`, `**`）、否定パターン（`!data/.gitkeep`）の解釈と、ディレクトリ走査時の早期プルーニング（不要サブディレクトリの再帰走査スキップ）を実現
+  - 共通デフォルト除外（`DEFAULT_EXCLUDED_PATTERNS`, `DEFAULT_EXCLUDED_DIR_NAMES`）を策定: `.git`, `node_modules`, `dist`, `out`, `.next`, `build`, `.venv`, `venv`, `coverage`, `.mypy_cache`, `.pytest_cache`, `.ruff_cache`, `.turbo`, `.nuxt`, `.cache` などを自動除外
+  - 機密ファイル自動除外（`SENSITIVE_EXCLUDED_PATTERNS`）の実装: `.env`, `.env.local`, `.env.production`, `.env.development`, `.env.test`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `id_rsa`, `id_ed25519` を built-in で自動除外。一方で `.env.example`, `.env.sample`, `.env.template` は確実に保護・維持
+  - Ignore 変更時の Index lifecycle 検証: `GitignoreIndexLifecycle.test.ts` を配備。`.gitignore` に対象ファイルが追加された場合に Repository / Structured / Semantic の 3 つすべての Index から即時除去され（特に Semantic Index に過去の embedding が残らない）、除外解除時には 3 つすべてに完全復帰することを実証
+  - Parity Test（`ScannerExclusionParity.test.ts`）の追加: 同一 fixture 上で `ProjectFileTree`, `ProjectScannerClient`, `VSCodeWorkspaceRepository` の included/excluded 結果が完全一致することを検証
+  - `ProjectFileTree.ts`（MCP ファイル一覧）および `ProjectScannerClient.ts`（リポジトリインデックス生成）を刷新: 探索・インデックス作成時に `.gitignore` を自動読み込みし、LLM コンテキストへのライブラリコード混入を防止
+  - VSCode 拡張機能の設定項目 `codeprep.useGitignore`（デフォルト: `true`）を追加: `TreeConfigLoader.ts` および `VSCodeWorkspaceRepository.ts` を通じてツリービューおよびファイル検索除外（`DEFAULT_GLOBS` 含む）へシームレスに反映
+  - 全品質ゲート（`npm run check`, `npm run desktop:test`, `npm run mcp:test`）を 100% 通過（BLOCKER = 0）
 - feat: Phase 6E Project KAIROS × Sonnet Repository Exploration Compression — 外部大規模リポジトリ（`project-kairos`）において、強力なモデル（Claude Code Sonnet）を対象に CodePrep MCP の探索圧縮効果を A/B 実証
 - feat: Search/Grep コールを 34 → 10（**-70.6% 削減**）、総ツールコールを 90 → 39（**-56.7% 削減**）、手動ドキュメント閲覧を 8 → 3（**-62.5% 削減**）、キャッシュトークンを 6.33M → 2.56M（**-59.5% 削減**）、総コストを $2.27 → $1.04（**-54.3% 削減・半減以下**）達成
 - feat: 探索を大幅削減しながらも、Gold Facts 品質スコアが 55 点 → **70 点（+27.3% 向上）** へ伸長し、難関である Signal Check の形骸化トラップ（Gold 6）やレガシースクリプト（Gold 9）の特定を実証

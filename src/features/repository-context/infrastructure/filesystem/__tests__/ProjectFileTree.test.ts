@@ -28,4 +28,37 @@ describe('ProjectFileTree', () => {
     const files = await listProjectFiles(tempDir, true);
     expect(files).toEqual(['.gitignore', 'b.js']);
   });
+
+  it('automatically excludes .venv and venv directories by default', async () => {
+    await mkdir(join(tempDir, '.venv/lib'), { recursive: true });
+    await writeFile(join(tempDir, '.venv/lib/site.py'), 'print(1)');
+    const files = await listProjectFiles(tempDir, true);
+    expect(files).not.toContain('.venv/lib/site.py');
+  });
+
+  it('handles directory patterns and negations from .gitignore', async () => {
+    await mkdir(join(tempDir, 'data'), { recursive: true });
+    await writeFile(join(tempDir, 'data/raw.csv'), 'raw');
+    await writeFile(join(tempDir, 'data/.gitkeep'), '');
+    await writeFile(join(tempDir, '.gitignore'), 'data/*\n!data/.gitkeep\n');
+
+    const files = await listProjectFiles(tempDir, true);
+    expect(files).toContain('data/.gitkeep');
+    expect(files).not.toContain('data/raw.csv');
+  });
+
+  it('excludes sensitive files by default but retains .env.example', async () => {
+    await writeFile(join(tempDir, '.env'), 'SECRET=123');
+    await writeFile(join(tempDir, '.env.local'), 'SECRET=123');
+    await writeFile(join(tempDir, '.env.example'), 'SECRET=your_key');
+    await writeFile(join(tempDir, 'server.key'), 'KEY_DATA');
+    await writeFile(join(tempDir, 'id_rsa'), 'RSA_DATA');
+
+    const files = await listProjectFiles(tempDir, true);
+    expect(files).toContain('.env.example');
+    expect(files).not.toContain('.env');
+    expect(files).not.toContain('.env.local');
+    expect(files).not.toContain('server.key');
+    expect(files).not.toContain('id_rsa');
+  });
 });

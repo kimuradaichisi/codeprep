@@ -5,11 +5,13 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { ExcludePattern } from './domain/ExcludePattern';
 import { IFileSystem } from '../../shared/domain/IFileSystem';
+import { DEFAULT_EXCLUDED_DIR_NAMES } from '../../shared/filesystem/defaultExcludes';
 
 export interface TreeConfig {
   excludePatterns: ExcludePattern[];
   excludedDirNames: Set<string>;
   hideExcludedDirectories: boolean;
+  useGitignore: boolean;
 }
 
 export class TreeConfigLoader {
@@ -19,29 +21,32 @@ export class TreeConfigLoader {
   ) {}
 
   load(workspaceRoot: string | undefined): TreeConfig {
-    const config = vscode.workspace.getConfiguration('codeprep');
-    const excludes: string[] = config.get('exclude', []);
-    const regexPatterns: string[] = config.get('excludePatterns', []);
-    const hideExcludedDirectories = config.get<boolean>('hideExcludedDirectories', false) ?? false;
-    const excludePatterns = [
+    const cfg = vscode.workspace.getConfiguration('codeprep');
+    const excludes: string[] = cfg.get('exclude', []);
+    const hideExcludedDirectories = cfg.get<boolean>('hideExcludedDirectories', false) ?? false;
+    const useGitignore = cfg.get<boolean>('useGitignore', true) ?? true;
+    const excludePatterns = this.buildPatterns(excludes, cfg.get('excludePatterns', []));
+    const excludedDirNames = this.buildDirNames(excludes);
+
+    if ((hideExcludedDirectories || useGitignore) && workspaceRoot) {
+      void this.augmentWithGitignore(workspaceRoot, excludePatterns, excludedDirNames);
+    }
+    return { excludePatterns, excludedDirNames, hideExcludedDirectories, useGitignore };
+  }
+
+  private buildPatterns(excludes: string[], regexPatterns: string[]): ExcludePattern[] {
+    return [
       ...excludes.map(p => ExcludePattern.create(p)),
       ...regexPatterns.map(p => ExcludePattern.createFromRegex(p))
     ];
-    const excludedDirNames = this.buildDirNames(excludes);
-
-    if (hideExcludedDirectories && workspaceRoot) {
-      void this.augmentWithGitignore(workspaceRoot, excludePatterns, excludedDirNames);
-    }
-    return { excludePatterns, excludedDirNames, hideExcludedDirectories };
   }
 
   private buildDirNames(excludes: string[]): Set<string> {
-    return new Set(
-      excludes
-        .map(p => p.replace(/^\*\*\//, '').replace(/\/\*\*\/$/, '').replace(/[{}]/g, ''))
-        .map(p => p.split('/').filter(Boolean)[0])
-        .filter(Boolean)
-    );
+    const fromConfig = excludes
+      .map(p => p.replace(/^\*\*\//, '').replace(/\/\*\*\/$/, '').replace(/[{}]/g, ''))
+      .map(p => p.split('/').filter(Boolean)[0])
+      .filter(Boolean);
+    return new Set([...DEFAULT_EXCLUDED_DIR_NAMES, ...fromConfig]);
   }
 
   private async augmentWithGitignore(

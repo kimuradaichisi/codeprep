@@ -1,6 +1,12 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { getRelativePath, normalizePath } from '../../../utils/path';
+import { DEFAULT_EXCLUDED_DIR_NAMES, SENSITIVE_EXCLUDED_PATTERNS } from '../../../shared/filesystem/defaultExcludes';
+
+const DEFAULT_GLOBS = [
+  ...DEFAULT_EXCLUDED_DIR_NAMES.map((n) => `**/${n}/**`),
+  ...SENSITIVE_EXCLUDED_PATTERNS.map((p) => `**/${p}`),
+];
 
 /**
  * VSCode ワークスペースのファイル検索を担当するクラス
@@ -14,29 +20,24 @@ export class VSCodeWorkspaceRepository {
   private async getExcludePattern(): Promise<string | undefined> {
     const config = vscode.workspace.getConfiguration('codeprep');
     const userExcludes = config.get<string[]>('exclude', []) || [];
+    const useGitignore = config.get<boolean>('useGitignore', true) ?? true;
 
-    const gitignoreUri = vscode.Uri.file(path.join(this.workspaceRoot, '.gitignore'));
-    let gitignorePatterns: string[] = [];
-    try {
-      const buf = await vscode.workspace.fs.readFile(gitignoreUri);
-      const txt = new TextDecoder().decode(buf);
-      gitignorePatterns = txt
-        .split(/\r?\n/)
-        .map(l => l.trim())
-        .filter(l => l.length > 0 && !l.startsWith('#') && !l.startsWith('!'))
-        .map(p => {
-          if (p.endsWith('/')) return `**/${p}**`;
-          if (p.includes('*') || p.includes('?')) return `**/${p}`;
-          return `**/${p}/**`;
-        });
-    } catch {
-      // .gitignore が無ければ無視
-    }
-
-    const all = Array.from(new Set<string>([...userExcludes, ...gitignorePatterns].filter(Boolean)));
+    const gitignorePatterns = useGitignore ? await this.readGitignorePatterns() : [];
+    const all = Array.from(new Set<string>([...DEFAULT_GLOBS, ...userExcludes, ...gitignorePatterns].filter(Boolean)));
     if (all.length === 0) return undefined;
     if (all.length === 1) return all[0];
     return `{${all.join(',')}}`;
+  }
+
+  private async readGitignorePatterns(): Promise<string[]> {
+    try {
+      const gitignoreUri = vscode.Uri.file(path.join(this.workspaceRoot, '.gitignore'));
+      const buf = await vscode.workspace.fs.readFile(gitignoreUri);
+      const txt = new TextDecoder().decode(buf);
+      return parseGitignoreToGlobs(txt);
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -55,4 +56,16 @@ export class VSCodeWorkspaceRepository {
     const files = await vscode.workspace.findFiles('**/*', exclude);
     return files.map((f) => getRelativePath(this.workspaceRoot, f.fsPath));
   }
+}
+
+function parseGitignoreToGlobs(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l.length > 0 && !l.startsWith('#') && !l.startsWith('!'))
+    .map(p => {
+      if (p.endsWith('/')) return `**/${p}**`;
+      if (p.includes('*') || p.includes('?')) return `**/${p}`;
+      return `**/${p}/**`;
+    });
 }
