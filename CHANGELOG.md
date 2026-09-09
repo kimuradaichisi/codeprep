@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.11] - 2026-09-09
 - feat(desktop): Candidate Entry Points のアコーディオン開閉UI対応
   - `CandidateCardList.tsx`: 候補一覧ヘッダー（`CANDIDATE ENTRY POINTS (N)`）をクリックで開閉（折りたたみ/展開）可能にし、画面下部の「Build Context Pack」やプレビュー領域の視認性を劇的に向上
   - 単一カード描画責務を `CandidateCardItem.tsx` に分離し、150行/15行コード規約を厳格に遵守
@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
   - `ConfidenceSummary.tsx`: 英語の内部診断ログ（`Candidate scores are close`, `Structural support is weak` 等）を直感的な日本語タイトルと具体的なアクションガイダンス（例: 「単語一致のみで構造的根拠が弱いため、下の候補一覧から関係するファイルを直接チェックしてください」）に改善
   - Pack Strategy の選択肢説明も分かりやすい日本語（最小構成 / 標準構成 / 広め構成）に整理
   - 内部判定理由の内訳は `<details>` による折りたたみで確認可能にし、不要な画面占有を防止
+- docs: Claude Code との連携公式ガイド（`docs/guides/claude-code-integration.md`）を追加
+  - MCP（Model Context Protocol）による完全自動連携およびクリップボード連携の2通りの設定手順を網羅
 
 ## [0.8.10] - 2026-09-08
 - feat(desktop): ノートPC向け画面レイアウト最適化 & アコーディオン・ペイン開閉機能
