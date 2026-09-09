@@ -45,9 +45,9 @@ describe('TaskContextComponents', () => {
       const confHigh = { level: 'high' as const, score: 92, reasons: ['largeScoreGap' as const, 'strongExactMatch' as const] };
       const onStrategy = vi.fn();
       const c1 = render(<ConfidenceSummary confidence={confHigh} suggestedStrategy="fast" selectedStrategy="auto" onStrategyChange={onStrategy} />);
-      expect(c1.textContent).toContain('Confidence: high (92 pts)');
-      expect(c1.textContent).toContain('Suggested: FAST');
-      expect(c1.textContent).toContain('Clear separation from other candidates');
+      expect(c1.textContent).toContain('確信度: 高');
+      expect(c1.textContent).toContain('92 pts');
+      expect(c1.textContent).toContain('最有力候補と他の候補に明確なスコア差あり');
 
       const select = c1.querySelector('select');
       act(() => { if (select) { select.value = 'expanded'; select.dispatchEvent(new Event('change', { bubbles: true })); } });
@@ -55,8 +55,9 @@ describe('TaskContextComponents', () => {
 
       const confLow = { level: 'low' as const, score: 42, reasons: ['weakStructuralSupport' as const] };
       const c2 = render(<ConfidenceSummary confidence={confLow} suggestedStrategy="expanded" selectedStrategy="auto" />);
-      expect(c2.textContent).toContain('Confidence: low (42 pts)');
-      expect(c2.textContent).toContain('Review the candidate evidence before building context. Suggested: EXPANDED');
+      expect(c2.textContent).toContain('確信度: 低');
+      expect(c2.textContent).toContain('42 pts');
+      expect(c2.textContent).toContain('下の候補一覧から関係するファイルを直接チェックしてください');
     });
   });
 
@@ -83,6 +84,12 @@ describe('TaskContextComponents', () => {
       expect(container.textContent).toContain('Support 65');
       expect(container.textContent).toContain('Structural Evidence (1)');
       expect(container.textContent).toContain('relatedTest: tests/OrderService.test.ts');
+      expect(container.textContent).toContain('折りたたむ ▲');
+
+      const accordionHeader = container.querySelector('[role="button"]');
+      act(() => { accordionHeader?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+      expect(container.textContent).toContain('展開 ▼');
+      expect(container.querySelector('[data-testid="candidate-scroll-container"]')).toBeNull();
     });
   });
 
