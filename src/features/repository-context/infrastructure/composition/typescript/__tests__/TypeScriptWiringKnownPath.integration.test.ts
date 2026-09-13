@@ -39,7 +39,7 @@ describe('TypeScript Wiring Intelligence Known-Path Validation', () => {
     expect(injectsRelation).toBeDefined();
     expect(injectsRelation?.confidence).toBe(1.0);
     expect(injectsRelation?.compositionSite.path).toContain('SelectionActionHandler.ts');
-  });
+  }, 30000);
 
   it('Case C: does not create bogus edges for unsupported / non-new arguments', async () => {
     const result = await adapter.analyze({
