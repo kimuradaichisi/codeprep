@@ -1,12 +1,14 @@
 import * as fs from 'node:fs';
 import type {
   RepositoryIR,
+  RepositoryNode,
   RepositorySnapshot,
 } from '../../../domain/ir';
 import type {
   KnowledgeStoreMetadata,
   NeighborQueryFilter,
   NeighborQueryResult,
+  NodeSearchFilter,
   RepositoryKnowledgeStore,
   StoreStatistics,
 } from '../../../application/ir/persistence';
@@ -15,6 +17,7 @@ import { createSqliteConnection, resolveDatabasePath } from './SqliteConnectionF
 import { SqliteRepositoryIRWriter } from './SqliteRepositoryIRWriter';
 import { SqliteRepositoryIRReader } from './SqliteRepositoryIRReader';
 import { SqliteNeighborQuery } from './SqliteNeighborQuery';
+import { mapNodeRow, type NodeRow } from './RepositoryIRRowMapper';
 
 export interface SqliteStoreOptions {
   readonly workspaceRoot: string;
@@ -59,6 +62,31 @@ export class SqliteRepositoryKnowledgeStore implements RepositoryKnowledgeStore 
 
   public async queryNeighbors(filter: NeighborQueryFilter): Promise<NeighborQueryResult> {
     return this.neighborQuery.execute(filter);
+  }
+
+  public async findNodes(filter: NodeSearchFilter): Promise<readonly RepositoryNode[]> {
+    const conditions: string[] = ['snapshot_id = ?'];
+    const params: unknown[] = [filter.snapshotId];
+
+    if (filter.path) {
+      conditions.push('relative_path = ?');
+      params.push(filter.path.replace(/\\/g, '/'));
+    }
+    if (filter.kinds && filter.kinds.length > 0) {
+      const placeholders = filter.kinds.map(() => '?').join(', ');
+      conditions.push(`kind IN (${placeholders})`);
+      params.push(...filter.kinds);
+    }
+    if (filter.query) {
+      conditions.push('(name LIKE ? OR relative_path LIKE ?)');
+      const term = `%${filter.query}%`;
+      params.push(term, term);
+    }
+
+    const limit = Math.min(filter.limit ?? 50, 200);
+    const sql = `SELECT * FROM repository_nodes WHERE ${conditions.join(' AND ')} ORDER BY CASE WHEN kind = 'symbol' THEN 1 WHEN kind = 'file' THEN 2 ELSE 3 END, length(name) ASC LIMIT ${limit};`;
+    const rows = this.driver.prepare(sql).all(...params) as NodeRow[];
+    return Object.freeze(rows.map(mapNodeRow));
   }
 
   public async getMetadata(): Promise<KnowledgeStoreMetadata | null> {

@@ -117,7 +117,7 @@ export function executeFinalVerify(phase = 'current', format: 'text' | 'json' = 
 if (require.main === module) {
   const args = process.argv.slice(2);
   const mode = args.find((_, i) => args[i - 1] === '--mode') ?? 'fast';
-  const phase = args.find((_, i) => args[i - 1] === '--phase') ?? 'current';
+  const phase = args.find((_, i) => args[i - 1] === '--phase') ?? args.find(a => !a.startsWith('--') && a !== 'final' && a !== 'fast') ?? 'current';
   const format = args.includes('--format') && args[args.indexOf('--format') + 1] === 'json' ? 'json' : 'text';
   const res = mode === 'final' ? executeFinalVerify(phase, format) : executeFastVerify(format);
   if (res.status === 'FAIL') process.exit(1);

@@ -8,12 +8,14 @@ export interface InvalidationResult {
   readonly removedEdgeCount: number;
 }
 
-const ANALYZER_BY_PRODUCER: Record<string, string> = {
-  'typescript-language': 'typescript-compiler',
-  'typescript-wiring': 'typescript-manual-composition',
-  'dependency-scanner': 'dependency-scanner',
-  'git-cochange': 'git-cochange',
-  'docgraph': 'docgraph',
+const ANALYZERS_BY_PRODUCER: Record<string, readonly string[]> = {
+  'repository-index': [],
+  'structured-knowledge': ['typescript-symbol-extractor', 'markdown-section-extractor'],
+  'typescript-language': ['typescript-compiler'],
+  'typescript-wiring': ['typescript-manual-composition'],
+  'dependency-scanner': ['dependency-scanner'],
+  'git-cochange': ['git-cochange'],
+  'docgraph': ['docgraph'],
 };
 
 function collectInvalidatedPaths(plan: RefreshPlan): Set<string> {
@@ -34,9 +36,9 @@ function isEdgeFromInvalidatedProducer(
 ): boolean {
   const sourcePath = nodePathMap.get(edge.sourceNodeId);
   for (const pp of producerPlans) {
-    const analyzer = ANALYZER_BY_PRODUCER[pp.producer];
-    if (!analyzer) continue;
-    const hasEvidence = edge.evidences.some(ev => ev.analyzer === analyzer);
+    const analyzers = ANALYZERS_BY_PRODUCER[pp.producer];
+    if (!analyzers || analyzers.length === 0) continue;
+    const hasEvidence = edge.evidences.some(ev => analyzers.includes(ev.analyzer));
     if (!hasEvidence) continue;
 
     if (pp.strategy === 'PRODUCER_FULL') return true;

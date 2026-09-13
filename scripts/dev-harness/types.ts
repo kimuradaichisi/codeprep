@@ -86,6 +86,7 @@ export interface RepositoryEvalResult {
   readonly knownPaths: KnownPathsEvalResult;
   readonly performance: Readonly<{
     sessionSetupMs?: number;
+    structuredKnowledgeMs?: number;
     languageAnalysisMs?: number;
     wiringAnalysisMs?: number;
     dependencyMs?: number;
@@ -111,6 +112,57 @@ export interface RepositoryEvalResult {
     gitCoChangeEdgeExplosion?: {
       note: string;
     };
+  }>;
+  readonly taskQuery?: Readonly<{
+    tasks: number;
+    hitAt5: number;
+    hitAt10: number;
+    recallAt10: number;
+    mrr: number;
+    avgDurationMs: number;
+    baseline?: Readonly<{
+      hitAt5: number;
+      hitAt10: number;
+      recallAt10: number;
+      mrr: number;
+    }>;
+    graphQuery?: Readonly<{
+      hitAt5: number;
+      hitAt10: number;
+      recallAt10: number;
+      mrr: number;
+    }>;
+    delta?: Readonly<{
+      hitAt5: number;
+      hitAt10: number;
+      recallAt10: number;
+      mrr: number;
+    }>;
+    efficiency?: Readonly<{
+      avgExpandedNodes: number;
+      avgTraversedEdges: number;
+      avgSqliteQueryCount: number;
+      avgHops: number;
+      avgResultNodes: number;
+      avgDurationMs: number;
+    }>;
+    relationNoise?: Readonly<Record<string, {
+      available: number;
+      considered: number;
+      accepted: number;
+      pruned: number;
+    }>>;
+    goldenTask?: Readonly<{
+      task: string;
+      topNodes: readonly {
+        rank: number;
+        path: string;
+        name: string;
+        kind: string;
+        score: number;
+        reasons: readonly string[];
+      }[];
+    }>;
   }>;
 }
 

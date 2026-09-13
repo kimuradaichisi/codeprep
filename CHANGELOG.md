@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+- feat(ir): Phase 7G Task Query / Relevant Subgraph 実装および仕様策定（`docs/architecture/task-relevant-subgraph-query.md`）
+  - Task 文字列から Seed Discovery $\to$ Repository Knowledge Graph $\to$ Relation-aware Bounded Traversal $\to$ Relevant Subgraph $\to$ Ranked Relevant Nodes を生成する `QueryRelevantSubgraphUseCase` を実装
+  - Task 文字列から明示パス・ファイル名・シンボル識別子・見出しキーワードを段階的に特定する `SeedResolver`、および SQLite Knowledge Store からの高速ノード検索 `findNodes(filter)` を実装
+  - リレーションごとの優先度・最大 Fanout・確信度閾値・距離減衰を制御し、無制限探索を防ぐ `RelationTraversalPolicy` を策定（AST/型/DI 等の決定的関係を最優先、10,000 件以上の `CO_CHANGED_WITH` エッジを厳格プルーニング）
+  - 優先度キューを用いた Bounded Best-First Traversal により、循環参照や巨大グラフ爆発を防ぎつつ関連サブグラフを抽出する `GraphTraversalEngine` を実装
+  - エビデンス品質重み付け（AST/型 1.0、Wiring 0.95、Import 0.85、Git 0.50、Cross-ref 0.60、Fuzzy 0.30）と理由集約（Explanation: `seed:*`, `edge:*`）を伴う `EvidenceQualityScorer` および `RelevantNodeRanker` を実装
+  - Gate 0 BLOCKER であった `StructuredKnowledge`（シンボル 2,278 件、ドキュメント節点 836 件）の未連携を `ProductionRepositoryKnowledgeBuilder` に統合・解消し、全 3,778 Nodes / 18,846 Edges（全 9 Relation Type: `contains`, `depends-on`, `references`, `implements`, `extends`, `binds_to`, `injects`, `co-changed-with`, `doc-relation`）の Production IR 基盤を確立
+  - `IRInvalidator` をマルチアナライザー（`structured-knowledge` 内のシンボル・節点）対応に拡張し、全 9 種別で **Incremental Refresh == Full Rebuild（Oracle Match PASS、Dangling Edge = 0）** の完全一致を維持
+  - 7 カテゴリの代表シナリオを網羅した Golden Set（`evaluation/task-query-golden-set.json`）および自動評価器 `TaskQueryEvaluator` を新設し、Dev-Harness（`repositoryEval.ts`, `reportBuilder.ts`）に統合
+  - 実リポジトリ全域評価において、**Hit@5: 85.7%**、**Hit@10: 85.7%**、**Recall@10: 73.8%**、**MRR: 0.762**、**平均探索レイテンシ: 137ms** の高精度・高速探索を実証
+  - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を全モジュールで完全遵守
+
 ## [0.8.12] - 2026-09-13
 - feat(ir): Phase 7F Git Revision Based Incremental Refresh / Producer-aware Invalidation 実装および仕様策定（`docs/architecture/repository-knowledge-refresh.md`）
   - Git revision の差分（ChangeSet）を起点に、Producer ごとの波及範囲（`FILE_LOCAL`, `DEPENDENT_CLOSURE`, `PRODUCER_FULL`, `FULL_REBUILD`）を安全に決定論的解決し、Full Rebuild を回避して正確な新しい Stable Snapshot を生成する `RefreshRepositoryKnowledgeUseCase` を実装

@@ -5,6 +5,7 @@ import { SqliteRepositoryKnowledgeStore } from '../../src/features/repository-co
 import { RepositoryRefreshEvaluator } from '../../src/features/repository-context/infrastructure/evaluation/RepositoryRefreshEvaluator';
 import { ProductionRepositoryKnowledgeBuilder } from '../../src/features/repository-context/infrastructure/evaluation/ProductionRepositoryKnowledgeBuilder';
 import { evaluateKnownPaths, loadKnownPathCases } from './knownPathsEval';
+import { TaskQueryEvaluator } from '../../src/features/repository-context/infrastructure/evaluation/TaskQueryEvaluator';
 import { outputHarnessResult } from './commandRunner';
 import type { RepositoryEvalResult } from './types';
 
@@ -47,6 +48,7 @@ async function persistAndMeasureStore(workspaceRoot: string, dbPath: string) {
     stats,
     timings: {
       sessionSetupMs: 0,
+      structuredKnowledgeMs: buildResult.durationMs.structuredKnowledgeMs,
       languageAnalysisMs: buildResult.durationMs.languageMs,
       wiringAnalysisMs: buildResult.durationMs.wiringMs,
       dependencyMs: buildResult.durationMs.dependencyMs,
@@ -73,6 +75,15 @@ function printEvalSummary(res: RepositoryEvalResult, phase: string): void {
   if (res.refresh) {
     console.log(`- Incremental Refresh: ${res.refresh.status}, Inc=${res.refresh.incrementalMs}ms vs Full=${res.refresh.fullRebuildMs}ms, Oracle=${res.refresh.oracleMatch ? 'PASS' : 'FAIL'}`);
   }
+  if (res.taskQuery) {
+    console.log(`- Task Query: ${res.taskQuery.tasks} tasks, Hit@5=${res.taskQuery.hitAt5}, Recall@10=${res.taskQuery.recallAt10}, MRR=${res.taskQuery.mrr}, AvgMs=${res.taskQuery.avgDurationMs}ms`);
+    if (res.taskQuery.baseline && res.taskQuery.delta) {
+      console.log(`  * Baseline vs Graph: Hit@5(${res.taskQuery.baseline.hitAt5} -> ${res.taskQuery.graphQuery?.hitAt5}, d=${res.taskQuery.delta.hitAt5}), Recall@10(${res.taskQuery.baseline.recallAt10} -> ${res.taskQuery.graphQuery?.recallAt10}, d=${res.taskQuery.delta.recallAt10}), MRR(${res.taskQuery.baseline.mrr} -> ${res.taskQuery.graphQuery?.mrr}, d=${res.taskQuery.delta.mrr})`);
+    }
+    if (res.taskQuery.efficiency) {
+      console.log(`  * Efficiency: TraversedEdges=${res.taskQuery.efficiency.avgTraversedEdges}, SqliteQueries=${res.taskQuery.efficiency.avgSqliteQueryCount}, Hops=${res.taskQuery.efficiency.avgHops}, ResultNodes=${res.taskQuery.efficiency.avgResultNodes}`);
+    }
+  }
 }
 
 function countRelations(edges: readonly { relationType: string }[]): Record<string, number> {
@@ -91,6 +102,7 @@ export async function executeRepositoryEval(phase = 'current', format: 'text' | 
   const knownPaths = await evaluateKnownPaths(knownCases, dbPath);
   const relations = countRelations(ir.edges);
   const refresh = await new RepositoryRefreshEvaluator().evaluate(workspaceRoot, dbPath);
+  const taskQuerySummary = await new TaskQueryEvaluator().evaluate(workspaceRoot, dbPath, snapshot.snapshotId, relations);
 
   const memEnd = process.memoryUsage().heapUsed;
   const result: RepositoryEvalResult = {
@@ -102,6 +114,20 @@ export async function executeRepositoryEval(phase = 'current', format: 'text' | 
     relations: Object.freeze(relations),
     knownPaths,
     refresh,
+    taskQuery: {
+      tasks: taskQuerySummary.tasks,
+      hitAt5: taskQuerySummary.hitAt5,
+      hitAt10: taskQuerySummary.hitAt10,
+      recallAt10: taskQuerySummary.recallAt10,
+      mrr: taskQuerySummary.mrr,
+      avgDurationMs: taskQuerySummary.avgDurationMs,
+      baseline: taskQuerySummary.baseline,
+      graphQuery: taskQuerySummary.graphQuery,
+      delta: taskQuerySummary.delta,
+      efficiency: taskQuerySummary.efficiency,
+      relationNoise: taskQuerySummary.relationNoise,
+      goldenTask: taskQuerySummary.goldenTask,
+    },
     performance: { ...timings, dbSizeBytes: stats.dbSizeBytes, heapDeltaMb: Number(((memEnd - memStart) / 1024 / 1024).toFixed(2)) },
   };
 

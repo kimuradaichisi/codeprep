@@ -1,12 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
-import {
-  createRepositorySnapshot,
-  type RepositoryEdge,
-  type RepositoryIR,
-  type RepositoryNode,
-  type RepositorySnapshot,
+import type {
+  RepositoryIR,
+  RepositorySnapshot,
 } from '../../domain/ir';
 import { BuildRepositoryIRUseCase } from '../../application/ir/BuildRepositoryIRUseCase';
 import type { DocGraphRelationPair, FileDependencyPair, GitCoChangeRelation } from '../../application/ir/mappers';
@@ -15,11 +12,20 @@ import { createAnalysisSession, type TypeScriptAnalysisSession } from '../langua
 import { TypeScriptLanguageAdapter } from '../language/typescript/TypeScriptLanguageAdapter';
 import { TypeScriptWiringAdapter } from '../composition/typescript/TypeScriptWiringAdapter';
 
+import { MarkdownSectionExtractor } from '../markdown/MarkdownSectionExtractor';
+import { TypeScriptSymbolExtractor } from '../code/TypeScriptSymbolExtractor';
+import { NodeFsKnowledgeFileReader } from '../filesystem/NodeFsKnowledgeFileReader';
+import { KnowledgeExtractionService } from '../../application/KnowledgeExtractionService';
+import type { StructuredKnowledgeEntry, StructuredKnowledgeIndex } from '../../domain/StructuredKnowledgeIndex';
+import { CURRENT_KNOWLEDGE_SCHEMA_VERSION, sortKnowledgeEntries } from '../../domain/StructuredKnowledgeIndex';
+import { calculateKnowledgeMetrics } from '../../domain/StructuredKnowledgeMetrics';
+
 export interface ProductionExtractResult {
   readonly ir: RepositoryIR;
   readonly session: TypeScriptAnalysisSession;
   readonly fileEntries: readonly { relativePath: string; kind: 'code' | 'document'; size: number; contentHash: string; projectId: string }[];
   readonly durationMs: {
+    structuredKnowledgeMs: number;
     languageMs: number;
     wiringMs: number;
     dependencyMs: number;
@@ -135,9 +141,40 @@ export function extractDocRelations(workspaceRoot: string, allFileSet: Set<strin
   return docGraphRelations;
 }
 
-async function extractProducersData(workspaceRoot: string, session: TypeScriptAnalysisSession, fileEntries: readonly { relativePath: string; kind: 'code' | 'document' }[]) {
-  const allFileSet = new Set(fileEntries.map(e => e.relativePath));
-  const codeFileSet = new Set(fileEntries.filter(e => e.kind === 'code').map(e => e.relativePath));
+export async function extractStructuredKnowledge(
+  workspaceRoot: string,
+  fileEntries: readonly { relativePath: string }[],
+  targetPaths?: Set<string>,
+): Promise<StructuredKnowledgeIndex> {
+  const mdExtractor = new MarkdownSectionExtractor();
+  const tsExtractor = new TypeScriptSymbolExtractor();
+  const fileReader = new NodeFsKnowledgeFileReader(() => workspaceRoot);
+  const service = new KnowledgeExtractionService(mdExtractor, tsExtractor, fileReader);
+
+  const entries: StructuredKnowledgeEntry[] = [];
+  for (const file of fileEntries) {
+    if (targetPaths && !targetPaths.has(file.relativePath)) continue;
+    const extracted = await service.extractForFile('codeprep', file.relativePath);
+    for (const item of extracted) entries.push(item);
+  }
+
+  const sorted = sortKnowledgeEntries(entries);
+  const metrics = calculateKnowledgeMetrics(sorted);
+  return Object.freeze({
+    metadata: {
+      projectId: 'codeprep',
+      indexedAt: new Date().toISOString(),
+      schemaVersion: CURRENT_KNOWLEDGE_SCHEMA_VERSION,
+      ...metrics,
+    },
+    entries: Object.freeze(sorted),
+  });
+}
+
+async function extractCodeAnalysis(workspaceRoot: string, session: TypeScriptAnalysisSession, fileEntries: readonly { relativePath: string; kind: 'code' | 'document' }[]) {
+  const tSk = Date.now();
+  const structuredKnowledge = await extractStructuredKnowledge(workspaceRoot, fileEntries);
+  const structuredKnowledgeMs = Date.now() - tSk;
 
   const tLang = Date.now();
   const langResult = await new TypeScriptLanguageAdapter(session).analyze({ workspaceRoot });
@@ -146,6 +183,13 @@ async function extractProducersData(workspaceRoot: string, session: TypeScriptAn
   const tWire = Date.now();
   const wiringResult = await new TypeScriptWiringAdapter(session).analyze({ workspaceRoot });
   const wiringMs = Date.now() - tWire;
+
+  return { structuredKnowledge, langResult, wiringResult, structuredKnowledgeMs, languageMs, wiringMs };
+}
+
+async function extractContextRelations(workspaceRoot: string, fileEntries: readonly { relativePath: string; kind: 'code' | 'document' }[]) {
+  const allFileSet = new Set(fileEntries.map(e => e.relativePath));
+  const codeFileSet = new Set(fileEntries.filter(e => e.kind === 'code').map(e => e.relativePath));
 
   const tDep = Date.now();
   const dependencies = await extractDependencies(workspaceRoot, fileEntries);
@@ -159,7 +203,21 @@ async function extractProducersData(workspaceRoot: string, session: TypeScriptAn
   const docGraphRelations = extractDocRelations(workspaceRoot, allFileSet);
   const docGraphMs = Date.now() - tDoc;
 
-  return { langResult, wiringResult, dependencies, gitCoChanges, docGraphRelations, durations: { languageMs, wiringMs, dependencyMs, gitCoChangeMs, docGraphMs } };
+  return { dependencies, gitCoChanges, docGraphRelations, dependencyMs, gitCoChangeMs, docGraphMs };
+}
+
+async function extractProducersData(workspaceRoot: string, session: TypeScriptAnalysisSession, fileEntries: readonly { relativePath: string; kind: 'code' | 'document' }[]) {
+  const code = await extractCodeAnalysis(workspaceRoot, session, fileEntries);
+  const rel = await extractContextRelations(workspaceRoot, fileEntries);
+
+  return {
+    structuredKnowledge: code.structuredKnowledge, langResult: code.langResult, wiringResult: code.wiringResult,
+    dependencies: rel.dependencies, gitCoChanges: rel.gitCoChanges, docGraphRelations: rel.docGraphRelations,
+    durations: {
+      structuredKnowledgeMs: code.structuredKnowledgeMs, languageMs: code.languageMs, wiringMs: code.wiringMs,
+      dependencyMs: rel.dependencyMs, gitCoChangeMs: rel.gitCoChangeMs, docGraphMs: rel.docGraphMs,
+    },
+  };
 }
 
 export class ProductionRepositoryKnowledgeBuilder {
@@ -176,6 +234,7 @@ export class ProductionRepositoryKnowledgeBuilder {
         metadata: { workspaceId: 'codeprep', schemaVersion: 1, createdAt: '', updatedAt: '' },
         entries: fileEntries,
       },
+      structuredKnowledgeIndex: data.structuredKnowledge,
       languageRelations: data.langResult.relations,
       wiringRelations: data.wiringResult.relations,
       dependencies: data.dependencies,

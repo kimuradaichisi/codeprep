@@ -22,6 +22,14 @@ export interface NeighborQueryResult {
   readonly targetNodes: readonly RepositoryNode[];
 }
 
+export interface NodeSearchFilter {
+  readonly snapshotId: string;
+  readonly query?: string;
+  readonly path?: string;
+  readonly kinds?: readonly string[];
+  readonly limit?: number;
+}
+
 export interface StoreStatistics {
   readonly snapshotCount: number;
   readonly nodeCount: number;

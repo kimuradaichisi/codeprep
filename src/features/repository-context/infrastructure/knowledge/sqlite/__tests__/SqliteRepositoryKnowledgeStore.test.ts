@@ -172,4 +172,21 @@ describe('SqliteRepositoryKnowledgeStore', () => {
 
     await store.close();
   });
+
+  it('finds nodes by path, kind, or query term', async () => {
+    const store = new SqliteRepositoryKnowledgeStore({ workspaceRoot: '/workspace/test', dbPath: ':memory:' });
+    await store.save(createTestIR('snap-search'));
+
+    const byPath = await store.findNodes({ snapshotId: 'snap-search', path: 'src/port.ts' });
+    expect(byPath.length).toBeGreaterThan(0);
+    expect(byPath[0].path).toBe('src/port.ts');
+
+    const byQuery = await store.findNodes({ snapshotId: 'snap-search', query: 'port' });
+    expect(byQuery.length).toBeGreaterThan(0);
+
+    const byKind = await store.findNodes({ snapshotId: 'snap-search', kinds: ['file'] });
+    expect(byKind.every(n => n.kind === 'file')).toBe(true);
+
+    await store.close();
+  });
 });

@@ -16,6 +16,7 @@ export interface RepositoryKnowledgeStore {
   findByRevision(repositoryId: string, revision: string): Promise<RepositorySnapshot | null>;
   deleteSnapshot(snapshotId: string): Promise<void>;
   queryNeighbors(filter: NeighborQueryFilter): Promise<NeighborQueryResult>;
+  findNodes(filter: import('./PersistenceDto').NodeSearchFilter): Promise<readonly import('../../../domain/ir').RepositoryNode[]>;
   getMetadata(): Promise<KnowledgeStoreMetadata | null>;
   getStatistics(snapshotId?: string): Promise<StoreStatistics>;
   close(): Promise<void>;

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "1",
+  "tasks": [
+    {
+      "id": "TASK-01-IR-MAPPING",
+      "category": "1. 既知UseCase変更",
+      "task": "既存のRepositoryIndex・StructuredKnowledgeIndex・DependencyScanner・GitCoChange・DocGraph等の分析成果をRepository IRへ変換するMapperとIn-Memory Build UseCaseを実装する。",
+      "mustHave": [
+        "src/features/repository-context/application/ir/BuildRepositoryIRUseCase.ts",
+        "src/features/repository-context/application/ir/mappers/RepositoryIndexMapper.ts",
+        "src/features/repository-context/application/ir/mappers/StructuredKnowledgeMapper.ts",
+        "src/features/repository-context/application/ir/mappers/DerivedRelationMapper.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/domain/ir/RepositoryIR.ts",
+        "src/features/repository-context/domain/RepositoryIndex.ts",
+        "src/features/repository-context/domain/StructuredKnowledgeIndex.ts"
+      ],
+      "mustNotDominate": [
+        "docs/"
+      ]
+    },
+    {
+      "id": "TASK-02-PORT-ADAPTER",
+      "category": "2. Port / Adapter変更",
+      "task": "WorkspacePathResolver のインターフェース拡張および VSCodeWorkspacePathResolver 実装の改修",
+      "mustHave": [
+        "src/features/selection/application/WorkspacePathResolver.ts",
+        "src/features/selection/infrastructure/VSCodeWorkspacePathResolver.ts"
+      ],
+      "niceToHave": [
+        "src/features/selection/application/ClipboardSelectionUseCase.ts",
+        "src/features/selection/infrastructure/SelectionActionHandler.ts"
+      ],
+      "mustNotDominate": [
+        "docs/"
+      ]
+    },
+    {
+      "id": "TASK-03-COMPOSITION-DI",
+      "category": "3. DI / Composition変更",
+      "task": "TypeScriptWiringAdapter による手動コンポジションとコンストラクタインジェクション解析",
+      "mustHave": [
+        "src/features/repository-context/infrastructure/composition/typescript/TypeScriptWiringAdapter.ts",
+        "src/features/repository-context/infrastructure/composition/typescript/TypeScriptConstructionScanner.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/application/ir/composition/DependencyWiringPort.ts",
+        "src/features/repository-context/infrastructure/composition/typescript/TypeScriptConstructorResolver.ts"
+      ],
+      "mustNotDominate": [
+        "docs/"
+      ]
+    },
+    {
+      "id": "TASK-04-SQLITE-PERSISTENCE",
+      "category": "4. Persistence変更",
+      "task": "SqliteRepositoryKnowledgeStore による Repository IR の SQLite 永続化と近傍クエリ最適化",
+      "mustHave": [
+        "src/features/repository-context/infrastructure/knowledge/sqlite/SqliteRepositoryKnowledgeStore.ts",
+        "src/features/repository-context/infrastructure/knowledge/sqlite/SqliteNeighborQuery.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/application/ir/persistence/RepositoryKnowledgeStore.ts",
+        "src/features/repository-context/infrastructure/knowledge/sqlite/SqliteRepositoryIRWriter.ts"
+      ],
+      "mustNotDominate": [
+        "docs/"
+      ]
+    },
+    {
+      "id": "TASK-05-IR-DOMAIN",
+      "category": "5. Repository IR変更",
+      "task": "RepositoryNode と RepositoryEdge のドメインモデル拡張および不変条件バリデーション",
+      "mustHave": [
+        "src/features/repository-context/domain/ir/RepositoryNode.ts",
+        "src/features/repository-context/domain/ir/RepositoryEdge.ts",
+        "src/features/repository-context/domain/ir/RepositoryIRInvariants.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/domain/ir/RepositorySnapshot.ts",
+        "src/features/repository-context/domain/ir/RepositoryEvidence.ts"
+      ],
+      "mustNotDominate": [
+        "docs/"
+      ]
+    },
+    {
+      "id": "TASK-06-INCREMENTAL-REFRESH",
+      "category": "6. Incremental Refresh変更",
+      "task": "GitCliRevisionAdapter の差分解析と IRInvalidator による Producer-aware Invalidation",
+      "mustHave": [
+        "src/features/repository-context/application/ir/refresh/IRInvalidator.ts",
+        "src/features/repository-context/application/ir/refresh/RefreshPlanner.ts",
+        "src/features/repository-context/infrastructure/git/GitCliRevisionAdapter.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/application/ir/usecases/RefreshRepositoryKnowledgeUseCase.ts",
+        "src/features/repository-context/application/ir/refresh/ImpactResolver.ts"
+      ],
+      "mustNotDominate": [
+        "docs/"
+      ]
+    },
+    {
+      "id": "TASK-07-DOCS-CENTRIC",
+      "category": "7. Docs中心のTask",
+      "task": "repository knowledge refresh 仕様書および development harness 設計ドキュメントの更新",
+      "mustHave": [
+        "docs/architecture/repository-knowledge-refresh.md"
+      ],
+      "niceToHave": [
+        "docs/architecture/repository-knowledge-store.md",
+        "CHANGELOG.md"
+      ],
+      "mustNotDominate": [
+        "src/features/selection/"
+      ]
+    }
+  ]
+}

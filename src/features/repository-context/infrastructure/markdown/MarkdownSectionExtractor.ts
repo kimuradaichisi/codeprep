@@ -57,38 +57,43 @@ function finalizeSection(
   };
 }
 
+interface LineProcessingContext {
+  inFence: boolean;
+  current: RawSection | null;
+  readonly stack: HeadingInfo[];
+  readonly sections: MarkdownSectionEntry[];
+  readonly projectId: string;
+  readonly relativePath: string;
+}
+
+function processMarkdownLine(line: string, lineNum: number, ctx: LineProcessingContext): void {
+  if (isFenceLine(line)) ctx.inFence = !ctx.inFence;
+  const heading = !ctx.inFence ? parseHeadingLine(line) : null;
+  if (heading) {
+    if (ctx.current) {
+      const entry = finalizeSection(ctx.current, ctx.projectId, ctx.relativePath);
+      if (entry) ctx.sections.push(entry);
+    }
+    const path = updateHeadingStack(ctx.stack, heading);
+    ctx.current = { level: heading.level, text: heading.text, path, startLine: lineNum, lines: [line] };
+  } else if (ctx.current) {
+    ctx.current.lines.push(line);
+  } else if (line.trim() !== '') {
+    ctx.current = { level: 0, text: '', path: [], startLine: lineNum, lines: [line] };
+  }
+}
+
 export class MarkdownSectionExtractor implements MarkdownSectionExtractorPort {
   extract(projectId: string, relativePath: string, content: string): MarkdownSectionEntry[] {
     const lines = content.replace(/\r\n/g, '\n').split('\n');
-    const sections: MarkdownSectionEntry[] = [];
-    const stack: HeadingInfo[] = [];
-    let inFence = false;
-    let current: RawSection | null = null;
-
+    const ctx: LineProcessingContext = { inFence: false, current: null, stack: [], sections: [], projectId, relativePath };
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const lineNum = i + 1;
-      if (isFenceLine(line)) {
-        inFence = !inFence;
-      }
-      const heading = !inFence ? parseHeadingLine(line) : null;
-      if (heading) {
-        if (current) {
-          const entry = finalizeSection(current, projectId, relativePath);
-          if (entry) sections.push(entry);
-        }
-        const path = updateHeadingStack(stack, heading);
-        current = { level: heading.level, text: heading.text, path, startLine: lineNum, lines: [line] };
-      } else if (current) {
-        current.lines.push(line);
-      } else if (line.trim() !== '') {
-        current = { level: 0, text: '', path: [], startLine: lineNum, lines: [line] };
-      }
+      processMarkdownLine(lines[i], i + 1, ctx);
     }
-    if (current) {
-      const entry = finalizeSection(current, projectId, relativePath);
-      if (entry) sections.push(entry);
+    if (ctx.current) {
+      const entry = finalizeSection(ctx.current, projectId, relativePath);
+      if (entry) ctx.sections.push(entry);
     }
-    return sections;
+    return ctx.sections;
   }
 }

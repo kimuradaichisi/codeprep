@@ -12,6 +12,7 @@ function createMockStore(): RepositoryKnowledgeStore {
     findByRevision: vi.fn().mockResolvedValue(null),
     deleteSnapshot: vi.fn().mockResolvedValue(undefined),
     queryNeighbors: vi.fn().mockResolvedValue({ edges: [], targetNodes: [] }),
+    findNodes: vi.fn().mockResolvedValue([]),
     getMetadata: vi.fn().mockResolvedValue(null),
     getStatistics: vi.fn().mockResolvedValue({
       snapshotCount: 0,

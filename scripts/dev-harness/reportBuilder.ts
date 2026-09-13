@@ -50,6 +50,70 @@ function renderQualityGateSection(verify?: FinalVerifyResult): string {
   return lines.join('\n');
 }
 
+function renderTaskQueryComparison(tq: NonNullable<RepositoryEvalResult['taskQuery']>): string[] {
+  if (!tq.baseline || !tq.graphQuery || !tq.delta) return [];
+  const lines: string[] = ['#### Baseline Comparison (Candidate Only vs Graph Query):'];
+  lines.push('| Metric | Candidate Only | Graph Query | Delta |');
+  lines.push('| :--- | :---: | :---: | :---: |');
+  lines.push(`| **Hit@5** | ${(tq.baseline.hitAt5 * 100).toFixed(1)}% | ${(tq.graphQuery.hitAt5 * 100).toFixed(1)}% | ${tq.delta.hitAt5 >= 0 ? '+' : ''}${(tq.delta.hitAt5 * 100).toFixed(1)}% |`);
+  lines.push(`| **Hit@10** | ${(tq.baseline.hitAt10 * 100).toFixed(1)}% | ${(tq.graphQuery.hitAt10 * 100).toFixed(1)}% | ${tq.delta.hitAt10 >= 0 ? '+' : ''}${(tq.delta.hitAt10 * 100).toFixed(1)}% |`);
+  lines.push(`| **Recall@10** | ${(tq.baseline.recallAt10 * 100).toFixed(1)}% | ${(tq.graphQuery.recallAt10 * 100).toFixed(1)}% | ${tq.delta.recallAt10 >= 0 ? '+' : ''}${(tq.delta.recallAt10 * 100).toFixed(1)}% |`);
+  lines.push(`| **MRR** | ${tq.baseline.mrr.toFixed(3)} | ${tq.graphQuery.mrr.toFixed(3)} | ${tq.delta.mrr >= 0 ? '+' : ''}${tq.delta.mrr.toFixed(3)} |`);
+  return lines;
+}
+
+function renderQueryEfficiency(eff?: NonNullable<RepositoryEvalResult['taskQuery']>['efficiency']): string[] {
+  if (!eff) return [];
+  const lines: string[] = ['#### Query Efficiency (7-Task Average):'];
+  lines.push(`- **Avg Traversed Edges**: ${eff.avgTraversedEdges}`);
+  lines.push(`- **Avg SQLite Queries**: ${eff.avgSqliteQueryCount}`);
+  lines.push(`- **Avg Expanded Nodes**: ${eff.avgExpandedNodes}`);
+  lines.push(`- **Avg Hops Reached**: ${eff.avgHops}`);
+  lines.push(`- **Avg Result Nodes**: ${eff.avgResultNodes}`);
+  lines.push(`- **Avg Duration**: ${eff.avgDurationMs}ms`);
+  return lines;
+}
+
+function renderRelationNoise(noise?: NonNullable<RepositoryEvalResult['taskQuery']>['relationNoise']): string[] {
+  if (!noise) return [];
+  const lines: string[] = ['#### Relation Noise & Pruning (7-Task Aggregated):'];
+  lines.push('| Relation Type | Available in IR | Considered | Accepted | Pruned |');
+  lines.push('| :--- | :---: | :---: | :---: | :---: |');
+  for (const [rel, item] of Object.entries(noise)) {
+    lines.push(`| \`${rel}\` | ${item.available} | ${item.considered} | ${item.accepted} | ${item.pruned} |`);
+  }
+  return lines;
+}
+
+function renderGoldenTaskDetail(gt?: NonNullable<RepositoryEvalResult['taskQuery']>['goldenTask']): string[] {
+  if (!gt) return [];
+  const lines: string[] = ['#### Golden Task Detailed Verification:'];
+  lines.push(`- **Task**: \`${gt.task}\``);
+  lines.push('| Rank | Score | Kind | Path / Name | Evidence / Reason |');
+  lines.push('| :---: | :---: | :---: | :--- | :--- |');
+  for (const n of gt.topNodes) {
+    lines.push(`| ${n.rank} | ${n.score.toFixed(3)} | \`${n.kind}\` | \`${n.path}\` (${n.name}) | ${n.reasons.join('; ')} |`);
+  }
+  return lines;
+}
+
+function renderTaskQuerySection(tq?: RepositoryEvalResult['taskQuery']): string[] {
+  if (!tq) return [];
+  const lines: string[] = ['### Task Query & Relevant Subgraph Metrics:'];
+  lines.push(`- **Evaluated Tasks**: ${tq.tasks}`);
+  lines.push(`- **Overall Hit@5**: ${(tq.hitAt5 * 100).toFixed(1)}%`);
+  lines.push(`- **Overall Hit@10**: ${(tq.hitAt10 * 100).toFixed(1)}%`);
+  lines.push(`- **Overall Recall@10**: ${(tq.recallAt10 * 100).toFixed(1)}%`);
+  lines.push(`- **Overall MRR**: ${tq.mrr.toFixed(3)}`);
+  lines.push(`- **Avg Latency**: ${tq.avgDurationMs}ms\n`);
+
+  lines.push(...renderTaskQueryComparison(tq));
+  lines.push('\n' + renderQueryEfficiency(tq.efficiency).join('\n'));
+  lines.push('\n' + renderRelationNoise(tq.relationNoise).join('\n'));
+  lines.push('\n' + renderGoldenTaskDetail(tq.goldenTask).join('\n'));
+  return lines;
+}
+
 function renderRepoMetricsSection(evalRes?: RepositoryEvalResult): string {
   if (!evalRes) return '## 4. Repository Metrics & Known Paths (Machine Generated)\n- Not evaluated in this run\n';
   const lines = ['## 4. Repository Metrics & Known Paths (Machine Generated)'];
@@ -57,9 +121,7 @@ function renderRepoMetricsSection(evalRes?: RepositoryEvalResult): string {
   lines.push(`- **Files**: ${evalRes.files}, **Nodes**: ${evalRes.nodes}, **Edges**: ${evalRes.edges}, **Evidence**: ${evalRes.evidence}`);
   lines.push(`- **Known Paths Golden Set**: **${evalRes.knownPaths.passed} / ${evalRes.knownPaths.total} PASS**`);
   lines.push('### Relations Breakdown:');
-  for (const [k, v] of Object.entries(evalRes.relations)) {
-    lines.push(`  - \`${k}\`: ${v}`);
-  }
+  for (const [k, v] of Object.entries(evalRes.relations)) lines.push(`  - \`${k}\`: ${v}`);
   if (evalRes.refresh) {
     lines.push('### Incremental Refresh Performance & Oracle:');
     lines.push(`- **Refresh Status**: \`${evalRes.refresh.status}\``);
@@ -67,10 +129,9 @@ function renderRepoMetricsSection(evalRes?: RepositoryEvalResult): string {
     lines.push(`- **Incremental Time**: ${evalRes.refresh.incrementalMs}ms (vs Full Rebuild: ${evalRes.refresh.fullRebuildMs}ms)`);
     lines.push(`- **Reused / Regenerated**: Nodes(${evalRes.refresh.reusedNodes} reused, ${evalRes.refresh.regeneratedNodes} regen), Edges(${evalRes.refresh.reusedEdges} reused, ${evalRes.refresh.regeneratedEdges} regen)`);
     lines.push(`- **Oracle Match**: **${evalRes.refresh.oracleMatch ? 'PASS (100% Match)' : 'FAIL'}**`);
-    if (evalRes.refresh.gitCoChangeEdgeExplosion) {
-      lines.push(`- **Edge Explosion Note**: ${evalRes.refresh.gitCoChangeEdgeExplosion.note}`);
-    }
+    if (evalRes.refresh.gitCoChangeEdgeExplosion) lines.push(`- **Edge Explosion Note**: ${evalRes.refresh.gitCoChangeEdgeExplosion.note}`);
   }
+  lines.push(...renderTaskQuerySection(evalRes.taskQuery));
   return lines.join('\n');
 }
 

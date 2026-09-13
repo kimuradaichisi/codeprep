@@ -163,17 +163,18 @@ describe('ProductionIncrementalRefreshOracle', () => {
         const changedSet = new Set(plan.changeSet.allChangedPaths);
         const addedNodes = Array.from(fullTmp.nodes.values()).filter(n => changedSet.has(n.path));
 
-        const analyzerMap: Record<string, string> = {
-          'typescript-language': 'typescript-compiler',
-          'typescript-wiring': 'typescript-manual-composition',
-          'dependency-scanner': 'dependency-scanner',
-          'git-cochange': 'git-cochange',
-          'docgraph': 'docgraph',
+        const analyzerMap: Record<string, readonly string[]> = {
+          'structured-knowledge': ['typescript-symbol-extractor', 'markdown-section-extractor'],
+          'typescript-language': ['typescript-compiler'],
+          'typescript-wiring': ['typescript-manual-composition'],
+          'dependency-scanner': ['dependency-scanner'],
+          'git-cochange': ['git-cochange'],
+          'docgraph': ['docgraph'],
         };
 
         const addedEdges = fullTmp.edges.filter(e => {
           for (const ev of e.evidences) {
-            const pp = plan.producerPlans.find(p => analyzerMap[p.producer] === ev.analyzer);
+            const pp = plan.producerPlans.find(p => analyzerMap[p.producer]?.includes(ev.analyzer));
             if (!pp) continue;
             if (pp.strategy === 'PRODUCER_FULL') return true;
             const srcNode = fullTmp.nodes.get(e.sourceNodeId);
@@ -213,7 +214,7 @@ describe('ProductionIncrementalRefreshOracle', () => {
     const incCounts = countRelationBreakdown(irBInc.edges);
     const fullCounts = countRelationBreakdown(irBFull.edges);
     const expectedTypes = [
-      'depends-on', 'references', 'implements', 'extends',
+      'contains', 'depends-on', 'references', 'implements', 'extends',
       'binds_to', 'injects', 'co-changed-with', 'doc-relation',
     ] as const;
     for (const type of expectedTypes) {
