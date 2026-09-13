@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.8.12] - 2026-09-13
+- docs(analysis): Phase 7A 既存 Repository 分析能力の棚卸しと Self-Dogfooding 評価完了（`docs/analysis/repository-analysis-inventory.md`）
+  - リポジトリ分析機能を「Repository Facts（事実情報）」「Derived Relations（導出関係）」「Task-Specific Projection（一時的射影）」の3層に体系化
+  - 既存の分析・インデックス・推薦コンポーネント（Producer）19件を完全網羅した棚卸しテーブルおよび Mermaid パイプライン図を作成
+  - 次期 Repository IR (Phase 7B) への再利用性評価、および欠落している構造関係（`CALLS`, `IMPLEMENTS`/`EXTENDS`, `TESTS`, `USES_CONFIG`, `READS/WRITES`）を特定
+  - CodePrep CLI（`apps/cli/index.ts`）を用いた Initial Projection 評価（Self-Dogfooding）を実施し、ドキュメント・ログ汚染やキーワード抽出精度の課題、追加発見率（10%）を定量分析
 - feat(cli): CLI / Make 経由の Self-Dogfooding 導入（AI エージェント向けリポジトリコンテキスト探索）
   - MCP サーバを介さずに Claude Code などの AI エージェントから CodePrep の Repository Context 機能を直接利用できる CLI Adapter（`apps/cli/`）および `npm run context` スクリプト、`Makefile` ラッパーを追加
   - 共有 Composition Factory（`RepositoryContextContainer`）を抽出し、CLI と MCP 間で同一の Application UseCase グラフ（`PrepareTaskContextUseCase`, `DiscoverEntryPointCandidatesUseCase`, `BuildTaskContextUseCase` 等）を再利用。CLI 専用の分析ロジック複製を完全排除
