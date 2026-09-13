@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.8.12] - 2026-09-13
+- feat(ir): Phase 7B Repository IR Domain Model 最小実装および仕様策定（`docs/architecture/repository-ir-domain-model.md`）
+  - リポジトリの構造と関係を言語非依存・タスク非依存で表現するグラフ中間表現（Repository IR）の Domain Contract を確立
+  - コアエンティティ定義: `RepositoryNode`（File, Symbol, DocSection, Config, Test, EntryPoint 等）、`RepositoryEdge`（Contains, Calls, Implements, Extends, BindsTo, Injects, MayDispatchTo 等）、`RepositoryEvidence`（Provenance, Analyzer, Category, Confidence）、`RepositorySnapshot`
+  - 事実情報（Fact: 観測された言語/配線構造）と導出関係（Derived: 複数事実の論理合成）を明確に分離し、`derivation.derivedFromEdgeIds` による出所追跡可能性を保証
+  - LSP（Language Server Protocol）および DI（Dependency Injection / Framework wiring）を将来の Producer として統合可能な拡張受け口を整備
+  - ドメイン不変条件（自己ループ禁止、同一スナップショット境界、ID一意性、確信度範囲等）の実装および包括的単体テスト（17 passed）を配備
 - docs(analysis): Phase 7A 既存 Repository 分析能力の棚卸しと Self-Dogfooding 評価完了（`docs/analysis/repository-analysis-inventory.md`）
   - リポジトリ分析機能を「Repository Facts（事実情報）」「Derived Relations（導出関係）」「Task-Specific Projection（一時的射影）」の3層に体系化
   - 既存の分析・インデックス・推薦コンポーネント（Producer）19件を完全網羅した棚卸しテーブルおよび Mermaid パイプライン図を作成
