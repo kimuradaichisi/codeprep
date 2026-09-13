@@ -1,64 +1,12 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createRepositorySnapshot } from '../../src/features/repository-context/domain/ir';
-import { BuildRepositoryKnowledgeUseCase } from '../../src/features/repository-context/application/ir/usecases/BuildRepositoryKnowledgeUseCase';
-import { createAnalysisSession } from '../../src/features/repository-context/infrastructure/language/typescript/TypeScriptAnalysisSession';
-import { TypeScriptLanguageAdapter } from '../../src/features/repository-context/infrastructure/language/typescript/TypeScriptLanguageAdapter';
-import { TypeScriptWiringAdapter } from '../../src/features/repository-context/infrastructure/composition/typescript/TypeScriptWiringAdapter';
 import { SqliteRepositoryKnowledgeStore } from '../../src/features/repository-context/infrastructure/knowledge/sqlite/SqliteRepositoryKnowledgeStore';
+import { RepositoryRefreshEvaluator } from '../../src/features/repository-context/infrastructure/evaluation/RepositoryRefreshEvaluator';
+import { ProductionRepositoryKnowledgeBuilder } from '../../src/features/repository-context/infrastructure/evaluation/ProductionRepositoryKnowledgeBuilder';
 import { evaluateKnownPaths, loadKnownPathCases } from './knownPathsEval';
 import { outputHarnessResult } from './commandRunner';
 import type { RepositoryEvalResult } from './types';
-
-function buildRepositoryIndexFromSession(session: ReturnType<typeof createAnalysisSession>, workspaceRoot: string) {
-  const rootFiles = session.program.getRootFileNames();
-  return {
-    metadata: { workspaceId: 'codeprep', schemaVersion: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    entries: rootFiles
-      .map(f => path.relative(workspaceRoot, f).replace(/\\/g, '/'))
-      .filter(rel => !rel.startsWith('node_modules') && !rel.startsWith('..'))
-      .map(relativePath => ({
-        projectId: 'codeprep',
-        relativePath,
-        kind: 'code' as const,
-        size: 100,
-        contentHash: 'eval-hash',
-      })),
-  };
-}
-
-async function extractRelations(workspaceRoot: string) {
-  const t0 = Date.now();
-  const session = createAnalysisSession(workspaceRoot);
-  const sessionSetupMs = Date.now() - t0;
-
-  const tLang = Date.now();
-  const langResult = await new TypeScriptLanguageAdapter(session).analyze({ workspaceRoot });
-  const languageAnalysisMs = Date.now() - tLang;
-
-  const tWire = Date.now();
-  const wiringResult = await new TypeScriptWiringAdapter(session).analyze({ workspaceRoot });
-  const wiringAnalysisMs = Date.now() - tWire;
-  const repositoryIndex = buildRepositoryIndexFromSession(session, workspaceRoot);
-
-  return { langResult, wiringResult, repositoryIndex, timings: { sessionSetupMs, languageAnalysisMs, wiringAnalysisMs, t0 } };
-}
-
-async function persistKnowledge(
-  store: SqliteRepositoryKnowledgeStore,
-  snapshot: ReturnType<typeof createRepositorySnapshot>,
-  extracted: Awaited<ReturnType<typeof extractRelations>>,
-) {
-  const tSave = Date.now();
-  const buildResult = await new BuildRepositoryKnowledgeUseCase().execute({
-    snapshot,
-    repositoryIndex: extracted.repositoryIndex,
-    languageRelations: extracted.langResult.relations,
-    wiringRelations: extracted.wiringResult.relations,
-    store,
-  });
-  return { buildResult, saveMs: Date.now() - tSave };
-}
 
 async function measureStoreQueries(store: SqliteRepositoryKnowledgeStore, snapshotId: string, sampleNodeId?: string) {
   const tLoad = Date.now();
@@ -74,35 +22,40 @@ async function measureStoreQueries(store: SqliteRepositoryKnowledgeStore, snapsh
   return { loadMs, neighborQueryMs, stats };
 }
 
-async function persistAndMeasureStore(
-  workspaceRoot: string,
-  dbPath: string,
-  extracted: Awaited<ReturnType<typeof extractRelations>>,
-) {
+async function persistAndMeasureStore(workspaceRoot: string, dbPath: string) {
+  const t0 = Date.now();
   const store = new SqliteRepositoryKnowledgeStore({ workspaceRoot, dbPath });
   const snapshot = createRepositorySnapshot({
     snapshotId: `eval-${Date.now()}`, repositoryId: 'codeprep-repo',
     workspaceRoot, revision: 'eval-head', createdAt: new Date().toISOString(),
   });
-  const { buildResult, saveMs } = await persistKnowledge(store, snapshot, extracted);
-  const sampleNode = Array.from(buildResult.ir.nodes.values())[0];
-  const { loadMs, neighborQueryMs, stats } = await measureStoreQueries(store, snapshot.snapshotId, sampleNode?.id);
+
+  const builder = new ProductionRepositoryKnowledgeBuilder();
+  const buildResult = await builder.buildFullIR(workspaceRoot, snapshot);
+
+  const tSave = Date.now();
+  await store.save(buildResult.ir);
+  const saveMs = Date.now() - tSave;
+
+  const sampleNodeId = Array.from<string>(buildResult.ir.nodes.keys())[0];
+  const { loadMs, neighborQueryMs, stats } = await measureStoreQueries(store, snapshot.snapshotId, sampleNodeId);
 
   return {
-    snapshot, repositoryIndex: extracted.repositoryIndex, buildResult, stats,
+    snapshot,
+    fileCount: buildResult.fileEntries.length,
+    ir: buildResult.ir,
+    stats,
     timings: {
-      sessionSetupMs: extracted.timings.sessionSetupMs,
-      languageAnalysisMs: extracted.timings.languageAnalysisMs,
-      wiringAnalysisMs: extracted.timings.wiringAnalysisMs,
+      sessionSetupMs: 0,
+      languageAnalysisMs: buildResult.durationMs.languageMs,
+      wiringAnalysisMs: buildResult.durationMs.wiringMs,
+      dependencyMs: buildResult.durationMs.dependencyMs,
+      gitCoChangeMs: buildResult.durationMs.gitCoChangeMs,
+      docGraphMs: buildResult.durationMs.docGraphMs,
       saveMs, loadMs, neighborQueryMs,
-      totalMs: Date.now() - extracted.timings.t0,
+      totalMs: Date.now() - t0,
     },
   };
-}
-
-async function runExtractionAndBuild(workspaceRoot: string, dbPath: string) {
-  const extracted = await extractRelations(workspaceRoot);
-  return persistAndMeasureStore(workspaceRoot, dbPath, extracted);
 }
 
 function saveEvalArtifacts(workspaceRoot: string, phase: string, result: RepositoryEvalResult): void {
@@ -117,6 +70,15 @@ function printEvalSummary(res: RepositoryEvalResult, phase: string): void {
   console.log(`- DB Size: ${((res.performance.dbSizeBytes ?? 0) / 1024).toFixed(2)} KB`);
   console.log(`- Performance: Save=${res.performance.saveMs}ms, Load=${res.performance.loadMs}ms, Total=${res.performance.totalMs}ms`);
   console.log(`- Known Paths: ${res.knownPaths.passed}/${res.knownPaths.total} PASS`);
+  if (res.refresh) {
+    console.log(`- Incremental Refresh: ${res.refresh.status}, Inc=${res.refresh.incrementalMs}ms vs Full=${res.refresh.fullRebuildMs}ms, Oracle=${res.refresh.oracleMatch ? 'PASS' : 'FAIL'}`);
+  }
+}
+
+function countRelations(edges: readonly { relationType: string }[]): Record<string, number> {
+  const relations: Record<string, number> = {};
+  for (const edge of edges) relations[edge.relationType] = (relations[edge.relationType] ?? 0) + 1;
+  return relations;
 }
 
 export async function executeRepositoryEval(phase = 'current', format: 'text' | 'json' = 'text'): Promise<RepositoryEvalResult> {
@@ -124,22 +86,22 @@ export async function executeRepositoryEval(phase = 'current', format: 'text' | 
   const memStart = process.memoryUsage().heapUsed;
   const dbPath = path.join(workspaceRoot, '.codeprep', 'repository-knowledge.db');
 
-  const { snapshot, repositoryIndex, buildResult, stats, timings } = await runExtractionAndBuild(workspaceRoot, dbPath);
+  const { snapshot, fileCount, ir, stats, timings } = await persistAndMeasureStore(workspaceRoot, dbPath);
   const knownCases = loadKnownPathCases();
   const knownPaths = await evaluateKnownPaths(knownCases, dbPath);
-
-  const relations: Record<string, number> = {};
-  for (const edge of buildResult.ir.edges) relations[edge.relationType] = (relations[edge.relationType] ?? 0) + 1;
+  const relations = countRelations(ir.edges);
+  const refresh = await new RepositoryRefreshEvaluator().evaluate(workspaceRoot, dbPath);
 
   const memEnd = process.memoryUsage().heapUsed;
   const result: RepositoryEvalResult = {
     snapshotId: snapshot.snapshotId,
-    files: repositoryIndex.entries.length,
+    files: fileCount,
     nodes: stats.nodeCount,
     edges: stats.edgeCount,
     evidence: stats.evidenceCount,
     relations: Object.freeze(relations),
     knownPaths,
+    refresh,
     performance: { ...timings, dbSizeBytes: stats.dbSizeBytes, heapDeltaMb: Number(((memEnd - memStart) / 1024 / 1024).toFixed(2)) },
   };
 

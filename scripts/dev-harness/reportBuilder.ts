@@ -60,6 +60,17 @@ function renderRepoMetricsSection(evalRes?: RepositoryEvalResult): string {
   for (const [k, v] of Object.entries(evalRes.relations)) {
     lines.push(`  - \`${k}\`: ${v}`);
   }
+  if (evalRes.refresh) {
+    lines.push('### Incremental Refresh Performance & Oracle:');
+    lines.push(`- **Refresh Status**: \`${evalRes.refresh.status}\``);
+    lines.push(`- **Changed Files**: ${evalRes.refresh.changedFiles}`);
+    lines.push(`- **Incremental Time**: ${evalRes.refresh.incrementalMs}ms (vs Full Rebuild: ${evalRes.refresh.fullRebuildMs}ms)`);
+    lines.push(`- **Reused / Regenerated**: Nodes(${evalRes.refresh.reusedNodes} reused, ${evalRes.refresh.regeneratedNodes} regen), Edges(${evalRes.refresh.reusedEdges} reused, ${evalRes.refresh.regeneratedEdges} regen)`);
+    lines.push(`- **Oracle Match**: **${evalRes.refresh.oracleMatch ? 'PASS (100% Match)' : 'FAIL'}**`);
+    if (evalRes.refresh.gitCoChangeEdgeExplosion) {
+      lines.push(`- **Edge Explosion Note**: ${evalRes.refresh.gitCoChangeEdgeExplosion.note}`);
+    }
+  }
   return lines.join('\n');
 }
 

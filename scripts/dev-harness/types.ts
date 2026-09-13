@@ -88,12 +88,29 @@ export interface RepositoryEvalResult {
     sessionSetupMs?: number;
     languageAnalysisMs?: number;
     wiringAnalysisMs?: number;
+    dependencyMs?: number;
+    gitCoChangeMs?: number;
+    docGraphMs?: number;
     saveMs?: number;
     loadMs?: number;
     neighborQueryMs?: number;
     totalMs: number;
     dbSizeBytes?: number;
     heapDeltaMb?: number;
+  }>;
+  readonly refresh?: Readonly<{
+    status: string;
+    changedFiles: number;
+    incrementalMs: number;
+    fullRebuildMs: number;
+    reusedNodes: number;
+    reusedEdges: number;
+    regeneratedNodes: number;
+    regeneratedEdges: number;
+    oracleMatch: boolean;
+    gitCoChangeEdgeExplosion?: {
+      note: string;
+    };
   }>;
 }
 

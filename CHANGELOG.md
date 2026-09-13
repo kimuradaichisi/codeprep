@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.8.12] - 2026-09-13
+- feat(ir): Phase 7F Git Revision Based Incremental Refresh / Producer-aware Invalidation 実装および仕様策定（`docs/architecture/repository-knowledge-refresh.md`）
+  - Git revision の差分（ChangeSet）を起点に、Producer ごとの波及範囲（`FILE_LOCAL`, `DEPENDENT_CLOSURE`, `PRODUCER_FULL`, `FULL_REBUILD`）を安全に決定論的解決し、Full Rebuild を回避して正確な新しい Stable Snapshot を生成する `RefreshRepositoryKnowledgeUseCase` を実装
+  - Application 層と Git CLI を隔離する `RepositoryRevisionPort` および `GitCliRevisionAdapter`（`diff --name-status -M`, `status --porcelain`, `rev-parse HEAD`）を実装
+  - 前回のグラフ構造から 1-Hop の波及先（Incoming `DEPENDS_ON`, `REFERENCES`, `IMPLEMENTS`, `EXTENDS`）を安全側に探索する `ImpactResolver`、およびコンパイラ設定変更（`tsconfig.json` 等）の検知による自動 Full Fallback を導入
+  - 変更・削除・リネーム旧パス由来の事実および再解析対象 Producer のエビデンスを決定論的に除外し、Dangling Edge を 100% 排除する `IRInvalidator` を実装（`typescript-compiler` 等のアナライザー識別子整合性を完全同期）
+  - 新旧 Snapshot 間で Node / Edge ID および Snapshot ID の Cross-snapshot 違反を防ぎ、安全に ID リバインドとアトミックマージを行う `IRSnapshotAssembler` を実装
+  - 同一リビジョン時の無駄な再解析を排除する `NO_OP` Fast Path（所要時間 < 5ms）、および未コミット変更の混入を防ぐ Dirty Working Tree Policy（`DIRTY_WORKTREE` 拒絶）を導入
+  - テスト環境および Fixture による検証を実施し、Scenario A（No Change / NO_OP）、B（Add）、C（Modify）、D（Delete）、E（Rename）の全シナリオで **Incremental Refresh == Full Rebuild（Node / Edge / Evidence / Relation counts 100% 完全一致）** の Correctness Oracle を実証
+  - Production 相当の全 8 Producer を一元化する `ProductionRepositoryKnowledgeBuilder` を新設し、テスト・ハーネス間の二重実装を解消
+  - Production-equivalent Git Fixture を用いた `ProductionIncrementalRefreshOracle.test.ts` を配備し、全 8 種の Relation Type（`depends-on`, `references`, `implements`, `extends`, `binds_to`, `injects`, `co-changed-with`, `doc-relation`）すべてにおいて **Incremental Refresh == Full Rebuild（Oracle Match PASS、Dangling Edge = 0、Clean Revision での No-op PASS）** を実証
+  - 実リポジトリ全域での評価アダプター `RepositoryRefreshEvaluator` および Dev-Harness（`repositoryEval.ts`）を `ProductionRepositoryKnowledgeBuilder` に統一し、全 8 種別 654 Nodes / 15,460 Edges での評価を機械化
+  - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を全モジュールで完全遵守
 - feat(dev-harness): Phase 7E.5 Development Harness / Agent-Neutral Mechanized Workflow 実装および標準化（`docs/development/development-harness.md`）
   - エージェント非依存・決定論的な開発運用ハーネススクリプト群（`scripts/dev-harness/`）を新設し、npm scripts（`dev:phase:start`, `dev:verify`, `dev:verify:fast`, `dev:verify:final`, `dev:eval`, `dev:phase:finish`）として統合
   - プロジェクト標準開発実行規約（`.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md`）を策定し、Claude / Gemini / Codex / 人間を問わず同一の実行フロー・検査・証跡記録を保証
