@@ -11,12 +11,14 @@ import {
   mapDependenciesToEdges,
   mapDocGraphRelationsToEdges,
   mapGitCoChangesToEdges,
+  mapLanguageRelationsToEdges,
   mapRepositoryIndexToFileNodes,
   mapStructuredKnowledgeToNodesAndEdges,
   type DocGraphRelationPair,
   type FileDependencyPair,
   type GitCoChangeRelation,
 } from './mappers';
+import type { LanguageStructuralRelation } from './language';
 
 export interface BuildRepositoryIRInput {
   readonly snapshot: RepositorySnapshot;
@@ -25,6 +27,7 @@ export interface BuildRepositoryIRInput {
   readonly dependencies?: readonly FileDependencyPair[];
   readonly gitCoChanges?: readonly GitCoChangeRelation[];
   readonly docGraphRelations?: readonly DocGraphRelationPair[];
+  readonly languageRelations?: readonly LanguageStructuralRelation[];
 }
 
 function buildFilePathLookup(fileNodes: readonly RepositoryNode[]): Map<string, string> {
@@ -37,16 +40,11 @@ function collectRelationEdges(
   input: BuildRepositoryIRInput,
   fileNodeIdMap: Map<string, string>
 ): readonly RepositoryEdge[] {
-  const depEdges = input.dependencies
-    ? mapDependenciesToEdges(input.dependencies, input.snapshot, fileNodeIdMap)
-    : [];
-  const gitEdges = input.gitCoChanges
-    ? mapGitCoChangesToEdges(input.gitCoChanges, input.snapshot, fileNodeIdMap)
-    : [];
-  const docEdges = input.docGraphRelations
-    ? mapDocGraphRelationsToEdges(input.docGraphRelations, input.snapshot, fileNodeIdMap)
-    : [];
-  return [...depEdges, ...gitEdges, ...docEdges];
+  const depEdges = input.dependencies ? mapDependenciesToEdges(input.dependencies, input.snapshot, fileNodeIdMap) : [];
+  const gitEdges = input.gitCoChanges ? mapGitCoChangesToEdges(input.gitCoChanges, input.snapshot, fileNodeIdMap) : [];
+  const docEdges = input.docGraphRelations ? mapDocGraphRelationsToEdges(input.docGraphRelations, input.snapshot, fileNodeIdMap) : [];
+  const langRes = input.languageRelations ? mapLanguageRelationsToEdges({ relations: input.languageRelations, snapshot: input.snapshot, fileNodeIdByPath: fileNodeIdMap }) : { edges: [] };
+  return [...depEdges, ...gitEdges, ...docEdges, ...langRes.edges];
 }
 
 function resolveKnowledge(input: BuildRepositoryIRInput, knownIds: Set<string>) {

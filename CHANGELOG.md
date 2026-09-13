@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.8.12] - 2026-09-13
+- feat(ir): Phase 7D-A TypeScript Language Intelligence / Structural Relations 実装および仕様策定（`docs/architecture/language-intelligence-typescript.md`）
+  - TypeScript リポジトリを対象に、構文・型定義に基づく言語構造関係（`REFERENCES`, `IMPLEMENTS`, `EXTENDS`）を決定論的に抽出・IR 統合する `LanguageIntelligencePort`（Application）およびインプロセス TypeScript Compiler API による `TypeScriptLanguageAdapter`（Infrastructure）を実装
+  - 外部 LSP プロセスデーモンを排除し、Windows Native 環境での最高速・ゼロ外部プロセス依存・高信頼性を確保
+  - `import` 文によるシンボル Alias（`SymbolFlags.Alias`）の再帰解決（`getAliasedSymbol`）を導入し、宣言先トップレベルシンボルへの正確な `references` 解決を実現
+  - 全件走査による初期 IR 構築爆発を防ぐため、`CALLS`（Call Hierarchy）は Lazy / On-Demand クエリ候補として意図的に見送り（DEFER）を決定
+  - `LanguageRelationMapper` を新設し、抽出された言語構造事実を確信度 1.0 の決定論的 AST エビデンス（`category: 'deterministic-ast'`）を持つ `RepositoryEdge` として IR へマッピング
+  - CodePrep 自身の実コードによる統合テスト（`VSCodeWorkspacePathResolver IMPLEMENTS WorkspacePathResolver`, `ClipboardSelectionUseCase REFERENCES WorkspacePathResolver`）および実測スモークテスト（5ファイル・53 relations・2.1s）で動作実証
+  - God-Class Killer Policy（150行/15行/複雑度5制限）を全 11 モジュールで完全遵守
 - feat(ir): Phase 7C Existing Producers → Repository IR Mapping 実装および仕様策定（`docs/architecture/repository-ir-mapping.md`）
   - 既存の分析資産（`RepositoryIndex`, `StructuredKnowledgeIndex`, `DependencyScanner`, `GitCoChange`, `DocGraph`）を `RepositoryIR` グラフへ変換する In-Memory Mapper 群（`RepositoryIndexMapper`, `StructuredKnowledgeMapper`, `DependencyScannerMapper`, `DerivedRelationMapper`）を実装
   - 既存 Producer は一切変更せず、解析手法の精度・限界を忠実に `RepositoryEvidence`（`deterministic-ast`, `regex-pattern`, `git-history`, `rule-derived`）へ記録
