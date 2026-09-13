@@ -9,6 +9,12 @@ import { TypeScriptLanguageAdapter } from '../../../language/typescript/TypeScri
 import { TypeScriptWiringAdapter } from '../../../composition/typescript/TypeScriptWiringAdapter';
 import { SqliteRepositoryKnowledgeStore } from '../SqliteRepositoryKnowledgeStore';
 
+/**
+ * Note: このテストは TypeScript Language & Wiring に焦点を当てた Focused Smoke です。
+ * 高速実行のため一部 Producer（DependencyScanner, GitCoChange, DocGraph）を意図的に省略しています。
+ * 全 8 種の Relation Type を網羅した Production 相当の統合 Smoke は
+ * `SqliteRepositoryKnowledgeStoreProductionSmoke.test.ts` を参照してください。
+ */
 describe('SqliteRepositoryKnowledgeStore Real Repository Smoke & Benchmark', () => {
   const workspaceRoot = path.resolve(__dirname, '../../../../../../../');
   const tempDbPath = path.join(os.tmpdir(), `codeprep-knowledge-smoke-${Date.now()}.db`);

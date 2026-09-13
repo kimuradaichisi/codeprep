@@ -1,9 +1,11 @@
 import ts from 'typescript';
 import type { LanguageStructuralRelation } from '../../../application/ir/language';
-import { buildSymbolRef } from './TypeScriptSymbolLocator';
+import { buildSymbolRef, resolveActualSymbol } from './TypeScriptSymbolLocator';
 
 function resolveTargetRef(expr: ts.ExpressionWithTypeArguments, tc: ts.TypeChecker, root: string) {
-  const symbol = tc.getSymbolAtLocation(expr.expression);
+  const rawSymbol = tc.getSymbolAtLocation(expr.expression);
+  if (!rawSymbol) return undefined;
+  const symbol = resolveActualSymbol(rawSymbol, tc);
   if (!symbol || !symbol.declarations || symbol.declarations.length === 0) return undefined;
   const decl = symbol.declarations[0];
   return buildSymbolRef(symbol, decl, decl.getSourceFile(), root);

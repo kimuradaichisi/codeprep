@@ -3,6 +3,11 @@
 この文書は、Gemini (Antigravity Agent) に作業を依頼するときに最初に与える共通指示です。
 個別タスクの指示より先に読み、この方針をデフォルト動作として適用してください。
 
+> [!IMPORTANT]
+> **Mechanized Development Workflow (Canonical Policy):**
+> 開発実行、検証、品質Gateは [.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md](file:///D:/git/codeprep/.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md) に従います。
+> 決定論的な反復手順（baseline確認, Before Evaluation, standards, test, full gate, report）はエージェント非依存の Harness コマンド（`npm run dev:phase:start`, `npm run dev:verify`, `npm run dev:eval`, `npm run dev:phase:finish`）を優先して使用してください。
+
 ---
 
 ## 1. 基本原則

@@ -3,17 +3,23 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.8.12] - 2026-09-13
+- feat(dev-harness): Phase 7E.5 Development Harness / Agent-Neutral Mechanized Workflow 実装および標準化（`docs/development/development-harness.md`）
+  - エージェント非依存・決定論的な開発運用ハーネススクリプト群（`scripts/dev-harness/`）を新設し、npm scripts（`dev:phase:start`, `dev:verify`, `dev:verify:fast`, `dev:verify:final`, `dev:eval`, `dev:phase:finish`）として統合
+  - プロジェクト標準開発実行規約（`.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md`）を策定し、Claude / Gemini / Codex / 人間を問わず同一の実行フロー・検査・証跡記録を保証
+  - 変更ファイル分類（`changedFiles.ts`）、ピンポイント規約＋コンパイル＋局所テストの高速検査（`verify.ts --mode fast`）、および全域品質ゲート一括検査（`verify.ts --mode final`）を自動化
+  - Known Paths Golden Set（`evaluation/repository-known-paths.json`）照合および SQLite Repository Knowledge Store を活用した全域評価（`repositoryEval.ts`）を機械化
+  - 機械的集計（Factual）とエージェント・人間による設計判断（BLOCKER / SHOULD FIX / DEFER）の境界を明確に分離したフェーズ完了レポート自動生成（`phaseFinish.ts`, `reportBuilder.ts`）を実現
+  - `TypeScriptInheritanceAnalyzer` における `implements` 関係のシンボル Alias 未解決による drop 不具合を解消し、Known Paths Golden Set 3/3 PASS（全 41 件の `implements` 関係を正常検出）を達成
+  - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を全ハーネススクリプトで完全遵守
 - feat(ir): Phase 7E SQLite Repository Knowledge Store / Snapshot Persistence 実装および仕様策定（`docs/architecture/repository-knowledge-store.md`）
   - In-Memory Repository IR を再生成可能な派生インデックスとして高速永続化・復元する `RepositoryKnowledgeStore`（Application Port）および Node.js 22 内蔵 `node:sqlite` を用いた `SqliteRepositoryKnowledgeStore`（Infrastructure Adapter）を実装
   - ゼロ外部依存・ACID 保証・単一ファイル管理（`.codeprep/repository-knowledge.db`）およびテスト用の超高速インメモリモード（`:memory:`）を両立
   - リレーショナル正規化列（`snapshot_id`, `node_id`, `path`, `source_node_id`, `target_node_id`, `relation_type` 等のインデックス列）と拡張属性用 JSON 列を分離設計し、型安全性と将来の拡張性を担保
   - 単一トランザクションによる Atomic Write（失敗時の完全ロールバック保証）および Snapshot / Node / Edge / Evidence の 100% 完全復元（Round-trip Fidelity）を実証
   - ユースケースオーケストレータ `BuildRepositoryKnowledgeUseCase` および世代管理・旧スナップショット CASCADE 削除対応の `RebuildRepositoryKnowledgeUseCase` を新設
-  - CodePrep 自身の実機リポジトリ全域でのスモークテストおよび性能計測を実施:
-    - 555 Nodes, 3,256 Edges, 3,256 Evidences（`references`: 3,119, `injects`: 87, `binds_to`: 50）
-    - DB サイズ: 9,052 KB (約 8.8 MB)
-    - 保存時間: 183ms、全件ロード復元時間: 67ms、近傍インデックス検索時間: 4ms
-  - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を全 9 モジュールで完全遵守
+  - 実リポジトリ全域を対象とした Production 相当の統合 Smoke テスト（`SqliteRepositoryKnowledgeStoreProductionSmoke.test.ts`）を新設し、全 8 種の Relation Type（`references`, `implements`, `extends`, `binds_to`, `injects`, `depends-on`, `co-changed-with`, `doc-relation`）すべてにおいて Save前 = Load後 の完全一致（15,000 件以上のエッジで欠落ゼロ）を実証
+  - `DerivedRelationMapper` における同一ペアのエッジ ID 重複排除処理を実装
+  - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を完全遵守
 - feat(ir): Phase 7D-B Manual Composition / DI Wiring Analysis 実装および仕様策定（`docs/architecture/dependency-wiring-typescript.md`）
   - TypeScript リポジトリを対象に、明示的な `new` 式および Constructor Injection から依存配線関係（`BINDS_TO`, `INJECTS`）を静的解析・IR 統合する `DependencyWiringPort`（Application）および `TypeScriptWiringAdapter`（Infrastructure）を実装
   - Language Intelligence（`LanguageIntelligencePort`）と Wiring Analysis を完全分離し、動的 DI コンテナやフレームワーク依存を排除してゼロ推測・決定論的抽出を実現

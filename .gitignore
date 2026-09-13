@@ -48,3 +48,4 @@ meta.json
 dist-desktop/
 dist-mcp/
 reports/semantic-evaluation/indexes/
+.codeprep/

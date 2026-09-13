@@ -60,9 +60,11 @@ When providing code, you must follow this exact format:
 4. **Clarified Omission Anchors:** LLMs often fail at applying diffs if they don't provide exact anchor lines. Specifying "at least 2 lines of exact unmodified code" fixes this.
 5. **Refined Error Handling:** Explicitly told the AI not to crash the extension host, which is a common issue when `fs` operations fail in extensions.
 
-## 7. Gemini Execution Contract & Operational Guidelines
-CodePrep プロジェクトにおける Gemini (Antigravity Agent) の標準動作指針、品質契約、運用ガイドラインとして以下を策定しています。作業開始前に必ずこれらを参照し、最優先で遵守してください。
-
+## 7. Development Harness & Execution Guidelines
+CodePrep プロジェクトにおける開発実行、検証、品質Gateは、エージェント非依存の決定論的ハーネス（Harness）によって機械化されています。
+- **標準開発実行ポリシー (Canonical Policy):**
+  [.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md](file:///D:/git/codeprep/.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md)
+  - **原則**: Development execution and quality verification MUST follow `.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md`. Prefer harness commands (`npm run dev:phase:start`, `npm run dev:verify`, `npm run dev:eval`, `npm run dev:phase:finish`) over manually repeating deterministic verification steps.
 - **実行契約 (基本原則・調査・編集・判断・品質4層評価):**
   [.agents/GEMINI_EXECUTION_CONTRACT.md](file:///D:/git/codeprep/.agents/GEMINI_EXECUTION_CONTRACT.md)
   - 安い手段の優先、最小変更、推測の排除 (UNKNOWN/ERRORの明示、false PASSの厳禁)

@@ -1,5 +1,9 @@
 # CodePrep AI Agent Instructions (Claude Code & Gemini / Antigravity Agent)
 
+## Mechanized Development Workflow (Canonical Policy)
+Development execution and quality verification MUST follow [.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md](file:///D:/git/codeprep/.agents/MECHANIZED_DEVELOPMENT_WORKFLOW.md).
+Prefer harness commands (`npm run dev:phase:start`, `npm run dev:verify`, `npm run dev:eval`, `npm run dev:phase:finish`) over manually repeating deterministic verification steps.
+
 ## Repository Context with CodePrep
 
 When the implementation area is unclear, use CodePrep before broad repository exploration.

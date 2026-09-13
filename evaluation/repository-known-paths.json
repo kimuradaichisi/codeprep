@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1",
+  "cases": [
+    {
+      "id": "workspace-resolver-implements",
+      "source": "VSCodeWorkspacePathResolver",
+      "relation": "IMPLEMENTS",
+      "target": "WorkspacePathResolver",
+      "description": "VSCodeWorkspacePathResolver implements WorkspacePathResolver interface"
+    },
+    {
+      "id": "workspace-resolver-binding",
+      "source": "WorkspacePathResolver",
+      "relation": "BINDS_TO",
+      "target": "VSCodeWorkspacePathResolver",
+      "description": "SelectionActionHandler binds WorkspacePathResolver to VSCodeWorkspacePathResolver"
+    },
+    {
+      "id": "clipboard-injection",
+      "source": "ClipboardSelectionUseCase",
+      "relation": "INJECTS",
+      "target": "VSCodeWorkspacePathResolver",
+      "description": "SelectionActionHandler injects VSCodeWorkspacePathResolver into ClipboardSelectionUseCase"
+    }
+  ]
+}

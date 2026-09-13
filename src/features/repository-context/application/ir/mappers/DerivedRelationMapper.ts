@@ -67,10 +67,13 @@ export function mapGitCoChangesToEdges(
   snapshot: RepositorySnapshot,
   fileNodeIdByPath: ReadonlyMap<string, string>
 ): readonly RepositoryEdge[] {
+  const seenEdgeIds = new Set<string>();
   const edges: RepositoryEdge[] = [];
   for (const rel of relations) {
     const edge = mapSingleGitCoChange(rel, snapshot, fileNodeIdByPath);
-    if (edge) edges.push(edge);
+    if (!edge || seenEdgeIds.has(edge.id)) continue;
+    seenEdgeIds.add(edge.id);
+    edges.push(edge);
   }
   return Object.freeze(edges);
 }
@@ -80,10 +83,13 @@ export function mapDocGraphRelationsToEdges(
   snapshot: RepositorySnapshot,
   fileNodeIdByPath: ReadonlyMap<string, string>
 ): readonly RepositoryEdge[] {
+  const seenEdgeIds = new Set<string>();
   const edges: RepositoryEdge[] = [];
   for (const rel of relations) {
     const edge = mapSingleDocGraphRelation(rel, snapshot, fileNodeIdByPath);
-    if (edge) edges.push(edge);
+    if (!edge || seenEdgeIds.has(edge.id)) continue;
+    seenEdgeIds.add(edge.id);
+    edges.push(edge);
   }
   return Object.freeze(edges);
 }
