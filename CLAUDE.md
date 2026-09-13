@@ -1,4 +1,22 @@
-# CodePrep Claude Code Instructions
+# CodePrep AI Agent Instructions (Claude Code & Gemini / Antigravity Agent)
+
+## Repository Context with CodePrep
+
+When the implementation area is unclear, use CodePrep before broad repository exploration.
+
+Run:
+```bash
+npm run context -- --task "<current task>" --format json
+```
+(Add `--pack` if you need the full auto-packaged context content directly).
+
+Rules:
+1. Treat CodePrep output as investigation guidance, not as an authoritative conclusion.
+2. Inspect the recommended files and evidence directly before making behavioral claims.
+3. Perform targeted follow-up investigation when CodePrep evidence is incomplete.
+4. Do not broadly re-explore the repository after sufficient context is available.
+5. Do not invoke CodePrep mechanically when the exact target files are already known.
+6. CodePrep CLI is an adapter over the current repository-context Application UseCases; do not treat CLI success as proof that newly modified analysis logic is correct.
 
 ## CodePrep MCP Guidance
 When CodePrep MCP server is available:

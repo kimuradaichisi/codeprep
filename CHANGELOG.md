@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.8.12] - 2026-09-13
+- feat(cli): CLI / Make 経由の Self-Dogfooding 導入（AI エージェント向けリポジトリコンテキスト探索）
+  - MCP サーバを介さずに Claude Code などの AI エージェントから CodePrep の Repository Context 機能を直接利用できる CLI Adapter（`apps/cli/`）および `npm run context` スクリプト、`Makefile` ラッパーを追加
+  - 共有 Composition Factory（`RepositoryContextContainer`）を抽出し、CLI と MCP 間で同一の Application UseCase グラフ（`PrepareTaskContextUseCase`, `DiscoverEntryPointCandidatesUseCase`, `BuildTaskContextUseCase` 等）を再利用。CLI 専用の分析ロジック複製を完全排除
+  - 出力契約として機械可読な JSON 形式（標準）および人間/エージェント直接閲覧用の Markdown 形式（`--format markdown`）をサポート。ログや診断メッセージはすべて `stderr` に分離し、`stdout` の純粋性を保証
+  - Windows PowerShell / npm の引数解釈差異（フラグ消費）にも対応した堅牢な引数パーサーを実装
+  - `CLAUDE.md` に CodePrep 自身を用いた Self-Dogfooding の利用ガイドラインを配備
 - perf(selection): Clipboard Selection 高速化（Fast Path & Targeted Lookup への刷新）
   - `ClipboardSelectionUseCase` による `findFiles('**/*')` の全ファイル走査および各パスごとの総当たり走査（exact/suffix/segment match）を完全撤廃
   - `WorkspacePathResolver`（Application Port）および `VSCodeWorkspacePathResolver`（Infrastructure Adapter）を新設し、DDD境界と依存性注入（DI）を徹底

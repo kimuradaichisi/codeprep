@@ -72,3 +72,7 @@ CodePrep プロジェクトにおける Gemini (Antigravity Agent) の標準動�
   - 未コミット変更の保護、勝手なGit操作の禁止、反復の機械化候補フィードバック
   - Design Closure / One-Pass Completion (次工程を意識した不変条件確認、完了前 Self-Review)
   - **CHANGELOG 記録規約:** タスク作業完了時は必ずルートの `CHANGELOG.md` に変更概要を記録すること。
+- **CLAUDE.md / Self-Dogfooding 連携ガイドライン:**
+  [CLAUDE.md](file:///D:/git/codeprep/CLAUDE.md)
+  - 改修対象箇所が自明でない場合は、手動の広範探索を行う前に必ず `CLAUDE.md` の指示に従い `npm run context -- --task "<task>"` を実行して CodePrep 自身の推薦・コンテキストを活用すること（Dogfooding）。
+  - 出力結果は調査の道標として扱い、候補・Evidence を直接確認した上で実装・変更を行うこと。明確な単一ファイル修正など対象が自明な場合は機械的に実行せず直接作業すること。

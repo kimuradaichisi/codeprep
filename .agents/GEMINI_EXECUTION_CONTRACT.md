@@ -44,7 +44,8 @@
 2. 直接依存するコード / 文書
 3. 関連テスト
 4. 必要なArchitecture / Contract
-5. それでも場所が分からない場合だけ探索範囲を広げる
+5. 実装箇所が自明でない場合は、手動探索の前に [CLAUDE.md](file:///D:/git/codeprep/CLAUDE.md) に従って CodePrep CLI (`npm run context -- --task "<task>"`) を実行し、推薦・Evidence を確認する（Self-Dogfooding）
+6. それでも場所が分からない場合だけ探索範囲を広げる
 
 既に対象ファイルや場所が明確なら、広範囲探索を行わないでください。
 
