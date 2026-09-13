@@ -26,12 +26,14 @@ function resolveTargetSourceFiles(
 }
 
 export class TypeScriptLanguageAdapter implements LanguageIntelligencePort {
+  constructor(private readonly session?: import('./TypeScriptAnalysisSession').TypeScriptAnalysisSession) {}
+
   public getCapabilities(): LanguageCapabilities {
     return CAPABILITIES;
   }
 
   public async analyze(input: LanguageAnalysisInput): Promise<LanguageAnalysisResult> {
-    const program = createTypeScriptProgram(input.workspaceRoot, input.relativePaths);
+    const program = this.session?.program ?? createTypeScriptProgram(input.workspaceRoot, input.relativePaths);
     const targetSourceFiles = resolveTargetSourceFiles(program, input.relativePaths);
     const inheritance = extractInheritanceRelations(program, input.workspaceRoot, targetSourceFiles);
     const references = extractReferenceRelations(program, input.workspaceRoot, targetSourceFiles);

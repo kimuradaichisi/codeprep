@@ -46,3 +46,14 @@ export function buildSymbolRef(
     location,
   };
 }
+
+export function resolveActualSymbol(sym: ts.Symbol, tc: ts.TypeChecker): ts.Symbol {
+  if (sym.flags & ts.SymbolFlags.Alias) {
+    try {
+      return tc.getAliasedSymbol(sym);
+    } catch {
+      return sym;
+    }
+  }
+  return sym;
+}

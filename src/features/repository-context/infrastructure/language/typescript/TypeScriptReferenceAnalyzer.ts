@@ -1,17 +1,15 @@
 import ts from 'typescript';
 import type { LanguageStructuralRelation, LanguageSymbolRef } from '../../../application/ir/language';
-import { buildSymbolRef, getNodeLocation, normalizeWorkspacePath } from './TypeScriptSymbolLocator';
+import {
+  buildSymbolRef,
+  getNodeLocation,
+  normalizeWorkspacePath,
+  resolveActualSymbol,
+} from './TypeScriptSymbolLocator';
 
 function isTopLevelSymbol(sym: ts.Symbol): boolean {
   const flags = sym.flags;
   return Boolean(flags & (ts.SymbolFlags.Class | ts.SymbolFlags.Interface | ts.SymbolFlags.Function | ts.SymbolFlags.TypeAlias));
-}
-
-function resolveActualSymbol(sym: ts.Symbol, tc: ts.TypeChecker): ts.Symbol {
-  if (sym.flags & ts.SymbolFlags.Alias) {
-    try { return tc.getAliasedSymbol(sym); } catch { return sym; }
-  }
-  return sym;
 }
 
 function isSelfFileDeclaration(targetDecl: ts.Declaration, targetSf: ts.SourceFile, sourceFile: ts.SourceFile, idNode: ts.Identifier): boolean {

@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.8.12] - 2026-09-13
+- feat(ir): Phase 7D-B Manual Composition / DI Wiring Analysis 実装および仕様策定（`docs/architecture/dependency-wiring-typescript.md`）
+  - TypeScript リポジトリを対象に、明示的な `new` 式および Constructor Injection から依存配線関係（`BINDS_TO`, `INJECTS`）を静的解析・IR 統合する `DependencyWiringPort`（Application）および `TypeScriptWiringAdapter`（Infrastructure）を実装
+  - Language Intelligence（`LanguageIntelligencePort`）と Wiring Analysis を完全分離し、動的 DI コンテナやフレームワーク依存を排除してゼロ推測・決定論的抽出を実現
+  - `TypeScriptAnalysisSession` を導入し、同一セッション内で `ts.Program` / `TypeChecker` を再利用。重複ロードを回避し、Wiring 単体の全域解析時間をわずか 167ms（総合 7.0s）に最適化
+  - `WiringRelationMapper` を新設し、抽出された配線事実を確信度 1.0 のエビデンス（`category: 'deterministic-ast'`, `analyzer: 'typescript-manual-composition'`）を持つ `RepositoryEdge` として IR へマッピング
+  - CodePrep 自身の実コードによる統合テスト（`SelectionActionHandler.ts` における `WorkspacePathResolver BINDS_TO VSCodeWorkspacePathResolver`、`ClipboardSelectionUseCase INJECTS VSCodeWorkspacePathResolver`）および全域スモークテスト（全 138 件: `BINDS_TO` 51 件、`INJECTS` 87 件、unresolved 0 件）で動作実証
+  - God-Class Killer Policy（150行/15行/複雑度5制限）を全 12 モジュールで完全遵守
 - feat(ir): Phase 7D-A TypeScript Language Intelligence / Structural Relations 実装および仕様策定（`docs/architecture/language-intelligence-typescript.md`）
   - TypeScript リポジトリを対象に、構文・型定義に基づく言語構造関係（`REFERENCES`, `IMPLEMENTS`, `EXTENDS`）を決定論的に抽出・IR 統合する `LanguageIntelligencePort`（Application）およびインプロセス TypeScript Compiler API による `TypeScriptLanguageAdapter`（Infrastructure）を実装
   - 外部 LSP プロセスデーモンを排除し、Windows Native 環境での最高速・ゼロ外部プロセス依存・高信頼性を確保

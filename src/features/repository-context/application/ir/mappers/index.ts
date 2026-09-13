@@ -3,3 +3,4 @@ export * from './StructuredKnowledgeMapper';
 export * from './DependencyScannerMapper';
 export * from './DerivedRelationMapper';
 export * from './LanguageRelationMapper';
+export * from './WiringRelationMapper';

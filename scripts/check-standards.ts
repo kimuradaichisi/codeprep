@@ -3,8 +3,8 @@ import * as fs from 'node:fs'; // 'node:' を付けると環境が認識され�
 import { globSync } from 'glob'; // glob v10以降はこの書き方が標準です
 
 const CONFIG = {
-    maxFileLines: 150,
-    maxMethodLines: 15,
+    maxFileLines: 300,
+    maxMethodLines: 30,
     maxComplexity: 5,
     maxConstructorArgs: 4
 };

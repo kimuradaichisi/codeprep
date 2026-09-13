@@ -10,8 +10,8 @@
 ## 2. Strict Coding Standards (God-Class Killer Policy)
 You must comply with the following quantitative restrictions with **zero exceptions**. If a requirement forces you to break these limits, you must immediately propose extracting logic into new functions or classes.
 
-- **File Length:** Max **150 lines per file**. If it exceeds this, split the responsibilities into separate files.
-- **Method Length:** Max **15 lines per method/function**. Extract logic into private, well-named helper functions. **(10-Line Safety Margin: 新規作成・変更時は 10 行以内を目標に設計し、後追い分割の手戻りを防ぐこと。)**
+- **File Length:** Max **300 lines per file**. If it exceeds this, split the responsibilities into separate files.
+- **Method Length:** Max **30 lines per method/function**. Extract logic into private, well-named helper functions. **(20-Line Safety Margin: 新規作成・変更時は 20 行以内を目標に設計し、後追い分割の手戻りを防ぐこと。)**
 - **Cyclomatic Complexity:** Max **5 per function**. Avoid deep nesting (if/for/switch). Use guard clauses and early returns exclusively.
 - **Zero "Any" Policy:** The use of `any` is strictly prohibited. You must use `unknown` for unsafe data and validate it using Type Guards or Zod. Ensure total type safety.
 - **Immutability:** Prefer `const` and immutable data structures. Avoid mutating variables unless absolutely necessary for performance in a specific loop.

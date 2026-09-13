@@ -14,11 +14,13 @@ import {
   mapLanguageRelationsToEdges,
   mapRepositoryIndexToFileNodes,
   mapStructuredKnowledgeToNodesAndEdges,
+  mapWiringRelationsToEdges,
   type DocGraphRelationPair,
   type FileDependencyPair,
   type GitCoChangeRelation,
 } from './mappers';
 import type { LanguageStructuralRelation } from './language';
+import type { WiringStructuralRelation } from './composition';
 
 export interface BuildRepositoryIRInput {
   readonly snapshot: RepositorySnapshot;
@@ -28,6 +30,7 @@ export interface BuildRepositoryIRInput {
   readonly gitCoChanges?: readonly GitCoChangeRelation[];
   readonly docGraphRelations?: readonly DocGraphRelationPair[];
   readonly languageRelations?: readonly LanguageStructuralRelation[];
+  readonly wiringRelations?: readonly WiringStructuralRelation[];
 }
 
 function buildFilePathLookup(fileNodes: readonly RepositoryNode[]): Map<string, string> {
@@ -44,7 +47,8 @@ function collectRelationEdges(
   const gitEdges = input.gitCoChanges ? mapGitCoChangesToEdges(input.gitCoChanges, input.snapshot, fileNodeIdMap) : [];
   const docEdges = input.docGraphRelations ? mapDocGraphRelationsToEdges(input.docGraphRelations, input.snapshot, fileNodeIdMap) : [];
   const langRes = input.languageRelations ? mapLanguageRelationsToEdges({ relations: input.languageRelations, snapshot: input.snapshot, fileNodeIdByPath: fileNodeIdMap }) : { edges: [] };
-  return [...depEdges, ...gitEdges, ...docEdges, ...langRes.edges];
+  const wireRes = input.wiringRelations ? mapWiringRelationsToEdges({ relations: input.wiringRelations, snapshot: input.snapshot, fileNodeIdByPath: fileNodeIdMap }) : { edges: [] };
+  return [...depEdges, ...gitEdges, ...docEdges, ...langRes.edges, ...wireRes.edges];
 }
 
 function resolveKnowledge(input: BuildRepositoryIRInput, knownIds: Set<string>) {
