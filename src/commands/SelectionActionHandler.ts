@@ -9,6 +9,7 @@ import { VSCodeWorkspaceRepository } from '../features/selection/infrastructure/
 import { IGitClient } from '../features/git/domain/IGitClient';
 import { ISearchRepository } from '../features/selection/domain/ISearchRepository';
 import { ClipboardSelectionUseCase } from '../features/selection/application/ClipboardSelectionUseCase';
+import { VSCodeWorkspacePathResolver } from '../features/selection/infrastructure/VSCodeWorkspacePathResolver';
 import { PathService } from '../features/selection/domain/PathService';
 
 export interface SelectionActionDeps {
@@ -24,7 +25,8 @@ export class SelectionActionHandler {
   private readonly clipboardUseCase: ClipboardSelectionUseCase;
 
   constructor(private readonly deps: SelectionActionDeps) {
-    this.clipboardUseCase = new ClipboardSelectionUseCase(deps.useCase.currentSelection, deps.root);
+    const resolver = new VSCodeWorkspacePathResolver(deps.root ?? '');
+    this.clipboardUseCase = new ClipboardSelectionUseCase(deps.useCase.currentSelection, resolver);
   }
 
   async selectAll(): Promise<void> {
@@ -81,7 +83,10 @@ export class SelectionActionHandler {
     const input = await vscode.window.showInputBox({ placeHolder: 'ts,js,tsx', prompt: t('selection.enterExtensionsRegex') });
     if (!input) return;
     const patterns = this.parseExtensionPatterns(input);
-    if (!patterns) return;
+    if (patterns) await this.runExtensionSelection(patterns);
+  }
+
+  private async runExtensionSelection(patterns: RegExp[]): Promise<void> {
     await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `CodePrep: ${t('command.selectByExtension')}...` },
       async () => {

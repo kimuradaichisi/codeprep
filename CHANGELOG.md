@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.12] - 2026-09-13
+- perf(selection): Clipboard Selection 高速化（Fast Path & Targeted Lookup への刷新）
+  - `ClipboardSelectionUseCase` による `findFiles('**/*')` の全ファイル走査および各パスごとの総当たり走査（exact/suffix/segment match）を完全撤廃
+  - `WorkspacePathResolver`（Application Port）および `VSCodeWorkspacePathResolver`（Infrastructure Adapter）を新設し、DDD境界と依存性注入（DI）を徹底
+  - 明示的な相対パスおよび Windows/POSIX 絶対パスを直接存在確認（Direct Lookup）する Fast Path を実装。ドライブレターの大文字小文字差異やパストラバーサル防止にも完全対応
+  - Fast Path で未解決のパス（basename / multi-segment）のみピンポイントで検索（`findFiles('**/' + candidate, exclude, 2)`）する Targeted Fallback を導入し、複数候補検出時は勝手な選択を防止
+  - `WorkspaceExcludeProvider` を抽出し、`VSCodeWorkspaceRepository` との共通除外ポリシー（`DEFAULT_EXCLUDED_DIR_NAMES`, `SENSITIVE_EXCLUDED_PATTERNS`, `codeprep.exclude`, `.gitignore`）を統一
+
 ## [0.8.11] - 2026-09-09
 - feat(desktop): Candidate Entry Points のアコーディオン開閉UI対応
   - `CandidateCardList.tsx`: 候補一覧ヘッダー（`CANDIDATE ENTRY POINTS (N)`）をクリックで開閉（折りたたみ/展開）可能にし、画面下部の「Build Context Pack」やプレビュー領域の視認性を劇的に向上

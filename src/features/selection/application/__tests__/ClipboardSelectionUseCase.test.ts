@@ -5,28 +5,53 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import { ClipboardSelectionUseCase } from '../ClipboardSelectionUseCase';
 import { Selection } from '../../domain/Selection';
+import { VSCodeWorkspacePathResolver } from '../../infrastructure/VSCodeWorkspacePathResolver';
+
+const mockFiles = [
+  'C:/workspace/project/src/commands/__tests__/OutputCommands.test.ts',
+  'C:/workspace/project/src/features/engine/__tests__/OutputEngine.test.ts',
+  'C:/workspace/project/src/commands/OutputCommands.ts',
+  'C:/workspace/project/src/components/App.css',
+  'C:/workspace/project/src/app.ts',
+  'C:/workspace/project/README.md',
+  'C:/workspace/project/src/App.vue',
+  'C:/workspace/project/src/theme.sass',
+  'c:/project/src/index.ts',
+];
 
 vi.mock('vscode', () => ({
   env: { clipboard: { readText: vi.fn() } },
   window: { showInformationMessage: vi.fn(), showWarningMessage: vi.fn() },
+  Uri: {
+    file: vi.fn().mockImplementation((p: string) => ({
+      fsPath: p,
+      path: p.replace(/\\/g, '/'),
+    })),
+  },
   workspace: {
-    getConfiguration: vi.fn().mockImplementation(() => ({ get: (k: string, d: any) => d })),
-    findFiles: vi.fn().mockResolvedValue([
-      { path: 'C:/workspace/project/src/commands/__tests__/OutputCommands.test.ts' },
-      { path: 'C:/workspace/project/src/features/engine/__tests__/OutputEngine.test.ts' },
-      { path: 'C:/workspace/project/src/commands/OutputCommands.ts' },
-      { path: 'C:/workspace/project/src/components/App.css' },
-      { path: 'C:/workspace/project/src/app.ts' },
-      { path: 'C:/workspace/project/README.md' },
-      { path: 'C:/workspace/project/src/App.vue' },
-      { path: 'C:/workspace/project/src/theme.sass' },
-      { path: 'c:/project/src/index.ts' },
-    ]),
+    getConfiguration: vi.fn().mockImplementation(() => ({ get: (_k: string, d: any) => d })),
+    findFiles: vi.fn().mockImplementation((pattern: vscode.GlobPattern) => {
+      const rawPattern = typeof pattern === 'string' ? pattern : pattern.pattern;
+      const raw = rawPattern.replace(/^\*\*\//, '').replace(/\\/g, '/');
+      const matched = mockFiles.filter(f => f.toLowerCase().endsWith(raw.toLowerCase()));
+      return Promise.resolve(matched.map(f => ({ path: f, fsPath: f })));
+    }),
     asRelativePath: vi.fn().mockImplementation((uri: any) => {
-      const p = uri.path || uri;
+      const p = (uri.path || uri.fsPath || uri).replace(/\\/g, '/');
       return p.replace('C:/workspace/project/', '').replace('c:/project/', '');
-    })
-  }
+    }),
+    fs: {
+      stat: vi.fn().mockImplementation(async (uri: any) => {
+        const p = (uri.fsPath || uri.path || String(uri)).replace(/\\/g, '/');
+        const found = mockFiles.some(f => f.toLowerCase() === p.toLowerCase());
+        if (found) return { type: 1 };
+        const err: any = new Error('FileNotFound');
+        err.code = 'FileNotFound';
+        throw err;
+      }),
+      readFile: vi.fn().mockRejectedValue(new Error('no gitignore')),
+    },
+  },
 }));
 
 describe('ClipboardSelectionUseCase', () => {
@@ -37,12 +62,11 @@ describe('ClipboardSelectionUseCase', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     selection = new Selection();
-    useCase = new ClipboardSelectionUseCase(selection, mockRoot);
+    useCase = new ClipboardSelectionUseCase(selection, new VSCodeWorkspacePathResolver(mockRoot));
   });
 
   it('should not notify when clipboard.watch is disabled', async () => {
     vi.mocked(vscode.workspace.getConfiguration).mockReturnValueOnce({ get: () => false } as any);
-    // ensure clipboard has something so selectFromClipboard proceeds
     vi.mocked(vscode.env.clipboard.readText).mockResolvedValue('src/app.ts');
 
     await useCase.selectFromClipboard();
@@ -63,16 +87,11 @@ describe('ClipboardSelectionUseCase', () => {
 
     const paths = selection.getPaths();
 
-    // 抽出されたファイルパス
     expect(paths).toContain('src/commands/__tests__/OutputCommands.test.ts');
     expect(paths).toContain('src/features/engine/__tests__/OutputEngine.test.ts');
     expect(paths).toContain('src/commands/OutputCommands.ts');
-
-    // 親ディレクトリも含まれる
     expect(paths).toContain('src/commands');
     expect(paths).toContain('src/features/engine');
-
-    // 件数は親ディレクトリ展開後の総数
     expect(vscode.window.showInformationMessage).toHaveBeenCalled();
   });
 
@@ -93,7 +112,6 @@ describe('ClipboardSelectionUseCase', () => {
 
     await useCase.selectFromClipboard();
 
-    // app.ts とその親 src が登録される
     expect(selection.getPaths()).toContain('src/app.ts');
     const filesOnly = selection.getPaths().filter(p => p.endsWith('.ts'));
     expect(filesOnly).toHaveLength(1);
@@ -133,7 +151,7 @@ describe('ClipboardSelectionUseCase', () => {
   it('ドライブレターの大文字小文字差異を許容して正規化すること', async () => {
     const lowerRoot = 'c:/project';
     const upperInput = 'C:\\Project\\src\\index.ts';
-    const sut = new ClipboardSelectionUseCase(selection, lowerRoot);
+    const sut = new ClipboardSelectionUseCase(selection, new VSCodeWorkspacePathResolver(lowerRoot));
     vi.mocked(vscode.env.clipboard.readText).mockResolvedValue(upperInput);
 
     await sut.selectFromClipboard();
@@ -142,7 +160,6 @@ describe('ClipboardSelectionUseCase', () => {
   });
 
   it('完全一致しない場合でも、実在する一意なファイル名から後方一致で解決できること', async () => {
-    // クリップボードにはファイル名 "theme.sass" しかないが、一意にマッチするため解決される
     vi.mocked(vscode.env.clipboard.readText).mockResolvedValue('theme.sass');
 
     await useCase.selectFromClipboard();
@@ -151,7 +168,6 @@ describe('ClipboardSelectionUseCase', () => {
   });
 
   it('複数セグメントを含む後方一致で解決できること', async () => {
-    // クリップボードには "commands/OutputCommands.ts"
     vi.mocked(vscode.env.clipboard.readText).mockResolvedValue('commands/OutputCommands.ts');
 
     await useCase.selectFromClipboard();
