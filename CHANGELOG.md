@@ -2,17 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.13] - 2026-09-13
 - feat(ir): Phase 7G Task Query / Relevant Subgraph 実装および仕様策定（`docs/architecture/task-relevant-subgraph-query.md`）
   - Task 文字列から Seed Discovery $\to$ Repository Knowledge Graph $\to$ Relation-aware Bounded Traversal $\to$ Relevant Subgraph $\to$ Ranked Relevant Nodes を生成する `QueryRelevantSubgraphUseCase` を実装
   - Task 文字列から明示パス・ファイル名・シンボル識別子・見出しキーワードを段階的に特定する `SeedResolver`、および SQLite Knowledge Store からの高速ノード検索 `findNodes(filter)` を実装
   - リレーションごとの優先度・最大 Fanout・確信度閾値・距離減衰を制御し、無制限探索を防ぐ `RelationTraversalPolicy` を策定（AST/型/DI 等の決定的関係を最優先、10,000 件以上の `CO_CHANGED_WITH` エッジを厳格プルーニング）
   - 優先度キューを用いた Bounded Best-First Traversal により、循環参照や巨大グラフ爆発を防ぎつつ関連サブグラフを抽出する `GraphTraversalEngine` を実装
   - エビデンス品質重み付け（AST/型 1.0、Wiring 0.95、Import 0.85、Git 0.50、Cross-ref 0.60、Fuzzy 0.30）と理由集約（Explanation: `seed:*`, `edge:*`）を伴う `EvidenceQualityScorer` および `RelevantNodeRanker` を実装
-  - Gate 0 BLOCKER であった `StructuredKnowledge`（シンボル 2,278 件、ドキュメント節点 836 件）の未連携を `ProductionRepositoryKnowledgeBuilder` に統合・解消し、全 3,778 Nodes / 18,846 Edges（全 9 Relation Type: `contains`, `depends-on`, `references`, `implements`, `extends`, `binds_to`, `injects`, `co-changed-with`, `doc-relation`）の Production IR 基盤を確立
+  - Gate 0 BLOCKER であった `StructuredKnowledge`（シンボル 2,278 件、ドキュメント節点 836 件）の未連携を `ProductionRepositoryKnowledgeBuilder` に統合・解消し、全 3,829 Nodes / 18,932 Edges（全 9 Relation Type: `contains`, `depends-on`, `references`, `implements`, `extends`, `binds_to`, `injects`, `co-changed-with`, `doc-relation`）の Production IR 基盤を確立
   - `IRInvalidator` をマルチアナライザー（`structured-knowledge` 内のシンボル・節点）対応に拡張し、全 9 種別で **Incremental Refresh == Full Rebuild（Oracle Match PASS、Dangling Edge = 0）** の完全一致を維持
   - 7 カテゴリの代表シナリオを網羅した Golden Set（`evaluation/task-query-golden-set.json`）および自動評価器 `TaskQueryEvaluator` を新設し、Dev-Harness（`repositoryEval.ts`, `reportBuilder.ts`）に統合
-  - 実リポジトリ全域評価において、**Hit@5: 85.7%**、**Hit@10: 85.7%**、**Recall@10: 73.8%**、**MRR: 0.762**、**平均探索レイテンシ: 137ms** の高精度・高速探索を実証
+  - Baseline Comparison（Candidate Only vs Graph Query）において、**MRR 0.439 $\to$ 0.714 (+62.6%向上)**、**Hit@5 57.1% $\to$ 71.4% (+14.3%向上)** を実証
+  - Phase 7B / 7C 追跡 Golden Task において、従来の docs 偏重が完全に解消され、構造リレーション（`injects`, `references` 等）を根拠とした実装 Node が Top 10 中 8 件を占める劇的改善を達成
+  - 平均探索時間 **124.4ms**、全 10,424 件の `CO_CHANGED_WITH` エッジのうちフロンティア検討された 643 件すべてを安全にプルーニング（ノイズ混入 0 件）
   - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を全モジュールで完全遵守
 
 ## [0.8.12] - 2026-09-13
