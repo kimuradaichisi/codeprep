@@ -6,3 +6,4 @@ export * from './RepositoryNode';
 export * from './RepositoryEdge';
 export * from './RepositorySnapshot';
 export * from './RepositoryIRInvariants';
+export * from './RepositoryIR';

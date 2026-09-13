@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.8.12] - 2026-09-13
+- feat(ir): Phase 7C Existing Producers → Repository IR Mapping 実装および仕様策定（`docs/architecture/repository-ir-mapping.md`）
+  - 既存の分析資産（`RepositoryIndex`, `StructuredKnowledgeIndex`, `DependencyScanner`, `GitCoChange`, `DocGraph`）を `RepositoryIR` グラフへ変換する In-Memory Mapper 群（`RepositoryIndexMapper`, `StructuredKnowledgeMapper`, `DependencyScannerMapper`, `DerivedRelationMapper`）を実装
+  - 既存 Producer は一切変更せず、解析手法の精度・限界を忠実に `RepositoryEvidence`（`deterministic-ast`, `regex-pattern`, `git-history`, `rule-derived`）へ記録
+  - 複数 Mapper を統合し一貫性のある `RepositoryIR` 集約を構築する純粋オーケストレータ `BuildRepositoryIRUseCase` を新設
+  - 決定論的 Node ID（`node:<snapshot>:file:<path>`, `sym:<path>#<kind>:<name>:<line>`, `doc:<path>#L<line>`）および未解決ターゲットのノード捏造防止を保証
+  - Directory Proximity の IR 除外判断（クエリ時ヒューリスティック）および SemanticIndex の直接埋め込み見送り（DEFER）方針を明文化
+  - 包括的な単体・結合テスト（全 26 テスト PASS）および厳格な 150 行/15 行コード規約を完全遵守
 - feat(ir): Phase 7B Repository IR Domain Model 最小実装および仕様策定（`docs/architecture/repository-ir-domain-model.md`）
   - リポジトリの構造と関係を言語非依存・タスク非依存で表現するグラフ中間表現（Repository IR）の Domain Contract を確立
   - コアエンティティ定義: `RepositoryNode`（File, Symbol, DocSection, Config, Test, EntryPoint 等）、`RepositoryEdge`（Contains, Calls, Implements, Extends, BindsTo, Injects, MayDispatchTo 等）、`RepositoryEvidence`（Provenance, Analyzer, Category, Confidence）、`RepositorySnapshot`
