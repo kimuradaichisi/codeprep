@@ -10,8 +10,9 @@ import { parseEntryPoints } from '../hooks/workspaceTaskContext';
 
 export const TaskContextInputArea: React.FC<SearchPanelProps> = (props) => {
   const isBusy = Boolean(props.isAnalyzing || props.isDiscoveringEntryPoints);
+  const isKnowledge = props.adaptiveStrategy === 'knowledge';
   const selectedPaths = parseEntryPoints(props.entryPointInput);
-  const canBuild = !isBusy && props.taskInput.trim().length > 0 && selectedPaths.length > 0;
+  const canBuild = !isBusy && props.taskInput.trim().length > 0 && (isKnowledge || selectedPaths.length > 0);
 
   const [isTaskCollapsed, setIsTaskCollapsed] = React.useState(false);
 
@@ -21,9 +22,12 @@ export const TaskContextInputArea: React.FC<SearchPanelProps> = (props) => {
         indexStatus={props.indexStatus}
         knowledgeStatus={props.knowledgeStatus}
         semanticStatus={props.semanticStatus}
+        knowledgeDbStatus={props.knowledgeDbStatus}
+        knowledgeDbMessage={props.knowledgeDbMessage}
         onRefreshIndex={props.refreshIndex ? () => void props.refreshIndex?.() : undefined}
         onOpenSettings={props.openSettings}
       />
+
 
       {isTaskCollapsed ? (
         <div
@@ -116,23 +120,25 @@ export const TaskContextInputArea: React.FC<SearchPanelProps> = (props) => {
           onClick={() => void props.analyzeTask()}
           style={{ padding: '4px 14px' }}
         >
-          {props.isAnalyzing ? 'Building Pack...' : 'Build Context Pack'}
+          {props.isAnalyzing ? 'Building Pack...' : (isKnowledge ? 'Prepare Context (v2)' : 'Build Context Pack')}
         </button>
       </div>
 
-      {props.packManifest && (
+      {(props.packManifest || props.contextPackV2) && (
         <ContextPackViewer
           manifest={props.packManifest}
+          contextPackV2={props.contextPackV2}
           manifestMarkdown={props.preview}
           packContent={props.packContent}
           resolvedStrategy={props.resolvedStrategy}
           activeTab={props.activePreviewTab ?? 'manifest'}
           isBusy={isBusy}
           onTabChange={(t) => props.setActivePreviewTab?.(t)}
-          onCopy={() => void props.copyPackContent?.()}
+          onCopy={(format) => void props.copyPackContent?.(format)}
           onReset={() => props.resetTaskContext?.()}
         />
       )}
     </div>
   );
 };
+

@@ -44,14 +44,14 @@ async function handleKnowledgeStrategy(
   logStderr(`Using Knowledge Graph strategy (Context Pack v2)`);
   const { useCase, store } = createPrepareContextPackV2UseCase(container);
   try {
-    const stats = await store.getStatistics('latest');
-    const snapshotId = stats.nodeCount > 0 ? 'latest' : 'eval-head';
+    const snapshotId = await resolveSnapshotId(store, container.project.name);
     const budget = (args.maxFiles !== undefined || args.maxTokens !== undefined)
       ? createWorkingSetBudget({
           maxFiles: args.maxFiles ?? 10,
           maxEstimatedTokens: args.maxTokens ?? 12000,
         })
       : undefined;
+
     const packV2 = await useCase.execute({
       project: container.project,
       task: args.task,
@@ -124,3 +124,20 @@ function writeOutput(text: string, outputPath?: string): void {
 function logStderr(message: string): void {
   process.stderr.write(`[codeprep-cli] ${message}\n`);
 }
+
+async function resolveSnapshotId(
+  store: import('../../src/features/repository-context/infrastructure/knowledge/sqlite/SqliteRepositoryKnowledgeStore').SqliteRepositoryKnowledgeStore,
+  projectName: string
+): Promise<string> {
+  const stats = await store.getStatistics('latest');
+  if (stats.nodeCount > 0) return 'latest';
+
+  const latest = (await store.findLatest(projectName)) ?? (await store.findLatest('codeprep-repo'));
+  if (latest) return latest.snapshotId;
+
+  const evalHeadStats = await store.getStatistics('eval-head');
+  if (evalHeadStats.nodeCount > 0) return 'eval-head';
+
+  return 'latest';
+}
+

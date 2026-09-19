@@ -32,8 +32,25 @@ describe('toBuildTaskContextRequest', () => {
     expect(toBuildTaskContextRequest(raw).strategy).toBe('fast');
     const autoRaw = { projectId: 'p1', task: 'Task', entryPoints: ['src/a.ts'], strategy: 'auto' };
     expect(toBuildTaskContextRequest(autoRaw).strategy).toBe('auto');
+    const knowledgeRaw = { projectId: 'p1', task: 'Task', strategy: 'knowledge' };
+    expect(toBuildTaskContextRequest(knowledgeRaw).strategy).toBe('knowledge');
+    expect(toBuildTaskContextRequest(knowledgeRaw).entryPoints).toBeUndefined();
     expect(() => toBuildTaskContextRequest({ projectId: 'p1', task: 'Task', entryPoints: ['src/a.ts'], strategy: 'invalid' })).toThrow('Invalid strategy.');
   });
+
+  it('parses budget and explicitPaths correctly', () => {
+    const raw = {
+      projectId: 'p1',
+      task: 'Task',
+      strategy: 'knowledge',
+      budget: { maxFiles: 5, maxTokens: 8000 },
+      explicitPaths: ['src/a.ts', 'src/b.ts'],
+    };
+    const parsed = toBuildTaskContextRequest(raw);
+    expect(parsed.budget).toEqual({ maxFiles: 5, maxTokens: 8000 });
+    expect(parsed.explicitPaths).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+
 
   it('throws on non-object', () => {
     expect(() => toBuildTaskContextRequest(null)).toThrow('Invalid task context request.');

@@ -6,6 +6,9 @@ import type { EntryPointCandidate } from '../../../../src/features/repository-co
 import { desktopErrorMessage } from '../DesktopWorkflow';
 import { candidateKeys } from './workspaceAnalysis';
 
+import type { ContextPackV2 } from '../../../../src/features/repository-context/domain/workingset';
+import type { DesktopStrategy } from '../types';
+
 export type TaskAnalysisResultUpdate = Readonly<{
   candidates?: readonly AnalyzedCandidate[];
   selectedKeys?: readonly string[];
@@ -13,7 +16,8 @@ export type TaskAnalysisResultUpdate = Readonly<{
   manifestMarkdown?: string;
   packContent?: string;
   manifest?: import('../../../../src/features/repository-context/domain/ContextManifest').ContextManifest;
-  resolvedStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode;
+  resolvedStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode | 'knowledge';
+  contextPackV2?: ContextPackV2;
   searchNotice: string | undefined;
 }>;
 
@@ -28,19 +32,21 @@ export const analyzeTaskWorkspace = async (
   entryPointInput: string,
   projects: readonly Project[],
   tokenLimit: number,
-  strategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptiveStrategyOverride,
+  strategy?: DesktopStrategy,
 ): Promise<TaskAnalysisResultUpdate> => {
   const primaryProject = projects[0];
   if (!primaryProject) return { searchNotice: 'No project selected.' };
   const entryPoints = parseEntryPoints(entryPointInput);
-  if (entryPoints.length === 0) return { searchNotice: 'At least one entry point is required.' };
+  if (strategy !== 'knowledge' && entryPoints.length === 0) {
+    return { searchNotice: 'At least one entry point is required.' };
+  }
   if (!task.trim()) return { searchNotice: 'Task description is required.' };
 
   try {
     const result = await api.buildTaskContext({
       projectId: primaryProject.id,
       task: task.trim(),
-      entryPoints,
+      entryPoints: entryPoints.length > 0 ? entryPoints : undefined,
       tokenLimit,
       strategy,
     });
@@ -61,8 +67,10 @@ const toSuccessUpdate = (
   packContent: result.content,
   manifest: result.manifest,
   resolvedStrategy: result.resolvedStrategy,
+  contextPackV2: result.contextPackV2,
   searchNotice: result.warnings.join('\n') || undefined,
 });
+
 
 export const discoverEntryPointsWorkspace = async (
   api: DesktopApi,

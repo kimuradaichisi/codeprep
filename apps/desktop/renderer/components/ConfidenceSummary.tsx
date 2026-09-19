@@ -2,11 +2,13 @@
 import React from 'react';
 import type { ContextConfidence, ContextConfidenceReason, AdaptivePackMode, AdaptiveStrategyOverride } from '../../../../src/features/repository-context/domain/ContextConfidence';
 
+import type { DesktopStrategy } from '../types';
+
 type Props = Readonly<{
   confidence?: ContextConfidence;
   suggestedStrategy?: AdaptivePackMode;
-  selectedStrategy?: AdaptiveStrategyOverride;
-  onStrategyChange?(value: AdaptiveStrategyOverride): void;
+  selectedStrategy?: DesktopStrategy;
+  onStrategyChange?(value: DesktopStrategy): void;
 }>;
 
 const REASON_LABELS_JA: Record<ContextConfidenceReason, string> = {
@@ -20,10 +22,11 @@ const REASON_LABELS_JA: Record<ContextConfidenceReason, string> = {
   weakStructuralSupport: '構造的な結びつき（import/test等）が弱い',
 };
 
-const STRATEGY_DESCRIPTIONS_JA: Record<AdaptivePackMode, string> = {
+const STRATEGY_DESCRIPTIONS_JA: Record<AdaptivePackMode | 'knowledge', string> = {
   fast: '⚡ 最小構成: 本命ファイルと主要な型定義のみパック（トークン消費最小）',
   standard: '⚖️ 標準構成: 選択ファイルと直近の依存関係をバランスよくパック',
   expanded: '🔍 広め構成: 周辺コードや参照先も含めて広めにパック（見落とし防止）',
+  knowledge: '🧠 知識グラフ: リポジトリ知識グラフからタスク直結サブグラフを抽出（Context Pack v2）',
 };
 
 const LEVEL_CONFIG = {
@@ -86,10 +89,11 @@ export const ConfidenceSummary: React.FC<Props> = ({
             <select
               aria-label="Pack strategy"
               value={selectedStrategy}
-              onChange={(e) => onStrategyChange(e.target.value as AdaptiveStrategyOverride)}
+              onChange={(e) => onStrategyChange(e.target.value as DesktopStrategy)}
               style={{ fontSize: '11px', padding: '1px 6px', background: '#0f172a', color: '#e2e8f0', border: '1px solid #334155' }}
             >
               <option value="auto">Auto ({suggestedStrategy})</option>
+              <option value="knowledge">Knowledge Graph (v2)</option>
               <option value="fast">Fast (最小限)</option>
               <option value="standard">Standard (標準)</option>
               <option value="expanded">Expanded (広め)</option>
@@ -97,6 +101,7 @@ export const ConfidenceSummary: React.FC<Props> = ({
           </div>
         )}
       </div>
+
 
       <div style={{ fontSize: '10px', color: '#cbd5e1' }}>
         {STRATEGY_DESCRIPTIONS_JA[activeMode]}

@@ -129,8 +129,62 @@ describe('TaskContextComponents', () => {
       act(() => { resetBtn?.click(); });
       expect(onReset).toHaveBeenCalled();
     });
+
+    it('renders ContextPackV2 with tabs, metrics, and multi-format copy', () => {
+      const onCopy = vi.fn();
+      const onTabChange = vi.fn();
+      const packV2 = {
+        schemaVersion: '2' as const,
+        task: 'Fix payment timeout',
+        strategy: 'knowledge-subgraph' as const,
+        confidence: {},
+        workingSet: { core: [], supporting: [], recallReserve: [] },
+        context: [],
+        excluded: [],
+        metrics: {
+          subgraphNodes: 8,
+          workingSetEntries: 2,
+          contextFiles: 2,
+          contextRanges: 3,
+          estimatedTokens: 1250,
+          compressionRatio: 0.75,
+          budgetDecision: {
+            source: 'adaptive' as const,
+            scope: 'standard' as const,
+            budget: { maxFiles: 10, maxEstimatedTokens: 12000, maxNodes: 30, maxBytes: 50000 },
+            recallReserveLimit: 2,
+            reasons: ['standard'],
+            signals: [],
+          },
+        },
+      };
+
+      const container = render(
+        <ContextPackViewer
+          contextPackV2={packV2}
+          manifestMarkdown="# V2 Markdown"
+          packContent="// V2 Code Content"
+          resolvedStrategy="knowledge"
+          activeTab="manifest"
+          isBusy={false}
+          onTabChange={onTabChange}
+          onCopy={onCopy}
+          onReset={vi.fn()}
+        />
+      );
+
+      expect(container.textContent).toContain('Strategy: KNOWLEDGE');
+      expect(container.textContent).toContain('Scope: standard');
+      expect(container.textContent).toContain('Compression: 75.0%');
+      expect(container.textContent).toContain('Working Set');
+
+      const copyMdBtn = Array.from(container.querySelectorAll('button')).find((b) => b.textContent?.includes('Copy Markdown'));
+      act(() => { copyMdBtn?.click(); });
+      expect(onCopy).toHaveBeenCalledWith('markdown');
+    });
   });
 });
+
 
 const render = (node: React.ReactNode): HTMLElement => {
   const container = document.createElement('div');

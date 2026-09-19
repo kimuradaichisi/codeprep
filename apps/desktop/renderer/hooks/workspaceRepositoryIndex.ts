@@ -13,6 +13,8 @@ export type WorkspaceIndexState = Readonly<{
   knowledgeEntries: number;
   semanticStatus: SemanticIndexStatus;
   semanticEntries: number;
+  knowledgeDbStatus?: string;
+  knowledgeDbMessage?: string;
   refreshIndex(): Promise<void>;
 }>;
 
@@ -26,6 +28,8 @@ export const useWorkspaceRepositoryIndex = (
   const [knowledgeEntries, setKnowledgeEntries] = useState(0);
   const [semanticStatus, setSemanticStatus] = useState<SemanticIndexStatus>('not_built');
   const [semanticEntries, setSemanticEntries] = useState(0);
+  const [knowledgeDbStatus, setKnowledgeDbStatus] = useState<string | undefined>(undefined);
+  const [knowledgeDbMessage, setKnowledgeDbMessage] = useState<string | undefined>(undefined);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -36,12 +40,15 @@ export const useWorkspaceRepositoryIndex = (
       if (res.knowledgeEntries !== undefined) setKnowledgeEntries(res.knowledgeEntries);
       if (res.semanticStatus) setSemanticStatus(res.semanticStatus);
       if (res.semanticEntries !== undefined) setSemanticEntries(res.semanticEntries);
+      setKnowledgeDbStatus(res.knowledgeDbStatus);
+      setKnowledgeDbMessage(res.knowledgeDbMessage);
     } catch {
       setStatus('degraded');
       setKnowledgeStatus('degraded');
       setSemanticStatus('degraded');
     }
   }, [api, workspaceId]);
+
 
   const refreshIndex = useCallback(async () => {
     setStatus('updating');

@@ -37,7 +37,7 @@ export const registerDesktopHandlers = (registryPath: string): void => {
   ipcMain.handle('readFileContent', (_e, pId: unknown, rel: unknown) => readFileContent(registry, pId, rel));
   ipcMain.handle('buildTaskContext', (_e, value: unknown) => handleBuildTaskContext(registry, value));
   ipcMain.handle('discoverEntryPointCandidates', (_e, val: unknown) => handleDiscoverEntryPointCandidates(registry, val));
-  ipcMain.handle('getRepositoryIndexStatus', (_e, wsId: unknown) => handleGetRepositoryIndexStatus(indexesDir, wsId));
+  ipcMain.handle('getRepositoryIndexStatus', (_e, wsId: unknown) => handleGetRepositoryIndexStatus(indexesDir, wsId, registry));
   ipcMain.handle('refreshRepositoryIndex', (_e, wsId: unknown) => handleRefreshRepositoryIndex(registry, indexesDir, wsId));
 };
 

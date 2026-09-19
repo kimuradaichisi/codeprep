@@ -13,18 +13,27 @@ import type { Project } from '../../src/features/repository-context/domain/Proje
 
 import type { ContextConfidence, AdaptivePackMode } from '../../src/features/repository-context/domain/ContextConfidence';
 
+import type { ContextPackV2 } from '../../src/features/repository-context/domain/workingset';
+
 export type DesktopOutput = Readonly<{
   preview: string;
   warning?: string;
   manifest?: readonly Readonly<{ projectId: string; relativePath: string; included: boolean; reasons: readonly string[] }>[];
 }>;
 
+export type DesktopPackStrategy = AdaptivePackMode | 'auto' | 'knowledge';
+
 export type BuildTaskContextRequest = Readonly<{
   projectId: string;
   task: string;
-  entryPoints: readonly string[];
+  entryPoints?: readonly string[];
   tokenLimit?: number;
-  strategy?: AdaptivePackMode | 'auto';
+  strategy?: DesktopPackStrategy;
+  budget?: Readonly<{
+    maxFiles?: number;
+    maxTokens?: number;
+  }>;
+  explicitPaths?: readonly string[];
 }>;
 
 export type DiscoverEntryPointCandidatesRequest = Readonly<{
@@ -47,9 +56,10 @@ export type DesktopTaskContextResult = Readonly<{
   manifest: ContextManifest;
   markdown: string;
   content: string;
-  resolvedStrategy: AdaptivePackMode;
+  resolvedStrategy: AdaptivePackMode | 'knowledge';
   candidates: readonly AnalyzedCandidate[];
   warnings: readonly string[];
+  contextPackV2?: ContextPackV2;
 }>;
 
 export type SaveOutputRequest = Readonly<{
@@ -72,6 +82,8 @@ export type StructuredKnowledgeIndexStatus = 'ready' | 'building' | 'degraded' |
 
 export type SemanticIndexStatus = 'ready' | 'building' | 'degraded' | 'not_built';
 
+export type KnowledgeDbStatus = 'ready' | 'missing' | 'stale' | 'dirty' | 'refresh_required';
+
 export type RepositoryIndexStatusResponse = Readonly<{
   status: RepositoryIndexStatus;
   totalFiles: number;
@@ -81,6 +93,8 @@ export type RepositoryIndexStatusResponse = Readonly<{
   knowledgeEntries?: number;
   semanticStatus?: SemanticIndexStatus;
   semanticEntries?: number;
+  knowledgeDbStatus?: KnowledgeDbStatus;
+  knowledgeDbMessage?: string;
 }>;
 
 export type RefreshRepositoryIndexResponse = Readonly<{

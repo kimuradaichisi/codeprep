@@ -2,7 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Phase 7J-A
+## [Unreleased] - Phase 7K-A
+- feat(desktop): Phase 7K-A Desktop Context Pack v2 Integration / Knowledge Strategy 統合（`docs/architecture/desktop-context-pack-v2-integration.md`）
+  - 既存のコードベース探索・パッキング UX および下位互換性を完全に維持したまま、Desktop UI (`apps/desktop`) に Knowledge Graph Strategy (`strategy: 'knowledge'`) および Context Pack v2 を統合
+  - **Single Source of Truth**: UI 専用の再実装を排除し、コアアプリケーション層の `createPrepareContextPackV2UseCase` を直接利用して Desktop / CLI / MCP の完全な振る舞いの一致を保証
+  - **UI / Renderer 拡張**:
+    - `WorkspaceStatusHeader`: Knowledge DB (v2) の稼働状態（`ready`, `missing`, `stale`, `dirty`）および警告メッセージを表示
+    - `ConfidenceSummary`: パッキング戦略選択肢に `Knowledge Graph (v2)` を追加
+    - `TaskContextInputArea`: Knowledge Strategy 選択時は自動探索により Entry Point 入力なしでも `Prepare Context (v2)` がワンクリックで実行可能な UX を実現
+    - `ContextPackViewer`: タブ切替（`Markdown`, `Working Set`, `Code`, `JSON`）、Scope / Budget / Compression などの Metrics バー、およびマルチフォーマット（Pack, Markdown, JSON）コピーを実装
+    - `ContextPackWorkingSetView` (新規): `CORE`, `SUPPORTING`, `RECALL_RESERVE` のグルーピング、スコア・トークン・粒度・選定理由・行範囲の展開表示
+  - **Backend / IPC 拡張**:
+    - `DesktopApi`: `DesktopPackStrategy`, `contextPackV2`, `knowledgeDbStatus`, `budget`, `explicitPaths` の型拡張
+    - `TaskContextRequestParser`: `strategy: 'knowledge'` パース対応
+    - `TaskContextPackV2Handler` (新規): 最新 snapshot ID 解決と v2 生成バックエンドオーケストレーション
+    - `KnowledgeStatusResolver` (新規): SQLite 知識ストアと Git リビジョン照合による同期ステータス判定
+  - **共通層フォーマッタ**:
+    - `ContextPackV2Formatter` (新規): Context Pack v2 を Markdown および プロンプト用テキスト（行範囲・粒度明記）に構造化整形するロジックを集約し、CLI / Desktop 間で再利用
+  - **検証と実測成果**:
+    - **Desktop / CLI / MCP Semantic Parity**: **100.0%** （`DesktopKnowledgeParity.test.ts`）
+    - **実リポジトリ Dogfooding (3 Tasks)**:
+      - Task A (Narrow): Latency 1,364ms, Tokens 3,958, Compression 74.2%, Core 3
+      - Task B (Cross-layer): Latency 1,541ms, Tokens 4,450, Compression 79.5%, Core 3
+      - Task C (Docs+Impl): Latency 3,275ms, Tokens 6,022, Compression 62.5%, Core 4
+      - 平均 Latency 2,060ms, 平均トークン 4,810 tokens, 平均選択ファイル数 8.3
+    - **下位互換性**: 既存の探索・パッキング UX および全テストスイート（全 28 テストファイル、159 テスト）すべて PASS、Legacy 回帰なし（0%）
+    - 品質ゲート（`npm run check`, `npm run desktop:test`, `npm run cli:test`, `npm run mcp:test`, `npm run lint:standards:changed`）すべて PASS
 - feat(ir): Phase 7J-A Deterministic Query Expansion / Seed Recall Improvement 実装および Closeout 修正（`docs/architecture/deterministic-query-expansion.md`）
   - 外部 LLM / Vector DB を一切使わず、ローカルの SQLite IR 知識ストアから決定論的語彙インデックス（`RepositoryVocabularyIndex`）をメモリ上に構築・キャッシュする機構を実装
   - キャメルケース・ケバブケース・ASCII/CJK境界・拡張子除去を行う `IdentifierNormalizer`、英語屈折変化を正規化する `QueryMorphology`、2〜3トークンの連語照合を行う `PhraseMatcher` を導入

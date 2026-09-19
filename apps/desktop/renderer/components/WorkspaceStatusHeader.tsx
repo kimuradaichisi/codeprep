@@ -5,6 +5,8 @@ type Props = Readonly<{
   indexStatus?: string;
   knowledgeStatus?: string;
   semanticStatus?: string;
+  knowledgeDbStatus?: string;
+  knowledgeDbMessage?: string;
   onRefreshIndex?(): void;
   onOpenSettings?(): void;
 }>;
@@ -13,10 +15,13 @@ export const WorkspaceStatusHeader: React.FC<Props> = ({
   indexStatus = 'ready',
   knowledgeStatus = 'ready',
   semanticStatus = 'ready',
+  knowledgeDbStatus,
+  knowledgeDbMessage,
   onRefreshIndex,
   onOpenSettings,
 }) => {
   const isSemanticDegraded = semanticStatus.toLowerCase() === 'degraded' || semanticStatus.toLowerCase() === 'not_built';
+  const isKnowledgeDbIssue = Boolean(knowledgeDbStatus && knowledgeDbStatus.toLowerCase() !== 'ready');
 
   return (
     <div
@@ -32,7 +37,11 @@ export const WorkspaceStatusHeader: React.FC<Props> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
           <StatusPill label="Repository Index" status={indexStatus} />
-          <StatusPill label="Knowledge Index" status={knowledgeStatus} />
+          {knowledgeDbStatus ? (
+            <StatusPill label="Knowledge DB (v2)" status={knowledgeDbStatus} isDegraded={isKnowledgeDbIssue} />
+          ) : (
+            <StatusPill label="Knowledge Index" status={knowledgeStatus} />
+          )}
           <StatusPill label="Semantic Index" status={semanticStatus} isDegraded={isSemanticDegraded} />
         </div>
         {onRefreshIndex && (
@@ -45,6 +54,12 @@ export const WorkspaceStatusHeader: React.FC<Props> = ({
           </button>
         )}
       </div>
+      {isKnowledgeDbIssue && knowledgeDbMessage && (
+        <div style={{ marginTop: '6px', color: '#fb923c', fontSize: '10px', lineHeight: 1.3 }}>
+          <span>⚠️ {knowledgeDbMessage}</span>
+        </div>
+      )}
+
       {isSemanticDegraded && (
         <div
           style={{

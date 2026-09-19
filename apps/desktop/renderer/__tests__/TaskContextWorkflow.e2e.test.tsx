@@ -4,18 +4,22 @@ import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 import { SearchPanel } from '../components/SearchPanel';
 import type { DesktopApi } from '../../DesktopApi';
+import type { DesktopStrategy, DesktopPreviewTab } from '../types';
+import type { EntryPointCandidate } from '../../../../src/features/repository-context/domain/EntryPointCandidate';
+import type { ContextConfidence, AdaptivePackMode } from '../../../../src/features/repository-context/domain/ContextConfidence';
+import type { ContextManifest } from '../../../../src/features/repository-context/domain/ContextManifest';
 import { defaultRecommendationSettings } from '../../../../src/features/repository-context/domain/Recommendation';
 
 const createWorkflowE2EProps = (api: DesktopApi) => {
   let task = '返品時に二重返金される問題を調査する';
   let selected = '';
-  let strategy: 'auto' | 'fast' | 'standard' | 'expanded' = 'auto';
-  let activeTab: 'manifest' | 'context' = 'manifest';
-  let candidates: any[] = [];
-  let confidence: any = undefined;
-  let packManifest: any = undefined;
+  let strategy: DesktopStrategy = 'auto';
+  let activeTab: DesktopPreviewTab = 'manifest';
+  let candidates: readonly EntryPointCandidate[] = [];
+  let confidence: ContextConfidence | undefined = undefined;
+  let packManifest: ContextManifest | undefined = undefined;
   let packContent = '';
-  let resolvedStrategy: any = undefined;
+  let resolvedStrategy: AdaptivePackMode | 'knowledge' | undefined = undefined;
 
   const renderCurrent = () => render(
     <SearchPanel

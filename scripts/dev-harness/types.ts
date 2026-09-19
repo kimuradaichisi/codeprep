@@ -218,7 +218,16 @@ export interface RepositoryEvalResult {
     avgUnusedRecommendationRatio?: number;
     tasks?: readonly unknown[];
   }>;
+  readonly desktopKnowledgeIntegration?: Readonly<{
+    parity: number;
+    dogfoodTasks: number;
+    legacyRegression: boolean;
+    avgPrepareMs: number;
+    avgSelectedFiles: number;
+    avgEstimatedTokens: number;
+  }>;
 }
+
 
 export interface PhaseFinishResult {
   readonly schemaVersion: string;

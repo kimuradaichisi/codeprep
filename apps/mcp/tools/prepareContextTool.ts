@@ -99,8 +99,7 @@ async function executeWithStandAloneStore(
   assertKnowledgeDbAvailable(container.project.rootPath);
   const { useCase, store } = createPrepareContextPackV2UseCase(container as unknown as RepositoryContextContainer);
   try {
-    const stats = await store.getStatistics('latest');
-    const snapshotId = stats.nodeCount > 0 ? 'latest' : 'eval-head';
+    const snapshotId = await resolveSnapshotId(store, container.project.name);
     return await useCase.execute({
       project: container.project,
       task: input.task,
@@ -113,6 +112,23 @@ async function executeWithStandAloneStore(
     await store.close();
   }
 }
+
+async function resolveSnapshotId(
+  store: import('../../../src/features/repository-context/infrastructure/knowledge/sqlite/SqliteRepositoryKnowledgeStore').SqliteRepositoryKnowledgeStore,
+  projectName: string
+): Promise<string> {
+  const stats = await store.getStatistics('latest');
+  if (stats.nodeCount > 0) return 'latest';
+
+  const latest = (await store.findLatest(projectName)) ?? (await store.findLatest('codeprep-repo'));
+  if (latest) return latest.snapshotId;
+
+  const evalHeadStats = await store.getStatistics('eval-head');
+  if (evalHeadStats.nodeCount > 0) return 'eval-head';
+
+  return 'latest';
+}
+
 
 async function handleLegacyPrepare(
   container: McpContextContainer,

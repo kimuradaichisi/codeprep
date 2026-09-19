@@ -33,17 +33,22 @@ export type ContextWorkflowState =
   | 'packReady'
   | 'error';
 
+import type { ContextConfidence, AdaptivePackMode, AdaptiveStrategyOverride } from '../../../src/features/repository-context/domain/ContextConfidence';
+import type { ContextManifest } from '../../../src/features/repository-context/domain/ContextManifest';
+import type { ContextPackV2 } from '../../../src/features/repository-context/domain/workingset';
+
+export type DesktopStrategy = AdaptiveStrategyOverride | 'knowledge';
+export type DesktopPreviewTab = 'manifest' | 'context' | 'workingset' | 'json';
+
 export type ProjectPanelProps = Readonly<{
   projects: readonly Project[]; projectNotice: WorkspaceNotice;
   indexStatus?: string; indexTotalFiles?: number;
   knowledgeStatus?: string; knowledgeEntries?: number;
   semanticStatus?: string; semanticEntries?: number;
+  knowledgeDbStatus?: string; knowledgeDbMessage?: string;
   addProject(rootPath: string): Promise<void>; chooseProjectFolder(): Promise<void>; removeProject(projectId: string): Promise<void>;
   refreshIndex?(): Promise<void>;
 }>;
-
-import type { ContextConfidence, AdaptivePackMode, AdaptiveStrategyOverride } from '../../../src/features/repository-context/domain/ContextConfidence';
-import type { ContextManifest } from '../../../src/features/repository-context/domain/ContextManifest';
 
 export type SearchPanelProps = Readonly<{
   discoveryMode: DiscoveryMode; taskInput: string; entryPointInput: string;
@@ -54,30 +59,34 @@ export type SearchPanelProps = Readonly<{
   enrichedCandidates?: readonly EnrichedEntryPointCandidate[];
   confidence?: ContextConfidence;
   suggestedPackStrategy?: AdaptivePackMode;
-  adaptiveStrategy?: AdaptiveStrategyOverride;
+  adaptiveStrategy?: DesktopStrategy;
   isDiscoveringEntryPoints?: boolean;
   workflowState?: ContextWorkflowState;
   preview?: string;
   packManifest?: ContextManifest;
   packContent?: string;
-  resolvedStrategy?: AdaptivePackMode;
-  activePreviewTab?: 'manifest' | 'context';
+  resolvedStrategy?: AdaptivePackMode | 'knowledge';
+  contextPackV2?: ContextPackV2;
+  activePreviewTab?: DesktopPreviewTab;
   indexStatus?: string;
   semanticStatus?: string;
   knowledgeStatus?: string;
+  knowledgeDbStatus?: string;
+  knowledgeDbMessage?: string;
   setDiscoveryMode(value: DiscoveryMode): void; setTaskInput(value: string): void; setEntryPointInput(value: string): void;
   setRecipeKind(value: SearchRecipeKind): void; setQuery(value: string): void; setContextLines(value: number): void;
   setPresetKind(value: ScenarioPresetKind): void; setUseGitignore(value: boolean): void;
   setRecommendationSettings(value: RecommendationSettings): void; analyze(query?: string): Promise<void>;
   analyzeTask(): Promise<void>; discoverEntryPoints?(): Promise<void>;
   toggleEntryPointCandidate?(relativePath: string): void; clearSearch(): Promise<void>;
-  setAdaptiveStrategy?(value: AdaptiveStrategyOverride): void;
-  setActivePreviewTab?(tab: 'manifest' | 'context'): void;
-  copyPackContent?(): Promise<void>;
+  setAdaptiveStrategy?(value: DesktopStrategy): void;
+  setActivePreviewTab?(tab: DesktopPreviewTab): void;
+  copyPackContent?(format?: 'content' | 'markdown' | 'json'): Promise<void>;
   resetTaskContext?(): void;
   refreshIndex?(): Promise<void>;
   openSettings?(): void;
 }>;
+
 
 export type CandidateTreeProps = Readonly<{
   tree: readonly CandidateTreeNode[]; candidates?: readonly AnalyzedCandidate[]; selectedKeys: readonly string[];

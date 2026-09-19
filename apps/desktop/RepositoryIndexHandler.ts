@@ -17,16 +17,29 @@ import {
   syncSemanticIndex,
 } from './SemanticIndexHandler';
 
+import { resolveKnowledgeStatus } from './KnowledgeStatusResolver';
+
 export const handleGetRepositoryIndexStatus = async (
   indexesDir: string,
-  workspaceIdVal: unknown
+  workspaceIdVal: unknown,
+  registry?: ProjectRegistryStore
 ): Promise<RepositoryIndexStatusResponse> => {
   const workspaceId = typeof workspaceIdVal === 'string' ? workspaceIdVal : 'default';
   const store = new JsonRepositoryIndexStore(indexesDir);
   const index = await store.load(workspaceId);
-  if (!index) return { status: 'not_indexed', totalFiles: 0 };
   const knowledge = await getStructuredKnowledgeStatus(indexesDir, workspaceId);
   const semantic = await getSemanticIndexStatus(indexesDir, workspaceId);
+  const knowledgeDb = await checkProjectKnowledgeDb(registry, workspaceId);
+
+  if (!index) {
+    return {
+      status: 'not_indexed',
+      totalFiles: 0,
+      knowledgeDbStatus: knowledgeDb?.status,
+      knowledgeDbMessage: knowledgeDb?.message,
+    };
+  }
+
   return {
     status: 'ready',
     totalFiles: index.entries.length,
@@ -36,8 +49,26 @@ export const handleGetRepositoryIndexStatus = async (
     knowledgeEntries: knowledge.entries,
     semanticStatus: semantic.status,
     semanticEntries: semantic.entries,
+    knowledgeDbStatus: knowledgeDb?.status,
+    knowledgeDbMessage: knowledgeDb?.message,
   };
 };
+
+const checkProjectKnowledgeDb = async (
+  registry?: ProjectRegistryStore,
+  workspaceId?: string
+) => {
+  if (!registry) return undefined;
+  try {
+    const projects = (await registry.readAll()).projects;
+    const project = projects.find((p) => p.id === workspaceId) ?? projects[0];
+    if (!project) return undefined;
+    return await resolveKnowledgeStatus(project.rootPath);
+  } catch {
+    return undefined;
+  }
+};
+
 
 export const handleRefreshRepositoryIndex = async (
   registry: ProjectRegistryStore,

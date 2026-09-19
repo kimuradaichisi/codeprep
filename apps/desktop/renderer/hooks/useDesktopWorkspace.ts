@@ -100,17 +100,20 @@ const buildWorkspace = (
     setAdaptiveStrategy: (s: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptiveStrategyOverride) => update(set, { adaptiveStrategy: s }),
     isDiscoveringEntryPoints: state.isDiscoveringEntryPoints, workflowState: state.workflowState,
     packManifest: state.packManifest, packContent: state.packContent, resolvedStrategy: state.resolvedStrategy,
+    contextPackV2: state.contextPackV2,
     preview: state.preview, activePreviewTab: state.activePreviewTab,
-    setActivePreviewTab: (tab: 'manifest' | 'context') => update(set, { activePreviewTab: tab }),
+    setActivePreviewTab: (tab: import('../types').DesktopPreviewTab) => update(set, { activePreviewTab: tab }),
     indexStatus: ctx.indexInfo.indexStatus, semanticStatus: ctx.indexInfo.semanticStatus, knowledgeStatus: ctx.indexInfo.knowledgeStatus,
+    knowledgeDbStatus: ctx.indexInfo.knowledgeDbStatus, knowledgeDbMessage: ctx.indexInfo.knowledgeDbMessage,
     setRecipeKind: (k: SearchRecipeKind) => update(set, { recipeKind: k }), setQuery: (q: string) => update(set, { query: q }),
     setContextLines: (c: number) => update(set, { contextLines: c }), setPresetKind, setUseGitignore: (u: boolean) => update(set, { useGitignore: u }),
     setRecommendationSettings: (r: RecommendationSettings) => update(set, { recommendationSettings: r }),
     analyze: actions.analyze, analyzeTask: actions.analyzeTask, discoverEntryPoints: actions.discoverEntryPoints,
     toggleEntryPointCandidate: actions.toggleEntryPointCandidate, clearSearch: actions.clearSearch,
-    copyPackContent: () => copyPackContent(api, set, state), resetTaskContext: () => resetTaskContext(set),
+    copyPackContent: (format?: 'content' | 'markdown' | 'json') => copyPackContent(api, set, state, format), resetTaskContext: () => resetTaskContext(set),
     refreshIndex: ctx.indexInfo.refreshIndex,
   };
+
   const outputPanel = { format: state.format, packMode: state.packMode, tokenLimit: state.tokenLimit, preview: state.preview, outputNotice: state.outputNotice, includeDependencies: state.includeDependencies, includeRelatedDocs: state.includeRelatedDocs, autoOptimize: state.autoOptimize, activeTab: state.activeTab, isSaving: state.isSaving, isGenerating: state.isGenerating, setFormat: (f: import('../../../../src/features/repository-context/application/ports').ContextOutputFormat) => update(set, { format: f }), setPackMode: (m: PackMode) => update(set, { packMode: m }), setTokenLimit: (l: number) => update(set, { tokenLimit: l }), setIncludeDependencies: (d: boolean) => update(set, { includeDependencies: d }), setIncludeRelatedDocs, setAutoOptimize: (o: boolean) => update(set, { autoOptimize: o }), setActiveTab: (t: OutputTab) => update(set, { activeTab: t }), ...actions.output };
 
   return { ...state, tree: ctx.tree, isProjectsOpen: ctx.isProjectsOpen, useGitignore: state.useGitignore, favorites: ctx.favorites, favoritesOnly: ctx.favoritesOnly, sortKey: ctx.sortKey, setSortKey: ctx.setSortKey, toggleProjects: () => ctx.setIsProjectsOpen((p) => !p), toggleFavorite: ctx.toggleFavorite, setDiscoveryMode: (d) => update(set, { discoveryMode: d }), setTaskInput: (t) => update(set, { taskInput: t }), setEntryPointInput: (e) => update(set, { entryPointInput: e }), setQuery: (q) => update(set, { query: q }), setRecipeKind: (k) => update(set, { recipeKind: k }), setFormat: (f) => update(set, { format: f }), setPackMode: (m) => update(set, { packMode: m }), setTokenLimit: (l) => update(set, { tokenLimit: l }), setContextLines: (c) => update(set, { contextLines: c }), setIncludeDependencies: (d) => update(set, { includeDependencies: d }), setIncludeRelatedDocs, setAutoOptimize: (o) => update(set, { autoOptimize: o }), setPresetKind, setActiveTab: (t) => update(set, { activeTab: t }), setUseGitignore: (u) => update(set, { useGitignore: u }), setRecommendationSettings: (r) => update(set, { recommendationSettings: r }), setFavoritesOnly: ctx.setFavoritesOnly, projectPanel, searchPanel, treePanel, outputPanel, ...actions.project, ...actions.output, analyze: actions.analyze, analyzeTask: actions.analyzeTask, discoverEntryPoints: actions.discoverEntryPoints, toggleEntryPointCandidate: actions.toggleEntryPointCandidate, clearSearch: actions.clearSearch, toggleTreeNode: actions.toggleTreeNode, viewFile, closeFile, setFilePackMode };

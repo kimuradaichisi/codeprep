@@ -42,13 +42,15 @@ export type WorkspaceState = Readonly<{
   enrichedCandidates?: readonly EnrichedEntryPointCandidate[];
   confidence?: import('../../../../src/features/repository-context/domain/ContextConfidence').ContextConfidence;
   suggestedPackStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode;
-  adaptiveStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptiveStrategyOverride;
+  adaptiveStrategy?: import('../types').DesktopStrategy;
   isDiscoveringEntryPoints?: boolean;
   workflowState: ContextWorkflowState;
   packManifest?: ContextManifest;
   packContent?: string;
-  resolvedStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode;
-  activePreviewTab: 'manifest' | 'context';
+  resolvedStrategy?: import('../../../../src/features/repository-context/domain/ContextConfidence').AdaptivePackMode | 'knowledge';
+  manifestMarkdown?: string;
+  contextPackV2?: import('../../../../src/features/repository-context/domain/workingset').ContextPackV2;
+  activePreviewTab: import('../types').DesktopPreviewTab;
 }>;
 
 export type SetWorkspace = Dispatch<SetStateAction<WorkspaceState>>;

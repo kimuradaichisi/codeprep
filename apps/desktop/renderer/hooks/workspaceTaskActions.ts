@@ -6,14 +6,21 @@ import type { SetWorkspace, WorkspaceState } from './workspaceState';
 import { update } from './workspaceState';
 
 export const analyzeTask = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {
-  if (!state.entryPointInput.trim()) {
+  if (state.adaptiveStrategy !== 'knowledge' && !state.entryPointInput.trim()) {
     return update(set, { searchNotice: 'At least one entry point is required.', workflowState: 'error' });
   }
   update(set, { isAnalyzing: true, workflowState: 'buildingPack', searchNotice: undefined });
   try {
     const result = await analyzeTaskWorkspace(api, state.taskInput, state.entryPointInput, state.projects, state.tokenLimit, state.adaptiveStrategy);
-    const nextState = result.manifest ? 'packReady' : 'error';
-    update(set, { ...result, workflowState: nextState, packManifest: result.manifest, packContent: result.packContent, resolvedStrategy: result.resolvedStrategy });
+    const nextState = result.manifest || result.contextPackV2 ? 'packReady' : 'error';
+    update(set, {
+      ...result,
+      workflowState: nextState,
+      packManifest: result.manifest,
+      packContent: result.packContent,
+      resolvedStrategy: result.resolvedStrategy,
+      contextPackV2: result.contextPackV2,
+    });
   } finally {
     update(set, { isAnalyzing: false });
   }
@@ -49,16 +56,32 @@ export const toggleEntryPointCandidate = (set: SetWorkspace, path: string): void
   });
 };
 
-export const copyPackContent = async (api: DesktopApi, set: SetWorkspace, state: WorkspaceState): Promise<void> => {
-  const content = (state.packContent || state.preview || '').trim();
+export const copyPackContent = async (
+  api: DesktopApi,
+  set: SetWorkspace,
+  state: WorkspaceState,
+  format: 'content' | 'markdown' | 'json' = 'content'
+): Promise<void> => {
+  const content = resolveCopyContent(state, format);
   if (!content) return update(set, { searchNotice: 'Build a context pack before copying.' });
   try {
     await copyOutput(api, content);
-    update(set, { searchNotice: 'Context pack copied to clipboard.' });
+    update(set, { searchNotice: `Context pack (${format}) copied to clipboard.` });
   } catch (error) {
     update(set, { searchNotice: desktopErrorMessage(error) });
   }
 };
+
+function resolveCopyContent(state: WorkspaceState, format: 'content' | 'markdown' | 'json'): string {
+  if (format === 'json') {
+    if (state.contextPackV2) return JSON.stringify(state.contextPackV2, null, 2);
+    return state.packManifest ? JSON.stringify(state.packManifest, null, 2) : '';
+  }
+  if (format === 'markdown') {
+    return (state.manifestMarkdown || state.preview || '').trim();
+  }
+  return (state.packContent || state.preview || '').trim();
+}
 
 export const resetTaskContext = (set: SetWorkspace): void => {
   update(set, {
@@ -71,8 +94,11 @@ export const resetTaskContext = (set: SetWorkspace): void => {
     packManifest: undefined,
     packContent: undefined,
     resolvedStrategy: undefined,
+    contextPackV2: undefined,
     workflowState: 'idle',
     searchNotice: undefined,
     preview: '',
+    activePreviewTab: 'manifest',
   });
 };
+

@@ -18,17 +18,23 @@ import { toBuildTaskContextRequest } from './TaskContextRequestParser';
 import { resolveTaskContextStrategy } from './TaskContextStrategyResolver';
 import { loadPackContent } from './TaskContextPackLoader';
 
+import { handleBuildKnowledgePackV2 } from './TaskContextPackV2Handler';
+
 export const handleBuildTaskContext = async (
   registry: ProjectRegistryStore,
   value: unknown,
 ): Promise<DesktopTaskContextResult> => {
   const request = toBuildTaskContextRequest(value);
   const project = await findProject(registry, request.projectId);
+  if (request.strategy === 'knowledge') {
+    return handleBuildKnowledgePackV2(project, request);
+  }
   const resolvedStrategy = await resolveTaskContextStrategy(registry, project, request.task, request.strategy);
   const result = await executeUseCase(project, registry, request, resolvedStrategy);
   const content = await loadPackContent(project, result.manifest.entries, request.task, resolvedStrategy);
   return formatResult(result, content, resolvedStrategy);
 };
+
 
 const findProject = async (registry: ProjectRegistryStore, projectId: string): Promise<Project> => {
   const projects = await registry.getByIds([projectId]);
@@ -46,7 +52,7 @@ const executeUseCase = async (
   const ports = createTaskContextPorts(registry);
   const useCase = new BuildTaskContextUseCase(ports);
   return useCase.execute({
-    taskContext: { projectId: project.id, task: request.task, entryPoints: request.entryPoints },
+    taskContext: { projectId: project.id, task: request.task, entryPoints: request.entryPoints ?? [] },
     tokenLimit: request.tokenLimit,
     strategy,
   });
