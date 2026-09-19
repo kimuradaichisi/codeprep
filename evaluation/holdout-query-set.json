@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1",
+  "description": "Phase 7J-A Holdout Test Set - Fixed before implementation to prevent overfitting",
+  "tasks": [
+    {
+      "id": "HOLDOUT-01-IR-DERIVED-MAPPER",
+      "category": "1. IR / Mapper変更",
+      "task": "Repository IR の DerivedRelationMapper における GitCoChange と DocGraph のエビデンス生成処理の拡張",
+      "mustHave": [
+        "src/features/repository-context/application/ir/mappers/DerivedRelationMapper.ts",
+        "src/features/repository-context/domain/ir/RepositoryEvidence.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/domain/ir/RepositoryEdge.ts",
+        "src/features/repository-context/infrastructure/git/GitCoChangeClient.ts"
+      ]
+    },
+    {
+      "id": "HOLDOUT-02-PORT-ADAPTER-REVISION",
+      "category": "2. Port / Adapter変更",
+      "task": "RepositoryRevisionPort インターフェースの拡張と GitCliRevisionAdapter によるコミットハッシュ取得",
+      "mustHave": [
+        "src/features/repository-context/application/ir/ports/RepositoryRevisionPort.ts",
+        "src/features/repository-context/infrastructure/git/GitCliRevisionAdapter.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/application/ir/refresh/IRInvalidator.ts"
+      ]
+    },
+    {
+      "id": "HOLDOUT-03-DI-WIRING-RELATION",
+      "category": "3. DI / Composition変更",
+      "task": "TypeScriptWiringAdapter でのインターフェース実装バインド解析と WiringRelationDto のマッピング",
+      "mustHave": [
+        "src/features/repository-context/infrastructure/composition/typescript/TypeScriptWiringAdapter.ts",
+        "src/features/repository-context/application/ir/composition/WiringRelationDto.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/application/ir/composition/DependencyWiringPort.ts"
+      ]
+    },
+    {
+      "id": "HOLDOUT-04-MCP-ADAPTIVE-DECISION",
+      "category": "4. CLI / MCP変更",
+      "task": "codeprep_prepare_context ツールにおける AdaptiveBudgetDecision の構造化出力対応",
+      "mustHave": [
+        "apps/mcp/tools/prepareContextTool.ts",
+        "src/features/repository-context/domain/workingset/TaskScope.ts"
+      ],
+      "niceToHave": [
+        "src/features/repository-context/application/workingset/PrepareContextPackV2UseCase.ts"
+      ]
+    },
+    {
+      "id": "HOLDOUT-05-DOCS-PERSISTENCE-MODEL",
+      "category": "5. Docs中心Task",
+      "task": "Repository IR のドメインモデル仕様と永続化アーキテクチャの解説ドキュメント更新",
+      "mustHave": [
+        "docs/architecture/repository-ir-domain-model.md",
+        "docs/architecture/repository-knowledge-store.md"
+      ],
+      "niceToHave": [
+        "docs/architecture/repository-ir-mapping.md"
+      ]
+    }
+  ]
+}

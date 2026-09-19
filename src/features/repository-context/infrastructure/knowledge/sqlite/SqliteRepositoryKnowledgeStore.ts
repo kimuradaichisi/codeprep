@@ -83,7 +83,7 @@ export class SqliteRepositoryKnowledgeStore implements RepositoryKnowledgeStore 
       params.push(term, term);
     }
 
-    const limit = Math.min(filter.limit ?? 50, 200);
+    const limit = filter.limit ? Math.min(filter.limit, 20000) : 50;
     const sql = `SELECT * FROM repository_nodes WHERE ${conditions.join(' AND ')} ORDER BY CASE WHEN kind = 'symbol' THEN 1 WHEN kind = 'file' THEN 2 ELSE 3 END, length(name) ASC LIMIT ${limit};`;
     const rows = this.driver.prepare(sql).all(...params) as NodeRow[];
     return Object.freeze(rows.map(mapNodeRow));

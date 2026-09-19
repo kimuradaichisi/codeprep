@@ -29,7 +29,9 @@ export class CandidateClassifier {
   }
 
   private static isHighConfidenceCore(input: ClassifyCandidateInput): boolean {
-    if (input.isSeed) return true;
+    if (input.isSeed && (input.score >= 0.95 || input.rank === undefined || input.rank <= 3)) {
+      return true;
+    }
     if (input.relations && this.hasCoreRelation(input.relations)) return true;
     return Boolean(input.rank !== undefined && input.rank === 1 && input.score >= 0.7);
   }
@@ -40,6 +42,7 @@ export class CandidateClassifier {
   }
 
   private static classifySupporting(input: ClassifyCandidateInput): ClassificationResult {
+    if (input.isSeed) return { tier: 'supporting', priority: 2.5 };
     if (input.role === 'dependency') return { tier: 'supporting', priority: 3 };
     if (input.role === 'test') return { tier: 'supporting', priority: 4 };
     if (input.role === 'architecture' || input.role === 'specification') {

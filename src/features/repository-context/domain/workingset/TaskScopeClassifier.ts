@@ -50,6 +50,9 @@ export class TaskScopeClassifier {
   }
 
   private static isNarrowScope(input: ScopeClassificationInput, _gap1_2: number): boolean {
+    if (input.highConfidenceSeedCount >= 3 && input.seedFeatureCount >= 2) {
+      return false;
+    }
     if (input.dominantFeatureRatio >= 0.75 && input.topScore >= 0.85) {
       return true;
     }

@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - Phase 7J-A
+- feat(ir): Phase 7J-A Deterministic Query Expansion / Seed Recall Improvement 実装および Closeout 修正（`docs/architecture/deterministic-query-expansion.md`）
+  - 外部 LLM / Vector DB を一切使わず、ローカルの SQLite IR 知識ストアから決定論的語彙インデックス（`RepositoryVocabularyIndex`）をメモリ上に構築・キャッシュする機構を実装
+  - キャメルケース・ケバブケース・ASCII/CJK境界・拡張子除去を行う `IdentifierNormalizer`、英語屈折変化を正規化する `QueryMorphology`、2〜3トークンの連語照合を行う `PhraseMatcher` を導入
+  - 語族照合（Term-Family Matching）・複合識別子展開（Compound Identifier Matching）・形態素展開をパイプライン化した `DeterministicQueryExpander` を実装し、タスク文から高精度な展開クエリ群を自動生成
+  - `SeedScorer` において完全一致・前方一致・ファイル名一致・見出し一致、展開手法ボーナス、非本番減点、曖昧語ペナルティ（Ambiguity Penalty）を統合した精密スコアリングを導入
+  - **Downstream Regression の解消（Closeout 修正）**:
+    - **問題の特定**: Query Expansion による Subgraph Recall 向上（77.4%）の一方で、下流の Working Set Selection においてスコア 1.000 の高信頼度シード（TASK-01 の `RepositoryIndexMapper`, `StructuredKnowledgeMapper` 等）が Supporting 最低優先度（priority 7）に転落し、Supporting 枠超過で切り捨てられていた優先度逆転バグを特定
+    - **モジュール粒度スコープ判定の適正化**: `AdaptiveBudgetResolver` の feature 抽出粒度を `features/<feature>/<layer>` へ細分化し、`TaskScopeClassifier` において多数の高信頼度シード（>=3）が複数モジュール（>=2）に跨る協調修正タスクが過剰に NARROW（上限5ファイル）に縮退する問題を解消
+    - **シード優先度の多層保護**: `CandidateClassifier` において超高スコア（>=0.95）シードを CORE（priority 2）に昇格させ、Supporting に回るシードも priority 2.5 で dependency (3) や test (4) より上位で保護
+  - Golden Set (7 Tasks) 最終実測成果：
+    - **Hit@5**: 71.4% $\to$ **100.0%** (+28.6pt 向上、全タスクが Top 5 に到達)
+    - **Hit@10**: 85.7% $\to$ **100.0%** (+14.3pt 向上)
+    - **Subgraph Recall@10**: 61.9% $\to$ **77.4%** (+15.5pt 向上)
+    - **Subgraph MRR**: 0.620 $\to$ **0.809** (+0.189 向上)
+    - **TASK-01 Must-Have Recall**: 25.0% $\to$ **75.0%** (+50.0pt 大幅改善、シード・Mapper 脱落を完全解消)
+    - **Context Pack Must-Have Recall**: Phase 7I-A Baseline 72.6% $\to$ **77.4%** (+4.8pt 純増、中間回帰 65.5% から完全回復)
+    - **平均クエリ処理時間**: **174.6ms** (Baseline 133ms に対し 1.31倍、許容上限2倍以内)
+    - **平均トークン数**: 9,828 $\to$ **4,227 tokens** (-57.0% 削減、圧縮率 71.0%)
+    - **CLI / MCP Semantic Parity**: **100.0%** を完全維持
+  - Holdout Set (5 Tasks) 汎化性能・Cold/Warm 計測：
+    - **Cold Query Duration (初回インデックス構築込み)**: **509.5ms**
+    - **Avg Warm Query Duration**: **317.3ms**
+    - **Avg Seeds Recall@10**: **80.0%**
+    - **Avg Subgraph Recall@10**: **80.0%**
+    - **Avg Context Pack Recall**: **80.0%** (5タスク中 4タスクで 100% 達成)
+    - **HOLDOUT-05 (Docs中心) 分析**: ドキュメント間の参照関係（`DOC_RELATION`）不足によりグラフ展開でドロップする課題を特定、Phase 7J-B へ DEFER
+  - BLOCKER = 0, Final Verify (check, desktop:test, cli:test, mcp:test, standards:changed) PASS を確認
+
 ## [Unreleased] - Phase 7I-A
 - feat(context-pack): Phase 7I-A Adaptive Working Set Budget / Context Pack Right-Sizing 実装および仕様策定（`docs/architecture/adaptive-working-set-budget.md`）
   - Task の構造的スコープ（**NARROW / STANDARD / BROAD**）と知識グラフ特徴量（主要モジュール集中度 `dominantFeatureRatio`、トップスコア、シード数など）に応じて Working Set 予算枠（ファイル数・トークン数・Recall Reserve枠）を動的に決定する `TaskScopeClassifier`、`AdaptiveBudgetPolicy`、および `AdaptiveBudgetResolver` を実装

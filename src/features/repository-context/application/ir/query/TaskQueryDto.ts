@@ -1,4 +1,9 @@
+// src/features/repository-context/application/ir/query/TaskQueryDto.ts
+/*
+ * Copyright 2026 CodePrep Contributors
+ */
 import type { RepositoryEdge, RepositoryNode } from '../../../domain/ir';
+import type { QueryExpansionTrace } from '../../../domain/ir/query/QueryExpansionModel';
 
 export interface RepositoryTaskQuery {
   readonly task: string;
@@ -17,6 +22,8 @@ export interface SubgraphSeed {
   readonly score: number;
   readonly matchType: SeedMatchType;
   readonly matchedText: string;
+  readonly reason?: string;
+  readonly expansionMethod?: string;
 }
 
 export interface RankedRelevantNode {
@@ -60,4 +67,5 @@ export interface RepositoryRelevantSubgraph {
   readonly rankedNodes: readonly RankedRelevantNode[];
   readonly explanations: readonly NodeQueryExplanation[];
   readonly metrics: SubgraphQueryMetrics;
+  readonly expansionTrace?: QueryExpansionTrace;
 }

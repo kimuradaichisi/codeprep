@@ -17,21 +17,21 @@ export class QueryRelevantSubgraphUseCase {
 
   public async execute(query: RepositoryTaskQuery): Promise<RepositoryRelevantSubgraph> {
     const t0 = Date.now();
-    const seeds = await this.seedResolver.resolve(query);
-    const traversal = await this.traversalEngine.traverse(query, seeds);
+    const seedResult = await this.seedResolver.resolveWithTrace(query);
+    const traversal = await this.traversalEngine.traverse(query, seedResult.seeds);
     const { rankedNodes, explanations } = this.ranker.rank(traversal.nodeStates);
 
     const durationMs = Date.now() - t0;
 
     return Object.freeze({
       query,
-      seeds,
+      seeds: seedResult.seeds,
       nodes: traversal.nodes,
       edges: traversal.edges,
       rankedNodes,
       explanations,
       metrics: {
-        seedCount: seeds.length,
+        seedCount: seedResult.seeds.length,
         expandedNodes: traversal.expandedNodeCount,
         queriedEdges: traversal.queriedEdgeCount,
         durationMs,
@@ -41,6 +41,7 @@ export class QueryRelevantSubgraphUseCase {
         noiseFilteredCounts: traversal.noiseFilteredCounts,
         consideredRelationCounts: traversal.consideredRelationCounts,
       },
+      expansionTrace: seedResult.trace,
     });
   }
 }

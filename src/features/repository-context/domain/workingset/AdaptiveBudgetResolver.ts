@@ -76,6 +76,9 @@ export class AdaptiveBudgetResolver {
   private static extractFeatureKey(filePath: string): string {
     const norm = filePath.replace(/\\/g, '/');
     const parts = norm.split('/');
+    if (parts.length >= 4 && parts[0] === 'src' && parts[1] === 'features') {
+      return `features/${parts[2]}/${parts[3]}`;
+    }
     if (parts.length >= 3 && parts[0] === 'src' && parts[1] === 'features') {
       return `features/${parts[2]}`;
     }
