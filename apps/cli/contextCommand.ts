@@ -1,26 +1,71 @@
+// apps/cli/contextCommand.ts
 /*
  * Copyright 2026 CodePrep Contributors
  */
 import * as fs from 'fs';
 import type { CliArguments } from './argumentParser';
-import type { CliCandidateDto, CliContextPackDto, CliContextResult } from './types';
+import type { CliCandidateDto, CliContextPackDto, CliContextResult, CliResult } from './types';
 import { createCliContainer } from './composition';
 import { formatAsMarkdown } from './markdownFormatter';
 import type { PrepareContextResult } from '../../src/features/repository-context/application/PrepareTaskContextUseCase';
 import type { RepositoryContextContainer } from '../../src/features/repository-context/infrastructure/composition/RepositoryContextContainer';
 import type { EnrichedEntryPointCandidate } from '../../src/features/repository-context/domain/CandidateEvidence';
+import {
+  createPrepareContextPackV2UseCase,
+  isKnowledgeDbAvailable,
+} from '../../src/features/repository-context/infrastructure/workingset/createPrepareContextPackV2UseCase';
+import { createWorkingSetBudget } from '../../src/features/repository-context/domain/workingset/WorkingSetBudget';
 
 export async function runContextCommand(
   args: CliArguments,
   containerFactory: (ws: string) => RepositoryContextContainer = createCliContainer
-): Promise<CliContextResult> {
+): Promise<CliResult> {
   logStderr(`Analyzing repository for task: "${args.task}" in ${args.workspace}`);
   const container = containerFactory(args.workspace);
+
+  if (args.strategy === 'knowledge') {
+    if (isKnowledgeDbAvailable(args.workspace)) {
+      return handleKnowledgeStrategy(args, container);
+    }
+    logStderr(`Knowledge database not found in ${args.workspace}. Explicitly falling back to standard strategy.`);
+  }
+
   const res = await container.prepareContextUseCase.execute({ task: args.task });
   const result = buildCliResult(args, res);
   const formatted = renderOutput(result, args.format);
   writeOutput(formatted, args.output);
   return result;
+}
+
+async function handleKnowledgeStrategy(
+  args: CliArguments,
+  container: RepositoryContextContainer
+): Promise<CliResult> {
+  logStderr(`Using Knowledge Graph strategy (Context Pack v2)`);
+  const { useCase, store } = createPrepareContextPackV2UseCase(container);
+  try {
+    const stats = await store.getStatistics('latest');
+    const snapshotId = stats.nodeCount > 0 ? 'latest' : 'eval-head';
+    const budget = (args.maxFiles !== undefined || args.maxTokens !== undefined)
+      ? createWorkingSetBudget({
+          maxFiles: args.maxFiles ?? 10,
+          maxEstimatedTokens: args.maxTokens ?? 12000,
+        })
+      : undefined;
+    const packV2 = await useCase.execute({
+      project: container.project,
+      task: args.task,
+      snapshotId,
+      budget,
+      explicitPaths: args.explicitPaths,
+      includeLegacyCandidates: true,
+    });
+    const formatted = renderOutput(packV2, args.format);
+    writeOutput(formatted, args.output);
+    return packV2;
+  } finally {
+    await store.close();
+  }
 }
 
 function buildCliResult(args: CliArguments, res: PrepareContextResult): CliContextResult {
@@ -62,7 +107,7 @@ function transformCandidates(enriched: readonly EnrichedEntryPointCandidate[]): 
   }));
 }
 
-function renderOutput(data: CliContextResult, format: 'json' | 'markdown'): string {
+function renderOutput(data: CliResult, format: 'json' | 'markdown'): string {
   if (format === 'markdown') return formatAsMarkdown(data);
   return JSON.stringify(data, null, 2);
 }

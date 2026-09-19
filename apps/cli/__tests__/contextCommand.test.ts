@@ -70,12 +70,14 @@ describe('runContextCommand', () => {
 
     expect(mockExecute).toHaveBeenCalledWith({ task: 'Optimize checkout' });
     expect(result.schemaVersion).toBe('1');
-    expect(result.task).toBe('Optimize checkout');
-    expect(result.workspace).toBe('C:/mock-ws');
-    expect(result.result.decision).toBe('AUTO_FAST_PACK');
-    expect(result.result.candidates).toHaveLength(1);
-    // pack is false, so contextPack is null
-    expect(result.result.contextPack).toBeNull();
+    if (result.schemaVersion === '1') {
+      expect(result.task).toBe('Optimize checkout');
+      expect(result.workspace).toBe('C:/mock-ws');
+      expect(result.result.decision).toBe('AUTO_FAST_PACK');
+      expect(result.result.candidates).toHaveLength(1);
+      // pack is false, so contextPack is null
+      expect(result.result.contextPack).toBeNull();
+    }
 
     // stdout check: must be valid JSON only
     const fullStdout = stdoutChunks.join('');
@@ -98,8 +100,11 @@ describe('runContextCommand', () => {
 
     const result = await runContextCommand(args, () => mockContainer);
 
-    expect(result.result.contextPack).not.toBeNull();
-    expect(result.result.contextPack?.content).toBe('# Checkout Pack Content');
+    expect(result.schemaVersion).toBe('1');
+    if (result.schemaVersion === '1') {
+      expect(result.result.contextPack).not.toBeNull();
+      expect(result.result.contextPack?.content).toBe('# Checkout Pack Content');
+    }
   });
 
   it('outputs markdown when format is markdown', async () => {
@@ -139,4 +144,19 @@ describe('runContextCommand', () => {
       if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);
     }
   });
+
+  it('falls back gracefully to standard context when knowledge db does not exist', async () => {
+    const args = {
+      task: 'Optimize checkout',
+      workspace: 'C:/non-existent-ws-for-db',
+      format: 'json' as const,
+      pack: false,
+      strategy: 'knowledge' as const,
+    };
+
+    const res = await runContextCommand(args, () => mockContainer);
+    expect(res.schemaVersion).toBe('1');
+    expect(mockExecute).toHaveBeenCalled();
+  });
 });
+

@@ -12,17 +12,19 @@ export function calculateRankMetrics(
   rankedPaths: readonly string[],
   mustHave: readonly string[]
 ): { hit5: number; hit10: number; recall10: number; mrr: number } {
-  const top5 = rankedPaths.slice(0, 5);
-  const top10 = rankedPaths.slice(0, 10);
-  const hit5 = top5.some(p => mustHave.includes(p)) ? 1 : 0;
-  const hit10 = top10.some(p => mustHave.includes(p)) ? 1 : 0;
+  const normRanked = rankedPaths.map(p => p.replace(/\\/g, '/'));
+  const normMust = mustHave.map(m => m.replace(/\\/g, '/'));
+  const top5 = normRanked.slice(0, 5);
+  const top10 = normRanked.slice(0, 10);
+  const hit5 = top5.some(p => normMust.includes(p)) ? 1 : 0;
+  const hit10 = top10.some(p => normMust.includes(p)) ? 1 : 0;
 
-  const foundMustHaves = mustHave.filter(m => top10.includes(m)).length;
-  const recall10 = mustHave.length > 0 ? foundMustHaves / mustHave.length : 1;
+  const foundMustHaves = normMust.filter(m => top10.includes(m)).length;
+  const recall10 = normMust.length > 0 ? foundMustHaves / normMust.length : 1;
 
   let firstRank = 0;
   for (let i = 0; i < top10.length; i++) {
-    if (mustHave.includes(top10[i])) { firstRank = i + 1; break; }
+    if (normMust.includes(top10[i])) { firstRank = i + 1; break; }
   }
   const mrr = firstRank > 0 ? 1 / firstRank : 0;
 

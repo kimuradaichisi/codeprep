@@ -6,6 +6,8 @@ import {
 import type { McpWorkspaceStatusResult } from './types';
 import { checkMcpStatus } from './statusChecker';
 
+import type { PrepareContextPackV2UseCase } from '../../src/features/repository-context/application/workingset/PrepareContextPackV2UseCase';
+
 export interface McpContextContainer extends Pick<
   RepositoryContextContainer,
   'project' | 'discoverUseCase' | 'enrichUseCase' | 'buildContextUseCase' | 'prepareContextUseCase' | 'formatter' | 'fileContentPort'
@@ -14,6 +16,7 @@ export interface McpContextContainer extends Pick<
   readonly semanticStore?: RepositoryContextContainer['semanticStore'];
   readonly embeddingAdapter?: RepositoryContextContainer['embeddingAdapter'];
   readonly filesPort?: RepositoryContextContainer['filesPort'];
+  readonly prepareContextPackV2UseCase?: PrepareContextPackV2UseCase;
   checkStatus(): Promise<McpWorkspaceStatusResult>;
 }
 

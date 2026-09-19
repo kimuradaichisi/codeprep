@@ -81,7 +81,7 @@ function evaluateSingleTask(tc: GoldenTaskCase, sub: RepositoryRelevantSubgraph)
   };
 }
 
-function loadGoldenCases(workspaceRoot: string): GoldenTaskCase[] {
+export function loadGoldenCases(workspaceRoot: string): GoldenTaskCase[] {
   const goldenFile = path.resolve(workspaceRoot, 'evaluation/task-query-golden-set.json');
   if (!fs.existsSync(goldenFile)) throw new Error(`Golden set not found: ${goldenFile}`);
   const rawJson = JSON.parse(fs.readFileSync(goldenFile, 'utf8'));

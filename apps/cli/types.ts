@@ -27,6 +27,8 @@ export interface CliContextPackDto {
   readonly warnings: readonly string[];
 }
 
+import type { ContextPackV2 } from '../../src/features/repository-context/domain/workingset';
+
 export interface CliContextResult {
   readonly schemaVersion: '1';
   readonly task: string;
@@ -40,3 +42,6 @@ export interface CliContextResult {
     readonly contextPack: CliContextPackDto | null;
   };
 }
+
+export type CliResult = CliContextResult | ContextPackV2;
+

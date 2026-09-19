@@ -3,6 +3,7 @@ import type { CandidateEvidenceKind } from '../../src/features/repository-contex
 import type { EntryPointCandidateReason } from '../../src/features/repository-context/domain/EntryPointCandidate';
 import type { ContextManifest } from '../../src/features/repository-context/domain/ContextManifest';
 import type { ContextConfidence, AdaptivePackMode } from '../../src/features/repository-context/domain/ContextConfidence';
+import type { ContextPackV2 } from '../../src/features/repository-context/domain/workingset';
 
 export type McpIndexState = 'ready' | 'missing' | 'error' | 'degraded';
 
@@ -57,4 +58,6 @@ export type McpPrepareContextResult = Readonly<{
   contextPack?: McpBuildContextPackResult;
   warnings: readonly string[];
 }>;
+
+export type McpPrepareContextResponse = McpPrepareContextResult | ContextPackV2;
 

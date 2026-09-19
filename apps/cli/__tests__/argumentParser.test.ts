@@ -75,4 +75,12 @@ describe('parseCliArguments', () => {
     expect(args3.pack).toBe(true);
     expect(args3.workspace).toBe(path.resolve('D:/ws'));
   });
+
+  it('should parse --strategy option correctly and validate', () => {
+    const args = parseCliArguments(['--task', 't', '--strategy', 'knowledge']);
+    expect(args.strategy).toBe('knowledge');
+
+    expect(() => parseCliArguments(['--task', 't', '--strategy', 'unknown'])).toThrow('Invalid strategy: unknown');
+  });
 });
+

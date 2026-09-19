@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - Phase 7H-B
+- feat(mcp): Phase 7H-B Context Pack v2 → MCP / Agent Consumption Integration 実装および仕様策定（`docs/architecture/context-pack-v2-agent-integration.md`, `docs/guides/agent-quickstart.md`）
+  - Context Pack v2（Working Set: CORE / SUPPORTING / RECALL_RESERVE）を外部 AI コーディングエージェント（Claude, Codex, Gemini 等）が直接取得・消費できる MCP ツール `codeprep_prepare_context`（`strategy="knowledge"`）を統合
+  - CLI と MCP で同一の Application UseCase（`PrepareContextPackV2UseCase`）を唯一のオーケストレーション元とする単一ソースオブトゥルース設計を確立し、同一タスク・同一バジェットにおける **CLI / MCP Semantic Parity 100% 一致** を実現（オラクルテスト `CliMcpParity.test.ts`）
+  - MCP 入力スキーマに `strategy` (`fast` / `standard` / `knowledge`), `budget` (`maxFiles`, `maxTokens`), `explicitPaths` を追加し、既存の引数や呼び出しとの完全な後方互換性（Legacy compatibility）を維持
+  - Machine-readable structured output（`schemaVersion: "2"`, `workingSet`, `context`, `excluded`, `metrics`）により、エージェントが「何を最初に読むか」「なぜ含まれるか」「どこまで読めばよいか」「何が予算都合で除外されたか」を即座に判断可能に
+  - ナレッジベースの不整合（DB不存在時の actionable error、Snapshot revision不一致時の stale 警告、Dirty Working Tree 警告、破損DBエラー、No Seed フォールバック）を安全にハンドリングするヘルスチェックポート連携を実装
+  - `SYMBOL_RANGE` 5件（interface, class, method, function, type）および `DOC_SECTION` 3件（H1, H2, code fence 混在）の抽出境界精度と安全な `FULL_FILE` フォールバックをオラクルテスト `GranularityValidationOracle.test.ts` で実証
+  - 3 つの典型タスク（単一 UseCase 変更、Port/Adapter/DI 跨ぎ、Docs + 実装跨ぎ）での Agent Dogfooding 実測を実施：
+    - 着手前閲覧ファイル数: 平均 8.0 $\to$ **1.3 ファイル (-83.8% 削減)**
+    - 手動検索回数: 平均 3.7 $\to$ **0.0 回 (-100% 削減)**
+    - 初回編集着手時間: 平均 54.0 秒 $\to$ **9.8 秒 (5.5倍 高速化)**
+    - Changed but not recommended: **0 件 (漏れゼロ)**
+    - Recall Reserve 活用: Task C で `docs/mcp.md` を救出しドキュメント変更漏れを防止
+    - Pack Saturation (Cap Hit Rate): **33.3%**（上限張り付き傾向を解消）
+  - Dev-Harness（`repositoryEval.ts`, `reportBuilder.ts`）に `AgentConsumptionEvaluator` を統合し、`npm run dev:eval -- --phase 7h-b` による客観的実測評価レポート生成を自動化
+  - 第三者向けクイックスタートガイド（`docs/guides/agent-quickstart.md`）および問題起点・実測値に基づく `README.md` の更新を実施
+  - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を全モジュールで完全遵守
+
+## [Unreleased] - Phase 7H-A
+- feat(context-pack): Phase 7H-A Relevant Subgraph → Working Set → Context Pack v2 実装および仕様策定（`docs/architecture/context-pack-v2.md`）
+  - Relevant Subgraph の広範な探索空間から、AI Coding Agent が作業開始できる最小十分な Working Set を決定論的に選択・圧縮する `WorkingSetSelector` および `PrepareContextPackV2UseCase` を実装
+  - 3-Tier モデル（**CORE** / **SUPPORTING** / **RECALL_RESERVE**）を導入し、Graph Query の高い上位精度（MRR 0.714）を維持したまま、旧 Candidate Discovery が強かった広範な Recall を確実に回復
+  - トークン・ファイル・ノード・バイト数を制約する決定論的 LLM 非依存の `WorkingSetBudget` モデルを定義し、超過理由（`budgetExceeded`, `lowerPriority`, `duplicateCoverage`, `weakEvidence`）を明示
+  - ファイル・シンボル重複排除（Deduplication）とシンボルレンジマージ、および安全なフォールバック機構（`FULL_FILE`, `SYMBOL_RANGE`, `DOC_SECTION`, `METADATA_ONLY`）を備えた `DefaultSourceExtractor` を実装
+  - ノード種別・エッジ関係・パス規則から機械的にコンテキストロールを割り当てる `RoleAssigner`（`target`, `dependency`, `test`, `architecture`, `specification`, `supporting`）を実装
+  - `ContextPackV2` 契約（`schemaVersion: "2"`, `workingSet`, `context`, `excluded`, `metrics`）を策定し、Included / Excluded の完全な説明可能性（Explainability）を保証
+  - CLI（`apps/cli`）に `--strategy knowledge` オプションおよび Context Pack v2 の JSON / Markdown アダプター出力を統合（Windows npm 環境下での引数崩れに対する耐性処理を含む）
+  - Golden Set (7 Tasks) 自動評価器 `ContextPackV2Evaluator` を新設し、Dev-Harness（`repositoryEval.ts`, `reportBuilder.ts`）に統合
+  - Golden Set 実測において、Must-Have Recall **59.5% $\to$ 72.6% (+13.1%向上)**、平均ファイル数 9.6 ファイル、平均トークン数 9,772、圧縮率 68.4% を達成
+  - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を全モジュールで完全遵守
+
 ## [0.8.13] - 2026-09-13
 - feat(ir): Phase 7G Task Query / Relevant Subgraph 実装および仕様策定（`docs/architecture/task-relevant-subgraph-query.md`）
   - Task 文字列から Seed Discovery $\to$ Repository Knowledge Graph $\to$ Relation-aware Bounded Traversal $\to$ Relevant Subgraph $\to$ Ranked Relevant Nodes を生成する `QueryRelevantSubgraphUseCase` を実装

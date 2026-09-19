@@ -10,6 +10,10 @@ export interface CliArguments {
   readonly format: 'json' | 'markdown';
   readonly pack: boolean;
   readonly output?: string;
+  readonly strategy?: 'knowledge' | 'standard' | 'fast';
+  readonly maxFiles?: number;
+  readonly maxTokens?: number;
+  readonly explicitPaths?: readonly string[];
 }
 
 type RawOptions = {
@@ -19,6 +23,10 @@ type RawOptions = {
   format?: string;
   pack?: boolean;
   output?: string;
+  strategy?: string;
+  maxFiles?: number;
+  maxTokens?: number;
+  explicitPaths?: string[];
 };
 
 export function parseCliArguments(argv: readonly string[], env: NodeJS.ProcessEnv = process.env): CliArguments {
@@ -26,12 +34,17 @@ export function parseCliArguments(argv: readonly string[], env: NodeJS.ProcessEn
   const task = resolveTask(raw);
   const workspace = raw.workspace ? path.resolve(raw.workspace) : process.cwd();
   const format = resolveFormat(raw.format);
+  const strategy = resolveStrategy(raw.strategy);
   return Object.freeze({
     task,
     workspace,
     format,
     pack: Boolean(raw.pack),
     output: raw.output ? path.resolve(raw.output) : undefined,
+    strategy,
+    maxFiles: raw.maxFiles,
+    maxTokens: raw.maxTokens,
+    explicitPaths: raw.explicitPaths ? Object.freeze(raw.explicitPaths) : undefined,
   });
 }
 
@@ -53,6 +66,8 @@ function resolvePositionalFallback(positional: string[], opt: RawOptions): void 
   for (const item of positional) {
     if (!opt.format && (item === 'json' || item === 'markdown')) {
       opt.format = item;
+    } else if (!opt.strategy && (item === 'knowledge' || item === 'standard' || item === 'fast')) {
+      opt.strategy = item;
     } else {
       remaining.push(item);
     }
@@ -69,6 +84,11 @@ function applyEnvFallback(opt: RawOptions, env: NodeJS.ProcessEnv): void {
   if (!opt.format && env.npm_config_format) opt.format = env.npm_config_format;
   if (!opt.pack && (env.npm_config_pack === 'true' || env.npm_config_pack === '')) opt.pack = true;
   if (!opt.output && env.npm_config_output) opt.output = env.npm_config_output;
+  if (!opt.strategy && env.npm_config_strategy && env.npm_config_strategy !== 'true') {
+    opt.strategy = env.npm_config_strategy;
+  }
+  if (!opt.maxFiles && env.npm_config_max_files) opt.maxFiles = Number(env.npm_config_max_files);
+  if (!opt.maxTokens && env.npm_config_max_tokens) opt.maxTokens = Number(env.npm_config_max_tokens);
 }
 
 function parseOptionAt(argv: readonly string[], i: number, opt: RawOptions): number {
@@ -86,9 +106,30 @@ function parseOptionAtSecondary(argv: readonly string[], i: number, opt: RawOpti
   if (a.startsWith('--workspace=')) { opt.workspace = a.slice(12); return 1; }
   if (a === '--format' && i + 1 < argv.length) { opt.format = argv[i + 1]; return 2; }
   if (a.startsWith('--format=')) { opt.format = a.slice(9); return 1; }
+  if (a === '--strategy' && i + 1 < argv.length) { opt.strategy = argv[i + 1]; return 2; }
+  if (a.startsWith('--strategy=')) { opt.strategy = a.slice(11); return 1; }
   if (a === '--pack') { opt.pack = true; return 1; }
   if ((a === '--output' || a === '-o') && i + 1 < argv.length) { opt.output = argv[i + 1]; return 2; }
   if (a.startsWith('--output=')) { opt.output = a.slice(9); return 1; }
+  return parseOptionAtTertiary(argv, i, opt);
+}
+
+function parseOptionAtTertiary(argv: readonly string[], i: number, opt: RawOptions): number {
+  const a = argv[i];
+  if (a === '--max-files' && i + 1 < argv.length) { opt.maxFiles = Number(argv[i + 1]); return 2; }
+  if (a.startsWith('--max-files=')) { opt.maxFiles = Number(a.slice(12)); return 1; }
+  if (a === '--max-tokens' && i + 1 < argv.length) { opt.maxTokens = Number(argv[i + 1]); return 2; }
+  if (a.startsWith('--max-tokens=')) { opt.maxTokens = Number(a.slice(13)); return 1; }
+  if (a === '--explicit-path' && i + 1 < argv.length) {
+    opt.explicitPaths = opt.explicitPaths ?? [];
+    opt.explicitPaths.push(argv[i + 1]);
+    return 2;
+  }
+  if (a.startsWith('--explicit-path=')) {
+    opt.explicitPaths = opt.explicitPaths ?? [];
+    opt.explicitPaths.push(a.slice(16));
+    return 1;
+  }
   return 0;
 }
 
@@ -107,4 +148,10 @@ function resolveFormat(format?: string): 'json' | 'markdown' {
   if (!format || format === 'json') return 'json';
   if (format === 'markdown') return 'markdown';
   throw new Error(`Invalid format: ${format}. Supported formats are 'json' or 'markdown'`);
+}
+
+function resolveStrategy(strat?: string): 'knowledge' | 'standard' | 'fast' | undefined {
+  if (!strat) return undefined;
+  if (strat === 'knowledge' || strat === 'standard' || strat === 'fast') return strat;
+  throw new Error(`Invalid strategy: ${strat}. Supported strategies are 'knowledge', 'standard', 'fast'`);
 }

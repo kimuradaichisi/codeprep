@@ -164,6 +164,30 @@ export interface RepositoryEvalResult {
       }[];
     }>;
   }>;
+  readonly contextPackV2?: Readonly<{
+    tasks: number;
+    mustHaveRecall: number;
+    avgFiles: number;
+    avgEstimatedTokens: number;
+    avgCompressionRatio: number;
+    avgIrrelevantRatio: number;
+    recallReserveContribution: number;
+    details?: readonly unknown[];
+  }>;
+  readonly agentIntegration?: Readonly<{
+    cliMcpParity: number;
+    dogfoodTasks: number;
+    avgFilesReadBeforeEditControl: number;
+    avgFilesReadBeforeEditCodePrep: number;
+    avgSearchesControl: number;
+    avgSearchesCodePrep: number;
+    avgTimeToFirstEditControlMs: number;
+    avgTimeToFirstEditCodePrepMs: number;
+    changedButNotRecommended: number;
+    recallReserveUsed: number;
+    packCapHitRate: number;
+    tasks?: readonly unknown[];
+  }>;
 }
 
 export interface PhaseFinishResult {

@@ -5,7 +5,9 @@ import { SqliteRepositoryKnowledgeStore } from '../../src/features/repository-co
 import { RepositoryRefreshEvaluator } from '../../src/features/repository-context/infrastructure/evaluation/RepositoryRefreshEvaluator';
 import { ProductionRepositoryKnowledgeBuilder } from '../../src/features/repository-context/infrastructure/evaluation/ProductionRepositoryKnowledgeBuilder';
 import { evaluateKnownPaths, loadKnownPathCases } from './knownPathsEval';
-import { TaskQueryEvaluator } from '../../src/features/repository-context/infrastructure/evaluation/TaskQueryEvaluator';
+import { TaskQueryEvaluator, loadGoldenCases } from '../../src/features/repository-context/infrastructure/evaluation/TaskQueryEvaluator';
+import { ContextPackV2Evaluator } from '../../src/features/repository-context/infrastructure/evaluation/ContextPackV2Evaluator';
+import { AgentConsumptionEvaluator } from '../../src/features/repository-context/infrastructure/evaluation/AgentConsumptionEvaluator';
 import { outputHarnessResult } from './commandRunner';
 import type { RepositoryEvalResult } from './types';
 
@@ -84,6 +86,12 @@ function printEvalSummary(res: RepositoryEvalResult, phase: string): void {
       console.log(`  * Efficiency: TraversedEdges=${res.taskQuery.efficiency.avgTraversedEdges}, SqliteQueries=${res.taskQuery.efficiency.avgSqliteQueryCount}, Hops=${res.taskQuery.efficiency.avgHops}, ResultNodes=${res.taskQuery.efficiency.avgResultNodes}`);
     }
   }
+  if (res.contextPackV2) {
+    console.log(`- Context Pack v2: ${res.contextPackV2.tasks} tasks, Recall=${res.contextPackV2.mustHaveRecall}, AvgFiles=${res.contextPackV2.avgFiles}, AvgTokens=${res.contextPackV2.avgEstimatedTokens}, Compression=${res.contextPackV2.avgCompressionRatio}, Noise=${res.contextPackV2.avgIrrelevantRatio}, ReserveBonus=${res.contextPackV2.recallReserveContribution}`);
+  }
+  if (res.agentIntegration) {
+    console.log(`- Agent Integration: Parity=${(res.agentIntegration.cliMcpParity * 100).toFixed(1)}%, Tasks=${res.agentIntegration.dogfoodTasks}, ReadBeforeEdit=${res.agentIntegration.avgFilesReadBeforeEditControl} -> ${res.agentIntegration.avgFilesReadBeforeEditCodePrep}, Searches=${res.agentIntegration.avgSearchesControl} -> ${res.agentIntegration.avgSearchesCodePrep}, TimeToEdit=${res.agentIntegration.avgTimeToFirstEditControlMs}ms -> ${res.agentIntegration.avgTimeToFirstEditCodePrepMs}ms, Missing=${res.agentIntegration.changedButNotRecommended}, ReserveUsed=${res.agentIntegration.recallReserveUsed}`);
+  }
 }
 
 function countRelations(edges: readonly { relationType: string }[]): Record<string, number> {
@@ -103,6 +111,10 @@ export async function executeRepositoryEval(phase = 'current', format: 'text' | 
   const relations = countRelations(ir.edges);
   const refresh = await new RepositoryRefreshEvaluator().evaluate(workspaceRoot, dbPath);
   const taskQuerySummary = await new TaskQueryEvaluator().evaluate(workspaceRoot, dbPath, snapshot.snapshotId, relations);
+
+  const goldenCases = loadGoldenCases(workspaceRoot);
+  const v2Result = await new ContextPackV2Evaluator().evaluate(workspaceRoot, dbPath, snapshot.snapshotId, goldenCases);
+  const agentIntegration = await new AgentConsumptionEvaluator().evaluate(workspaceRoot, dbPath, snapshot.snapshotId);
 
   const memEnd = process.memoryUsage().heapUsed;
   const result: RepositoryEvalResult = {
@@ -128,6 +140,11 @@ export async function executeRepositoryEval(phase = 'current', format: 'text' | 
       relationNoise: taskQuerySummary.relationNoise,
       goldenTask: taskQuerySummary.goldenTask,
     },
+    contextPackV2: {
+      ...v2Result.summary,
+      details: v2Result.details,
+    },
+    agentIntegration,
     performance: { ...timings, dbSizeBytes: stats.dbSizeBytes, heapDeltaMb: Number(((memEnd - memStart) / 1024 / 1024).toFixed(2)) },
   };
 

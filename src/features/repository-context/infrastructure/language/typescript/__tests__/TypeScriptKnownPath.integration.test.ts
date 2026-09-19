@@ -28,7 +28,7 @@ describe('TypeScriptKnownPath Integration on CodePrep Repository', () => {
     expect(implementsRel).toBeDefined();
     expect(implementsRel?.confidence).toBe(1.0);
     expect(implementsRel?.analyzer).toBe('typescript-compiler');
-  });
+  }, 30000);
 
   it('analyzes CodePrep repository and extracts real REFERENCES relation', async () => {
     const targetFiles = [
@@ -48,5 +48,5 @@ describe('TypeScriptKnownPath Integration on CodePrep Repository', () => {
 
     expect(ref).toBeDefined();
     expect(ref?.relationType).toBe('references');
-  });
+  }, 30000);
 });

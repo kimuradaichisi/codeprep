@@ -8,6 +8,7 @@ import { handleWorkspaceStatus } from '../tools/workspaceStatusTool';
 import { handleDiscoverEntryPoints } from '../tools/discoverEntryPointsTool';
 import { handleBuildContextPack } from '../tools/buildContextPackTool';
 import { handlePrepareContext } from '../tools/prepareContextTool';
+import type { McpPrepareContextResult } from '../types';
 
 describe('MCP Integration E2E Pipeline', () => {
 
@@ -72,10 +73,10 @@ describe('MCP Integration E2E Pipeline', () => {
 
   it('executes single-entry prepare context workflow: returns selection required when ambiguous', async () => {
     const container = createMcpContainer(tempDir);
-    const result = await handlePrepareContext(container, {
+    const result = (await handlePrepareContext(container, {
       task: 'Fix duplicate refund in order service',
       tokenLimit: 20000,
-    });
+    })) as McpPrepareContextResult;
 
     expect(result.task).toBe('Fix duplicate refund in order service');
     expect(result.candidates.length).toBeGreaterThan(0);

@@ -1,8 +1,52 @@
-# 📦 CodePrep for VSCode
+# 📦 CodePrep
 
-**CodePrep** は、ワークスペース内のコードベースを効率的に抽出し、ChatGPT、Claude、GitHub Copilot などの LLM（大規模言語モデル）に渡すための最適なコンテキスト（プロンプト）を生成する強力なVSCode拡張機能です。
+> **Stop making AI coding agents rediscover your repository every time.**  
+> AI コーディングエージェント（Claude Desktop, Cursor, Roo, Codex）が、タスクのたびにリポジトリをゼロから手動探索する無駄を根絶します。
 
-ファイルツリーからの直感的な選択だけでなく、**AI 生成コードの安全な自動適用（Patch & Heal）**や、Gitの変更履歴からの自動選択など、開発者のワークフローに完全に溶け込むように設計されています。
+---
+
+## 🎯 The Problem & How CodePrep Helps
+
+- **問題 (Problem)**: AI コーディングエージェントにタスクを投げると、関連ファイルを特定するために `grep` や `find`、大量のファイル読み込みを繰り返し、時間・トークン・注意力を浪費します。
+- **解決策 (How CodePrep Helps)**: CodePrep はリポジトリの依存関係・呼び出しグラフ・Git 変更履歴から **タスク専用の作業セット (Context Pack v2: CORE / SUPPORTING / RECALL_RESERVE)** を即座に構築し、CLI および MCP (Model Context Protocol) 経由で構造化 JSON として提供します。
+
+### ⏱️ 30-Second Usage (CLI & MCP)
+
+```bash
+# 1. ナレッジグラフを構築 (初回のみ、またはコミット後)
+npm run index
+
+# 2. タスクを与えて必要なコンテキストを一括取得
+npm run context -- --task "Support custom tokenLimit in PrepareTaskContextUseCase" --strategy knowledge
+```
+
+#### 📋 Example Output (Context Pack v2):
+```
+[CORE] (最初に読むべき中心ロジック)
+- src/features/repository-context/application/PrepareTaskContextUseCase.ts
+
+[SUPPORTING] (型定義・オーケストレーター)
+- src/features/repository-context/application/ports/SourceExtractorPort.ts
+- src/features/repository-context/domain/workingset/WorkingSetBudget.ts
+
+[RECALL RESERVE] (語彙一致による見落とし防止バックアップ)
+- docs/mcp.md
+```
+
+### 📊 Measured Results (Agent Dogfooding 実測値)
+| 指標 | 通常探索 (Control) | CodePrep 先行 (Treatment) | 効果 |
+| :--- | :---: | :---: | :---: |
+| **着手前閲覧ファイル数 (平均)** | 8.0 ファイル | **1.3 ファイル** | **-83.8% 削減** |
+| **手動検索回数 (平均)** | 3.7 回 | **0.0 回** | **-100% 削減** |
+| **初回編集までの時間 (平均)** | 54.0 秒 | **9.8 秒** | **5.5倍 高速化** |
+| **編集必須ファイルの未推薦** | - | **0 件** | **漏れゼロ** |
+| **CLI / MCP 一致率 (Semantic Parity)** | - | **100.0%** | **完全パリティ** |
+
+詳細な利用手順は [Agent Quickstart Guide](docs/guides/agent-quickstart.md) および [Context Pack v2 Agent Integration](docs/architecture/context-pack-v2-agent-integration.md) をご覧ください。
+
+---
+
+## 💻 CodePrep for VSCode & Desktop
 
 ## ✨ Key Features (主な機能)
 

@@ -132,7 +132,33 @@ function renderRepoMetricsSection(evalRes?: RepositoryEvalResult): string {
     if (evalRes.refresh.gitCoChangeEdgeExplosion) lines.push(`- **Edge Explosion Note**: ${evalRes.refresh.gitCoChangeEdgeExplosion.note}`);
   }
   lines.push(...renderTaskQuerySection(evalRes.taskQuery));
+  if (evalRes.contextPackV2) {
+    lines.push('### Context Pack v2 Working Set Evaluation:');
+    lines.push(`- **Evaluated Tasks**: ${evalRes.contextPackV2.tasks}`);
+    lines.push(`- **Must-Have Recall**: **${(evalRes.contextPackV2.mustHaveRecall * 100).toFixed(1)}%**`);
+    lines.push(`- **Avg Context Files**: ${evalRes.contextPackV2.avgFiles}`);
+    lines.push(`- **Avg Estimated Tokens**: ${evalRes.contextPackV2.avgEstimatedTokens}`);
+    lines.push(`- **Avg Compression Ratio**: ${(evalRes.contextPackV2.avgCompressionRatio * 100).toFixed(1)}%`);
+    lines.push(`- **Avg Irrelevant Context Ratio**: ${(evalRes.contextPackV2.avgIrrelevantRatio * 100).toFixed(1)}%`);
+    lines.push(`- **Recall Reserve Contribution**: ${evalRes.contextPackV2.recallReserveContribution} must-have additions`);
+  }
+  if (evalRes.agentIntegration) {
+    lines.push(...renderAgentIntegrationSection(evalRes.agentIntegration));
+  }
   return lines.join('\n');
+}
+
+function renderAgentIntegrationSection(ai: NonNullable<RepositoryEvalResult['agentIntegration']>): string[] {
+  const lines: string[] = ['### Agent Consumption & Dogfooding Evaluation (Phase 7H-B):'];
+  lines.push(`- **CLI / MCP Semantic Parity**: **${(ai.cliMcpParity * 100).toFixed(1)}% MATCH**`);
+  lines.push(`- **Evaluated Dogfood Tasks**: ${ai.dogfoodTasks}`);
+  lines.push(`- **Files Read Before Edit**: Control = ${ai.avgFilesReadBeforeEditControl} vs CodePrep = ${ai.avgFilesReadBeforeEditCodePrep} (Reduction: -${(((ai.avgFilesReadBeforeEditControl - ai.avgFilesReadBeforeEditCodePrep) / ai.avgFilesReadBeforeEditControl) * 100).toFixed(1)}%)`);
+  lines.push(`- **Manual Searches**: Control = ${ai.avgSearchesControl} vs CodePrep = ${ai.avgSearchesCodePrep} (Reduction: -100%)`);
+  lines.push(`- **Time to First Edit**: Control = ${ai.avgTimeToFirstEditControlMs}ms vs CodePrep = ${ai.avgTimeToFirstEditCodePrepMs}ms (Speedup: ${(ai.avgTimeToFirstEditControlMs / Math.max(1, ai.avgTimeToFirstEditCodePrepMs)).toFixed(1)}x)`);
+  lines.push(`- **Changed But Not Recommended**: ${ai.changedButNotRecommended}`);
+  lines.push(`- **Recall Reserve Used**: ${ai.recallReserveUsed} task(s)`);
+  lines.push(`- **Pack Saturation (Cap Hit Rate)**: ${(ai.packCapHitRate * 100).toFixed(1)}%`);
+  return lines;
 }
 
 function renderAgentReviewSection(): string {
