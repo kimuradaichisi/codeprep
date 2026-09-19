@@ -54,12 +54,17 @@ Graph Query では上位に入らなかったが、旧 Candidate Discovery で�
 
 ## 4. Budget Model & Deduplication
 
-### 4.1 Budget Model (LLM 非依存)
-決定論的近似による予算制約：
-- `maxFiles`: 10 ファイル
-- `maxNodes`: 20 ノード
-- `maxEstimatedTokens`: 12,000 トークン（文字数 / 4 の決定論的計算）
-- `maxBytes`: 64 KB
+### 4.1 Budget Model (Adaptive Budgeting / Phase 7I-A)
+Phase 7I-A より、タスクの構造的スコープ（NARROW / STANDARD / BROAD）およびシグナル（`dominantFeatureRatio` 等）に応じて動的に予算が決定されます（詳細は [Adaptive Working Set Budget](file:///D:/git/codeprep/docs/architecture/adaptive-working-set-budget.md) 参照）：
+
+| スコープ | Max Files | Max Tokens | Recall Reserve 上限 |
+| :--- | :---: | :---: | :---: |
+| **NARROW** | 5 | 7,000 | 1 |
+| **STANDARD** | 8 | 10,000 | 2 |
+| **BROAD** | 12 | 15,000 | 3 |
+
+※ ユーザーが明示的に `budget` を指定した場合は、明示指定（Explicit Override）が最優先されます。
+※ Diminishing Returns（限界効用逓減）による Early Stop が働き、下位の薄い関連ファイルは上限に達する前に早期打ち切りされます。
 
 ### 4.2 Deduplication (同一ファイル単位への整理)
 同一ファイルに属する複数のシンボルやドキュメントセクションは、単一のファイルエントリとして統合され、`selectedRanges`（シンボル範囲）や理由（`reasons`）、関係パス（`relationPaths`）がマージされる。下位の重複候補は除外理由 `duplicateCoverage` として追跡される。

@@ -116,4 +116,47 @@ describe('WorkingSetSelector', () => {
     expect(result.excluded.length).toBe(1);
     expect(result.excluded[0].reason).toBe('weakEvidence');
   });
+
+  it('stops selection early for narrow scope when diminishing returns detected', () => {
+    const candidates = [
+      makeCandidate('src/Core.ts', 2, 0.95, 'target'),
+      makeCandidate('src/CoreTest.ts', 3, 0.85, 'supporting'),
+      makeCandidate('src/LowRel.ts', 6, 0.35, 'supporting'),
+      makeCandidate('src/Extra.ts', 7, 0.3, 'supporting'),
+    ];
+
+    const result = WorkingSetSelector.select({
+      task: 'narrow task',
+      graphCandidates: candidates,
+      scope: 'narrow',
+    });
+
+    expect(result.workingSet.entries.length).toBe(2);
+    expect(result.workingSet.entries.map((e) => e.relativePath)).toEqual(['src/Core.ts', 'src/CoreTest.ts']);
+    expect(result.excluded.length).toBe(2);
+    expect(result.excluded[0].reason).toBe('weakEvidence');
+    expect(result.excluded[0].detail).toContain('Early stop');
+  });
+
+  it('respects recall reserve limit per scope', () => {
+    const candidates = [
+      makeCandidate('src/A.ts', 2, 0.9, 'target'),
+      makeCandidate('src/B.ts', 3, 0.8, 'supporting'),
+    ];
+    const legacy = [
+      { relativePath: 'src/L1.ts', score: 0.9, reasons: ['recent'] },
+      { relativePath: 'src/L2.ts', score: 0.8, reasons: ['recent'] },
+      { relativePath: 'src/L3.ts', score: 0.7, reasons: ['recent'] },
+    ];
+
+    const result = WorkingSetSelector.select({
+      task: 'reserve limit task',
+      graphCandidates: candidates,
+      legacyCandidates: legacy,
+      scope: 'narrow',
+      recallReserveLimit: 1,
+    });
+
+    expect(result.workingSet.recallReserve.length).toBe(1);
+  });
 });

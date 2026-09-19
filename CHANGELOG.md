@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - Phase 7I-A
+- feat(context-pack): Phase 7I-A Adaptive Working Set Budget / Context Pack Right-Sizing 実装および仕様策定（`docs/architecture/adaptive-working-set-budget.md`）
+  - Task の構造的スコープ（**NARROW / STANDARD / BROAD**）と知識グラフ特徴量（主要モジュール集中度 `dominantFeatureRatio`、トップスコア、シード数など）に応じて Working Set 予算枠（ファイル数・トークン数・Recall Reserve枠）を動的に決定する `TaskScopeClassifier`、`AdaptiveBudgetPolicy`、および `AdaptiveBudgetResolver` を実装
+  - 決定根拠を透明化・説明可能にする `AdaptiveBudgetDecision` DTO（`source`, `scope`, `budget`, `signals`, `reasons`）を導入し、CLI Markdown 出力および MCP 構造化レスポンス（`metrics.budgetDecision`）へ統合
+  - ユーザー明示指定の最優先（`Explicit Budget Override > Adaptive Budget`）を保証し、`budget` や `tokenLimit` が指定された場合は明示値を優先しつつ、未指定時は自動的に適正枠を解決
+  - スコープ連動の早期終了（**Stop Selection Early**）を `WorkingSetBudgetApplier` に実装：CORE ノード（優先度 1〜2）を確実に保護した上で、限界効用逓減（Diminishing Returns: スコア急落・低関連度ノード）を検知して不要な SUPPORTING ファイルの詰め込みを早期打ち切り
+  - スコープに応じた Recall Reserve 枠の可変化（Narrow: 1, Standard: 2, Broad: 3）を導入し、上位精度と広範リコールのバランスを最適化
+  - CLI / MCP Semantic Parity 100% 一致を完全維持（オラクルテスト `CliMcpParity.test.ts`）
+  - Golden Set (7 Tasks) 実測において、**Must-Have Recall 72.6% $\to$ 72.6% (完全維持)** を達成しつつ、**平均ファイル数を 9.6 $\to$ 6.4 ファイル (-33.3% 削減)**、**平均トークン数を 9,828 $\to$ 6,450 トークン (-34.4% 削減)**、**圧縮率を 68.4% $\to$ 77.3% (+8.9pt 向上)** へと大幅な Right-Sizing を実現
+    - NARROW (5 tasks): 平均 9.4 $\to$ 5.0 ファイル (-46.8%), Recall 76.7% 維持
+    - STANDARD (1 task): 平均 10.0 $\to$ 8.0 ファイル (-20.0%), Recall 25.0% 維持
+    - BROAD (1 task): 平均 10.0 $\to$ 12.0 ファイル (+20.0%), Recall 100.0% 維持
+  - Agent Dogfooding (3 Tasks) において、前フェーズの課題であった **上限到達率（Pack Cap Hit Rate）100% $\to$ 67.0% への解消** を達成し、着手前閲覧ファイル数 1 ファイル、手動検索 0 回、初手編集 9.8 秒 (5.5倍 高速化) の高効率を完全維持
+  - Dev-Harness（`repositoryEval.ts`, `reportBuilder.ts`）に `AdaptiveBudget` 比較評価テーブルおよび `unusedRecommendationRatio` メトリクス出力を統合
+  - コード規約（最大 300 行 / 30 行 / 複雑度 5 制限）を全モジュールで完全遵守
+
 ## [Unreleased] - Phase 7H-B
 - feat(mcp): Phase 7H-B Context Pack v2 → MCP / Agent Consumption Integration 実装および仕様策定（`docs/architecture/context-pack-v2-agent-integration.md`, `docs/guides/agent-quickstart.md`）
   - Context Pack v2（Working Set: CORE / SUPPORTING / RECALL_RESERVE）を外部 AI コーディングエージェント（Claude, Codex, Gemini 等）が直接取得・消費できる MCP ツール `codeprep_prepare_context`（`strategy="knowledge"`）を統合

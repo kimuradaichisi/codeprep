@@ -9,9 +9,15 @@ import type { BuildContextPackV2UseCase } from './BuildContextPackV2UseCase';
 import type {
   ContextPackV2,
   WorkingSetBudget,
+  WorkingSet,
+  ExcludedContextEntry,
+  AdaptiveBudgetDecision,
+} from '../../domain/workingset';
+import {
+  WorkingSetSelector,
+  AdaptiveBudgetResolver,
 } from '../../domain/workingset';
 import { SubgraphToCandidateMapper } from './SubgraphToCandidateMapper';
-import { WorkingSetSelector } from '../../domain/workingset/WorkingSetSelector';
 import type { LegacyCandidateInput } from '../../domain/workingset/RecallReserveCollector';
 
 import type { RepositoryRevisionPort } from '../ir/ports/RepositoryRevisionPort';
@@ -45,16 +51,14 @@ export class PrepareContextPackV2UseCase {
       optionalExplicitPaths: input.explicitPaths,
     });
 
-    const legacyCandidates = await this.resolveLegacyCandidates(input);
-    const graphCandidates = SubgraphToCandidateMapper.map(subgraph);
-
-    const { workingSet, excluded } = WorkingSetSelector.select({
+    const budgetDecision = AdaptiveBudgetResolver.resolve({
       task: input.task,
-      graphCandidates,
-      legacyCandidates,
-      budget: input.budget,
+      subgraph,
+      explicitPaths: input.explicitPaths,
+      userBudget: input.budget,
     });
 
+    const { workingSet, excluded } = await this.selectWorkingSetForTask(input, subgraph, budgetDecision);
     const health = await this.resolveHealthInfo(input.project.rootPath);
     const confidence = this.buildConfidence(subgraph, health);
 
@@ -64,6 +68,25 @@ export class PrepareContextPackV2UseCase {
       excluded,
       subgraphNodeCount: subgraph.rankedNodes.length,
       confidence,
+      budgetDecision,
+    });
+  }
+
+  private async selectWorkingSetForTask(
+    input: PrepareContextPackV2Input,
+    subgraph: RepositoryRelevantSubgraph,
+    decision: AdaptiveBudgetDecision
+  ): Promise<{ workingSet: WorkingSet; excluded: readonly ExcludedContextEntry[] }> {
+    const legacyCandidates = await this.resolveLegacyCandidates(input);
+    const graphCandidates = SubgraphToCandidateMapper.map(subgraph);
+
+    return WorkingSetSelector.select({
+      task: input.task,
+      graphCandidates,
+      legacyCandidates,
+      budget: decision.budget,
+      scope: decision.scope,
+      recallReserveLimit: decision.recallReserveLimit,
     });
   }
 

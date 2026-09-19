@@ -10,6 +10,7 @@ import type { ExcludedContextEntry } from './ContextPackV2';
 import { WorkingSetDeduplicator } from './WorkingSetDeduplicator';
 import { RecallReserveCollector, type LegacyCandidateInput, type CollectRecallReserveOptions } from './RecallReserveCollector';
 import { WorkingSetBudgetApplier } from './WorkingSetBudgetApplier';
+import type { TaskScope } from './TaskScope';
 
 export interface SelectWorkingSetParams {
   readonly task: string;
@@ -17,6 +18,8 @@ export interface SelectWorkingSetParams {
   readonly legacyCandidates?: readonly LegacyCandidateInput[];
   readonly budget?: WorkingSetBudget;
   readonly reserveOptions?: CollectRecallReserveOptions;
+  readonly scope?: TaskScope;
+  readonly recallReserveLimit?: number;
 }
 
 export interface SelectWorkingSetResult {
@@ -30,7 +33,10 @@ export class WorkingSetSelector {
     const allCandidates = this.assembleCandidates(params);
 
     const { deduplicated, duplicateExcluded } = WorkingSetDeduplicator.deduplicate(allCandidates);
-    const { entries, excluded: budgetExcluded } = WorkingSetBudgetApplier.apply(deduplicated, budget);
+    const { entries, excluded: budgetExcluded } = WorkingSetBudgetApplier.apply(deduplicated, budget, {
+      scope: params.scope,
+      recallReserveLimit: params.recallReserveLimit,
+    });
 
     const dupExcludedEntries: ExcludedContextEntry[] = duplicateExcluded.map((d) => ({
       nodeId: d.nodeId,
@@ -48,7 +54,11 @@ export class WorkingSetSelector {
   }
 
   private static assembleCandidates(params: SelectWorkingSetParams): readonly WorkingSetCandidate[] {
-    const reserveOptions = { ...params.reserveOptions, task: params.task };
+    const reserveOptions = {
+      maxRecallReserve: params.recallReserveLimit,
+      ...params.reserveOptions,
+      task: params.task,
+    };
     const reserves = params.legacyCandidates
       ? RecallReserveCollector.collect(params.graphCandidates, params.legacyCandidates, reserveOptions)
       : [];

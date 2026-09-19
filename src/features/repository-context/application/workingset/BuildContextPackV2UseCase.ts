@@ -10,6 +10,7 @@ import type {
   ContextPackV2Entry,
   ContextPackV2Metrics,
   ExcludedContextEntry,
+  AdaptiveBudgetDecision,
 } from '../../domain/workingset';
 import { GranularityResolver } from '../../domain/workingset/GranularityResolver';
 import type { SourceExtractorPort } from './ports/SourceExtractorPort';
@@ -20,6 +21,7 @@ export interface BuildContextPackV2Params {
   readonly excluded: readonly ExcludedContextEntry[];
   readonly subgraphNodeCount: number;
   readonly confidence?: Readonly<Record<string, unknown>>;
+  readonly budgetDecision: AdaptiveBudgetDecision;
 }
 
 export class BuildContextPackV2UseCase {
@@ -100,6 +102,7 @@ export class BuildContextPackV2UseCase {
       contextRanges: ranges,
       estimatedTokens: tokens,
       compressionRatio: Number(ratio.toFixed(3)),
+      budgetDecision: params.budgetDecision,
     });
   }
 }

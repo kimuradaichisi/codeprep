@@ -42,6 +42,8 @@ export interface ExcludedContextEntry {
   readonly detail?: string;
 }
 
+import type { AdaptiveBudgetDecision } from './TaskScope';
+
 export interface ContextPackV2Metrics {
   readonly subgraphNodes: number;
   readonly workingSetEntries: number;
@@ -49,6 +51,7 @@ export interface ContextPackV2Metrics {
   readonly contextRanges: number;
   readonly estimatedTokens: number;
   readonly compressionRatio: number;
+  readonly budgetDecision: AdaptiveBudgetDecision;
 }
 
 export interface ContextPackV2 {

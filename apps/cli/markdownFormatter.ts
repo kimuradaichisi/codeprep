@@ -38,10 +38,15 @@ function formatV1Markdown(data: CliContextResult): string {
 }
 
 function formatContextPackV2Markdown(data: ContextPackV2): string {
+  const bd = data.metrics.budgetDecision;
+  const budgetInfo = bd
+    ? `**Budget Decision:** \`${bd.source}\` (Scope: \`${bd.scope}\`, MaxFiles: ${bd.budget.maxFiles}, MaxTokens: ${bd.budget.maxEstimatedTokens})`
+    : '';
   const parts: string[] = [
     `# CodePrep Context Pack v2`,
     `**Task:** ${data.task}`,
     `**Strategy:** \`${data.strategy}\``,
+    budgetInfo,
     `**Compression Ratio:** ${(data.metrics.compressionRatio * 100).toFixed(1)}% (Nodes: ${data.metrics.subgraphNodes} -> Files: ${data.metrics.contextFiles}, Est. Tokens: ${data.metrics.estimatedTokens})`,
     '',
     `## Working Set`,

@@ -172,7 +172,36 @@ export interface RepositoryEvalResult {
     avgCompressionRatio: number;
     avgIrrelevantRatio: number;
     recallReserveContribution: number;
+    capHitRate?: number;
     details?: readonly unknown[];
+  }>;
+  readonly adaptiveBudget?: Readonly<{
+    tasks: number;
+    scopeCounts: {
+      narrow: number;
+      standard: number;
+      broad: number;
+    };
+    before: {
+      avgFiles: number;
+      avgTokens: number;
+      capHitRate: number;
+      mustHaveRecall: number;
+    };
+    after: {
+      avgFiles: number;
+      avgTokens: number;
+      capHitRate: number;
+      mustHaveRecall: number;
+    };
+    scopeBreakdown?: readonly {
+      scope: string;
+      taskCount: number;
+      avgFilesBefore: number;
+      avgFilesAfter: number;
+      recallBefore: number;
+      recallAfter: number;
+    }[];
   }>;
   readonly agentIntegration?: Readonly<{
     cliMcpParity: number;
@@ -186,6 +215,7 @@ export interface RepositoryEvalResult {
     changedButNotRecommended: number;
     recallReserveUsed: number;
     packCapHitRate: number;
+    avgUnusedRecommendationRatio?: number;
     tasks?: readonly unknown[];
   }>;
 }

@@ -52,6 +52,14 @@ describe('BuildContextPackV2UseCase', () => {
       workingSet,
       excluded: [],
       subgraphNodeCount: 10,
+      budgetDecision: {
+        source: 'adaptive',
+        scope: 'standard',
+        budget: DEFAULT_WORKING_SET_BUDGET,
+        recallReserveLimit: 2,
+        signals: [],
+        reasons: ['test'],
+      },
     });
 
     expect(pack.schemaVersion).toBe('2');

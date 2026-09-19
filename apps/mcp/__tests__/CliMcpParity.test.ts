@@ -69,6 +69,14 @@ describe('CLI / MCP Parity Oracle', () => {
       contextRanges: 3,
       estimatedTokens: 570,
       compressionRatio: 0.5,
+      budgetDecision: {
+        source: 'adaptive',
+        scope: 'standard',
+        budget: { maxFiles: 8, maxNodes: 16, maxEstimatedTokens: 10000, maxBytes: 48 * 1024 },
+        recallReserveLimit: 2,
+        signals: [],
+        reasons: ['test'],
+      },
     },
   };
 

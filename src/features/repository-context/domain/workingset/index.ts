@@ -16,3 +16,7 @@ export * from './WorkingSetDeduplicator';
 export * from './RecallReserveCollector';
 export * from './WorkingSetBudgetApplier';
 export * from './WorkingSetSelector';
+export * from './TaskScope';
+export * from './AdaptiveBudgetPolicy';
+export * from './TaskScopeClassifier';
+export * from './AdaptiveBudgetResolver';

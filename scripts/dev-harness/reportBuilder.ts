@@ -142,14 +142,38 @@ function renderRepoMetricsSection(evalRes?: RepositoryEvalResult): string {
     lines.push(`- **Avg Irrelevant Context Ratio**: ${(evalRes.contextPackV2.avgIrrelevantRatio * 100).toFixed(1)}%`);
     lines.push(`- **Recall Reserve Contribution**: ${evalRes.contextPackV2.recallReserveContribution} must-have additions`);
   }
+  if (evalRes.adaptiveBudget) {
+    lines.push(...renderAdaptiveBudgetSection(evalRes.adaptiveBudget));
+  }
   if (evalRes.agentIntegration) {
     lines.push(...renderAgentIntegrationSection(evalRes.agentIntegration));
   }
   return lines.join('\n');
 }
 
+function renderAdaptiveBudgetSection(ab: NonNullable<RepositoryEvalResult['adaptiveBudget']>): string[] {
+  const lines: string[] = ['### Adaptive Working Set Budget Evaluation (Phase 7I-A):'];
+  lines.push(`- **Evaluated Tasks**: ${ab.tasks} (Narrow: ${ab.scopeCounts.narrow}, Standard: ${ab.scopeCounts.standard}, Broad: ${ab.scopeCounts.broad})`);
+  lines.push('| Metric | Fixed Budget (Baseline) | Adaptive Budget | Delta |');
+  lines.push('| :--- | :---: | :---: | :---: |');
+  lines.push(`| **Avg Files** | ${ab.before.avgFiles} | ${ab.after.avgFiles} | ${(ab.after.avgFiles - ab.before.avgFiles).toFixed(1)} |`);
+  lines.push(`| **Avg Tokens** | ${ab.before.avgTokens} | ${ab.after.avgTokens} | ${ab.after.avgTokens - ab.before.avgTokens} |`);
+  lines.push(`| **Cap Hit Rate** | ${(ab.before.capHitRate * 100).toFixed(1)}% | ${(ab.after.capHitRate * 100).toFixed(1)}% | ${((ab.after.capHitRate - ab.before.capHitRate) * 100).toFixed(1)}% |`);
+  lines.push(`| **Must-Have Recall** | ${(ab.before.mustHaveRecall * 100).toFixed(1)}% | ${(ab.after.mustHaveRecall * 100).toFixed(1)}% | ${((ab.after.mustHaveRecall - ab.before.mustHaveRecall) * 100).toFixed(1)}% |`);
+
+  if (ab.scopeBreakdown && ab.scopeBreakdown.length > 0) {
+    lines.push('', '#### Scope Breakdown:');
+    lines.push('| Scope | Tasks | Avg Files (Before -> After) | Recall (Before -> After) |');
+    lines.push('| :--- | :---: | :---: | :---: |');
+    for (const sb of ab.scopeBreakdown) {
+      lines.push(`| **${sb.scope.toUpperCase()}** | ${sb.taskCount} | ${sb.avgFilesBefore} -> ${sb.avgFilesAfter} | ${(sb.recallBefore * 100).toFixed(1)}% -> ${(sb.recallAfter * 100).toFixed(1)}% |`);
+    }
+  }
+  return lines;
+}
+
 function renderAgentIntegrationSection(ai: NonNullable<RepositoryEvalResult['agentIntegration']>): string[] {
-  const lines: string[] = ['### Agent Consumption & Dogfooding Evaluation (Phase 7H-B):'];
+  const lines: string[] = ['### Agent Consumption & Dogfooding Evaluation (Phase 7H-B / 7I-A):'];
   lines.push(`- **CLI / MCP Semantic Parity**: **${(ai.cliMcpParity * 100).toFixed(1)}% MATCH**`);
   lines.push(`- **Evaluated Dogfood Tasks**: ${ai.dogfoodTasks}`);
   lines.push(`- **Files Read Before Edit**: Control = ${ai.avgFilesReadBeforeEditControl} vs CodePrep = ${ai.avgFilesReadBeforeEditCodePrep} (Reduction: -${(((ai.avgFilesReadBeforeEditControl - ai.avgFilesReadBeforeEditCodePrep) / ai.avgFilesReadBeforeEditControl) * 100).toFixed(1)}%)`);
@@ -158,6 +182,9 @@ function renderAgentIntegrationSection(ai: NonNullable<RepositoryEvalResult['age
   lines.push(`- **Changed But Not Recommended**: ${ai.changedButNotRecommended}`);
   lines.push(`- **Recall Reserve Used**: ${ai.recallReserveUsed} task(s)`);
   lines.push(`- **Pack Saturation (Cap Hit Rate)**: ${(ai.packCapHitRate * 100).toFixed(1)}%`);
+  if (ai.avgUnusedRecommendationRatio !== undefined) {
+    lines.push(`- **Avg Unused Recommendation Ratio**: ${(ai.avgUnusedRecommendationRatio * 100).toFixed(1)}%`);
+  }
   return lines;
 }
 

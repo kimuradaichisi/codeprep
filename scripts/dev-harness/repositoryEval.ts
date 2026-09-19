@@ -89,6 +89,10 @@ function printEvalSummary(res: RepositoryEvalResult, phase: string): void {
   if (res.contextPackV2) {
     console.log(`- Context Pack v2: ${res.contextPackV2.tasks} tasks, Recall=${res.contextPackV2.mustHaveRecall}, AvgFiles=${res.contextPackV2.avgFiles}, AvgTokens=${res.contextPackV2.avgEstimatedTokens}, Compression=${res.contextPackV2.avgCompressionRatio}, Noise=${res.contextPackV2.avgIrrelevantRatio}, ReserveBonus=${res.contextPackV2.recallReserveContribution}`);
   }
+  if (res.adaptiveBudget) {
+    const ab = res.adaptiveBudget;
+    console.log(`- Adaptive Budget: Tasks=${ab.tasks} (Narrow=${ab.scopeCounts.narrow}, Standard=${ab.scopeCounts.standard}, Broad=${ab.scopeCounts.broad}), Files=${ab.before.avgFiles} -> ${ab.after.avgFiles}, Tokens=${ab.before.avgTokens} -> ${ab.after.avgTokens}, CapHit=${((ab.before.capHitRate) * 100).toFixed(1)}% -> ${((ab.after.capHitRate) * 100).toFixed(1)}%, Recall=${((ab.before.mustHaveRecall) * 100).toFixed(1)}% -> ${((ab.after.mustHaveRecall) * 100).toFixed(1)}%`);
+  }
   if (res.agentIntegration) {
     console.log(`- Agent Integration: Parity=${(res.agentIntegration.cliMcpParity * 100).toFixed(1)}%, Tasks=${res.agentIntegration.dogfoodTasks}, ReadBeforeEdit=${res.agentIntegration.avgFilesReadBeforeEditControl} -> ${res.agentIntegration.avgFilesReadBeforeEditCodePrep}, Searches=${res.agentIntegration.avgSearchesControl} -> ${res.agentIntegration.avgSearchesCodePrep}, TimeToEdit=${res.agentIntegration.avgTimeToFirstEditControlMs}ms -> ${res.agentIntegration.avgTimeToFirstEditCodePrepMs}ms, Missing=${res.agentIntegration.changedButNotRecommended}, ReserveUsed=${res.agentIntegration.recallReserveUsed}`);
   }
@@ -144,6 +148,7 @@ export async function executeRepositoryEval(phase = 'current', format: 'text' | 
       ...v2Result.summary,
       details: v2Result.details,
     },
+    adaptiveBudget: v2Result.adaptiveBudget,
     agentIntegration,
     performance: { ...timings, dbSizeBytes: stats.dbSizeBytes, heapDeltaMb: Number(((memEnd - memStart) / 1024 / 1024).toFixed(2)) },
   };

@@ -128,6 +128,14 @@ describe(PREPARE_CONTEXT_TOOL_NAME, () => {
       metrics: {
         subgraphNodes: 5, workingSetEntries: 3, contextFiles: 3, contextRanges: 0,
         estimatedTokens: 700, compressionRatio: 0.4,
+        budgetDecision: {
+          source: 'adaptive' as const,
+          scope: 'standard' as const,
+          budget: { maxFiles: 8, maxNodes: 16, maxEstimatedTokens: 10000, maxBytes: 48 * 1024 },
+          recallReserveLimit: 2,
+          signals: [],
+          reasons: ['test'],
+        },
       },
     };
 

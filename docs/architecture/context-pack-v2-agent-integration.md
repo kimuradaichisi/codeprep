@@ -51,6 +51,7 @@ MCP Adapter (codeprep_prepare_context) ┘
 ```
 
 - `strategy: "knowledge"` を指定することで Context Pack v2 を返却。
+- `budget` を省略した場合（Phase 7I-A 以降）：タスクとサブグラフからスコープ（NARROW / STANDARD / BROAD）を自動判定する **Adaptive Budget** が発動。明示指定時は指定値が最優先（Explicit Override）。
 - 未指定または `"fast"` / `"standard"` の場合はレガシー（v1）レスポンスを返却し、完全な後方互換性を維持。
 
 #### Machine-Readable Structured Output

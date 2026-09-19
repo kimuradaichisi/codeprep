@@ -22,9 +22,12 @@ export interface DogfoodTaskSpec {
   };
 }
 
+import type { TaskScope } from '../../domain/workingset';
+
 export interface DogfoodTaskEvaluationResult {
   readonly id: string;
   readonly type: string;
+  readonly scope: TaskScope;
   readonly task: string;
   readonly recommendedFiles: readonly string[];
   readonly changedFiles: readonly string[];
@@ -34,6 +37,7 @@ export interface DogfoodTaskEvaluationResult {
   readonly recallReserveUsed: boolean;
   readonly maxFilesReached: boolean;
   readonly tokenBudgetReached: boolean;
+  readonly unusedRecommendationRatio: number;
   readonly control: {
     readonly filesRead: number;
     readonly searches: number;
@@ -58,6 +62,7 @@ export interface AgentIntegrationResult {
   readonly changedButNotRecommended: number;
   readonly recallReserveUsed: number;
   readonly packCapHitRate: number;
+  readonly avgUnusedRecommendationRatio: number;
   readonly tasks: readonly DogfoodTaskEvaluationResult[];
 }
 
@@ -133,6 +138,7 @@ export class AgentConsumptionEvaluator {
     return Object.freeze({
       id: spec.id,
       type: spec.type,
+      scope: pack.metrics.budgetDecision?.scope ?? 'standard',
       task: spec.task,
       recommendedFiles: Object.freeze(recFiles),
       changedFiles: spec.changedFiles,
@@ -140,8 +146,9 @@ export class AgentConsumptionEvaluator {
       additionalDiscovery: Object.freeze(changedMissing),
       changedButNotRecommended: Object.freeze(changedMissing),
       recallReserveUsed: reserveUsed,
-      maxFilesReached: totalFiles >= 10,
-      tokenBudgetReached: pack.metrics.estimatedTokens >= 12000,
+      maxFilesReached: totalFiles >= (pack.metrics.budgetDecision?.budget.maxFiles ?? 10),
+      tokenBudgetReached: pack.metrics.estimatedTokens >= (pack.metrics.budgetDecision?.budget.maxEstimatedTokens ?? 12000),
+      unusedRecommendationRatio: Number(((recFiles.length - actuallyRead.length) / Math.max(1, recFiles.length)).toFixed(3)),
       control: {
         filesRead: spec.control.filesReadBeforeEdit,
         searches: spec.control.searches,
@@ -183,6 +190,7 @@ export class AgentConsumptionEvaluator {
     const totalCpSearches = tasks.reduce((sum, t) => sum + t.codePrep.searches, 0);
     const totalCtrlTime = tasks.reduce((sum, t) => sum + t.control.timeToFirstEditMs, 0);
     const totalCpTime = tasks.reduce((sum, t) => sum + t.codePrep.timeToFirstEditMs, 0);
+    const totalUnusedRatio = tasks.reduce((sum, t) => sum + t.unusedRecommendationRatio, 0);
 
     const changedMissingTotal = tasks.reduce((sum, t) => sum + t.changedButNotRecommended.length, 0);
     const reserveUsedCount = tasks.filter((t) => t.recallReserveUsed).length;
@@ -200,6 +208,7 @@ export class AgentConsumptionEvaluator {
       changedButNotRecommended: changedMissingTotal,
       recallReserveUsed: reserveUsedCount,
       packCapHitRate: Number((capHitCount / count).toFixed(2)),
+      avgUnusedRecommendationRatio: Number((totalUnusedRatio / count).toFixed(3)),
       tasks,
     });
   }
