@@ -2,8 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Phase 7K-A
+## [0.8.14] - 2026-09-20
+- fix(wsl): Remote WSL および WSL UNC パスにおけるファイルツリー・パス解決の不具合修正
+
+  - **Remote WSL URI 透過対応**: VSCode Remote WSL 接続時（`vscode-remote://` スキーム環境下）に `vscode.Uri.file` の決め打ちによりローカルファイルシステムが誤参照され、ファイルツリーが表示されない（空になる）問題を根本解消
+    - `VSCodeFileSystem`: `rootUri` に基づくリモート URI 解決機構（`resolveUri`）を実装し、リモート接続環境下でも透過的なディレクトリ走査・ファイル読み書きを実現
+    - `FileNode`: `uri` オプションをサポートし、リモート URI を保持することでファイルツリーのアイコン表示およびファイルオープン操作が正常に動作するよう修正
+    - `FileTreeProvider`: `FileTreeOptions` を通じた `rootUri` サポートを追加し、リモート URI ベースの `RelativePattern` によるファイルシステム監視とツリーノード構築を実現
+    - `VSCodeWorkspaceRepository`: `rootUri` および `vscode.workspace.asRelativePath` による確実な相対パス解決を実装
+    - `VSCodeWorkspacePathResolver`: リモート URI を用いたファイル存在確認および fallback 検索に対応
+  - **WSL パス相互解決・抽出強化**:
+    - `pathMatchUtils`: WSL UNC パス（`//wsl$/...`, `//wsl.localhost/...`）と Linux POSIX パス（`/home/...`）の相互プレフィックス解決・照合を実装
+    - `ClipboardPathExtractor` / `ClipboardSelectionUseCase`: `$` 記号や UNC パス形式（`\\wsl$\...`）に対応し、WSL パスをクリップボードから正常に検出・選択可能に改善
+    - `CommandRegistry`: リモート URI の相対パス取得および `extractFsPath` を強化
+
+## Phase 7K-A
 - feat(desktop): Phase 7K-A Desktop Context Pack v2 Integration / Knowledge Strategy 統合（`docs/architecture/desktop-context-pack-v2-integration.md`）
+
   - 既存のコードベース探索・パッキング UX および下位互換性を完全に維持したまま、Desktop UI (`apps/desktop`) に Knowledge Graph Strategy (`strategy: 'knowledge'`) および Context Pack v2 を統合
   - **Single Source of Truth**: UI 専用の再実装を排除し、コアアプリケーション層の `createPrepareContextPackV2UseCase` を直接利用して Desktop / CLI / MCP の完全な振る舞いの一致を保証
   - **UI / Renderer 拡張**:

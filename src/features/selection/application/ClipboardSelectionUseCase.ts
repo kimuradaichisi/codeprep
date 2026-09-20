@@ -40,8 +40,9 @@ export class ClipboardSelectionUseCase {
   }
 
   private extractPaths(text: string): string[] {
-    const regex = /(([a-zA-Z]:\\|(?:\.\/|\/))?[a-z0-9_./\\-]+\.[a-z0-9]+)/gi;
+    const regex = /(([a-zA-Z]:\\|\\\\|(?:\.\/|\/))?[a-z0-9_./\\$-]+\.[a-z0-9]+)/gi;
     const matches = text.match(regex) || [];
+
     const paths = new Set<string>();
     for (const match of matches) {
       const cleaned = match.replace(/^['"`]+|['"`]+$/g, '').replace(/:\d+(:\d+)?$/, '').replace(/\\/g, '/').trim();

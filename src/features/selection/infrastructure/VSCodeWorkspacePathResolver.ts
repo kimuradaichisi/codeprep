@@ -13,12 +13,19 @@ import {
 
 export class VSCodeWorkspacePathResolver implements WorkspacePathResolver {
   private readonly workspaceRoot: string;
+  private readonly rootUri?: vscode.Uri;
   private readonly excludeProvider: WorkspaceExcludeProvider;
 
-  constructor(workspaceRoot: string, excludeProvider?: WorkspaceExcludeProvider) {
+  constructor(
+    workspaceRoot: string,
+    excludeProvider?: WorkspaceExcludeProvider,
+    rootUri?: vscode.Uri
+  ) {
     this.workspaceRoot = normalizeSeparators(workspaceRoot);
+    this.rootUri = rootUri;
     this.excludeProvider = excludeProvider ?? new WorkspaceExcludeProvider(this.workspaceRoot);
   }
+
 
   public async resolve(paths: readonly string[]): Promise<string[]> {
     if (!this.workspaceRoot || paths.length === 0) return [];
@@ -62,13 +69,16 @@ export class VSCodeWorkspacePathResolver implements WorkspacePathResolver {
     const relPath = extractWorkspaceRelativePath(candidate, this.workspaceRoot);
     if (!relPath) return undefined;
     const fullPath = path.join(this.workspaceRoot, relPath);
-    const exists = await this.fileExists(fullPath);
+    const exists = await this.fileExists(fullPath, relPath);
     return exists ? relPath.replace(/\\/g, '/') : undefined;
   }
 
-  private async fileExists(fullPath: string): Promise<boolean> {
+  private async fileExists(fullPath: string, relPath: string): Promise<boolean> {
     try {
-      const stat = await vscode.workspace.fs.stat(vscode.Uri.file(fullPath));
+      const uri = this.rootUri
+        ? vscode.Uri.joinPath(this.rootUri, relPath)
+        : vscode.Uri.file(fullPath);
+      const stat = await vscode.workspace.fs.stat(uri);
       return stat !== undefined;
     } catch {
       return false;
@@ -80,9 +90,11 @@ export class VSCodeWorkspacePathResolver implements WorkspacePathResolver {
     exclude: string | undefined
   ): Promise<string | undefined> {
     const clean = normalizeSeparators(candidate).replace(/^(\.\/|\/)+/, '');
-    const pattern = `**/${clean}`;
+    const glob = `**/${clean}`;
+    const pattern = this.rootUri ? new vscode.RelativePattern(this.rootUri, glob) : glob;
     const matches = await vscode.workspace.findFiles(pattern, exclude, 2);
     if (matches.length !== 1) return undefined;
     return vscode.workspace.asRelativePath(matches[0], false).replace(/\\/g, '/');
   }
 }
+

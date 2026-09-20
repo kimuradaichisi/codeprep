@@ -22,4 +22,11 @@ describe('ClipboardPathExtractor', () => {
         const result = extractor.extract(text);
         expect(result).toHaveLength(1);
     });
-});
+
+    it('should extract WSL UNC and posix paths', () => {
+        const text = 'Files: \\\\wsl$\\Ubuntu\\home\\user\\src\\app.ts and /home/user/src/index.ts';
+        const result = extractor.extract(text);
+        expect(result).toContain('//wsl$/Ubuntu/home/user/src/app.ts');
+        expect(result).toContain('/home/user/src/index.ts');
+    });
+});

@@ -9,6 +9,11 @@ import { FileIconType } from './domain/FileIconType';
 import { IFileSystem } from '../../shared/domain/IFileSystem';
 import { TreeConfigLoader, TreeConfig } from './TreeConfigLoader';
 
+export interface FileTreeOptions {
+    gitWatcher?: GitWatcher;
+    rootUri?: vscode.Uri;
+}
+
 export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     private _onDidChangeTreeData = new vscode.EventEmitter<FileNode | undefined | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -19,25 +24,35 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
     private readonly iconService = new FileIconService();
     private readonly configLoader: TreeConfigLoader;
     private refreshTimer: NodeJS.Timeout | undefined;
+    private readonly gitWatcher?: GitWatcher;
+    private rootUri?: vscode.Uri;
 
     constructor(
         workspaceRoot: string | undefined,
         private readonly selection: Selection,
         private readonly fileSystem: IFileSystem,
-        private readonly gitWatcher?: GitWatcher
+        optionsOrWatcher?: FileTreeOptions | GitWatcher
     ) {
         this.workspaceRoot = workspaceRoot ? normalizePath(workspaceRoot) : undefined;
+        if (optionsOrWatcher && 'updateCache' in optionsOrWatcher) {
+            this.gitWatcher = optionsOrWatcher;
+        } else if (optionsOrWatcher) {
+            this.gitWatcher = optionsOrWatcher.gitWatcher;
+            this.rootUri = optionsOrWatcher.rootUri;
+        }
         this.configLoader = new TreeConfigLoader(fileSystem, () => this._onDidChangeTreeData.fire());
         this.reloadConfig();
         this.updateWatcher();
     }
 
+
     private reloadConfig(): void {
         this.config = this.configLoader.load(this.workspaceRoot);
     }
 
-    public setRoot(root: string | undefined): void {
+    public setRoot(root: string | undefined, rootUri?: vscode.Uri): void {
         this.workspaceRoot = root ? normalizePath(root) : undefined;
+        this.rootUri = rootUri;
         this.updateWatcher();
         this.refresh();
     }
@@ -54,9 +69,10 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         const config = vscode.workspace.getConfiguration('codeprep');
         this.watcher?.dispose();
         this.watcher = undefined;
-        if (config.get<boolean>('autoRefreshTree', true) && this.workspaceRoot) {
+        const base = this.rootUri ?? this.workspaceRoot;
+        if (config.get<boolean>('autoRefreshTree', true) && base) {
             this.watcher = vscode.workspace.createFileSystemWatcher(
-                new vscode.RelativePattern(this.workspaceRoot, '**/*')
+                new vscode.RelativePattern(base, '**/*')
             );
             const trigger = () => this.refresh();
             this.watcher.onDidCreate(trigger);
@@ -64,6 +80,7 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
             this.watcher.onDidDelete(trigger);
         }
     }
+
 
     public setExpandAll(expand: boolean): void {
         this.expandAll = expand;
@@ -118,7 +135,16 @@ export class FileTreeProvider implements vscode.TreeDataProvider<FileNode> {
         const relPath = normalizePath(getRelativePath(this.workspaceRoot!, fullPath));
         if (this.config.excludePatterns.some(p => p.match(relPath))) return null;
         if (this.config.hideExcludedDirectories && isDir && this.config.excludedDirNames.has(name)) return null;
-        return new FileNode(name, fullPath, relPath, isDir);
+        const nodeUri = this.resolveNodeUri(fullPath, relPath);
+        return new FileNode({ label: name, fullPath, relativePath: relPath, isDirectory: isDir, uri: nodeUri });
+    }
+
+
+    private resolveNodeUri(fullPath: string, relPath: string): vscode.Uri {
+        if (this.rootUri) {
+            return vscode.Uri.joinPath(this.rootUri, relPath);
+        }
+        return vscode.Uri.file(fullPath);
     }
 
     private compareNodes(a: FileNode, b: FileNode): number {

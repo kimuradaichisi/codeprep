@@ -7,10 +7,21 @@ vi.mock('vscode', () => ({
         fs: {
             readFile: vi.fn(),
             readDirectory: vi.fn(),
-            stat: vi.fn()
+            stat: vi.fn(),
+            createDirectory: vi.fn(),
+            writeFile: vi.fn()
         }
     },
-    Uri: { file: vi.fn(p => ({ fsPath: p })) },
+    Uri: {
+        file: vi.fn(p => ({ scheme: 'file', fsPath: p, path: p })),
+        parse: vi.fn(str => ({ scheme: str.split(':')[0], path: str.replace(/^[^:]+:\/\/[^/]*/, '') })),
+        joinPath: vi.fn((base, ...segments) => ({
+            scheme: base.scheme,
+            authority: base.authority,
+            path: `${base.path}/${segments.join('/')}`.replace(/\/+/g, '/'),
+            fsPath: `${base.fsPath || base.path}/${segments.join('/')}`.replace(/\/+/g, '/')
+        }))
+    },
     FileType: { File: 1, Directory: 2 }
 }));
 
@@ -21,6 +32,7 @@ describe('VSCodeFileSystem', () => {
         vi.clearAllMocks();
         fs = new VSCodeFileSystem();
     });
+
 
     it('readFile: should return Success with content when successful', async () => {
         const content = new TextEncoder().encode('hello');
@@ -56,5 +68,34 @@ describe('VSCodeFileSystem', () => {
             expect(result.value).toBe(1234);
         }
     });
+
+    it('remote WSL: rootUriを持つ場合にリモートURIを保持してファイルを読み書きできること', async () => {
+        const mockRootUri: any = {
+            scheme: 'vscode-remote',
+            authority: 'wsl+Ubuntu',
+            path: '/home/user/project',
+            fsPath: '\\home\\user\\project',
+            with: vi.fn(change => ({ ...mockRootUri, ...change }))
+        };
+        const remoteFs = new VSCodeFileSystem(mockRootUri);
+
+        // readDirectory
+        (vscode.workspace.fs.readDirectory as any).mockResolvedValue([['src', 2]]);
+        const dirResult = await remoteFs.readDirectory('/home/user/project');
+        expect(dirResult.isSuccess).toBe(true);
+        expect(vscode.workspace.fs.readDirectory).toHaveBeenCalledWith(
+            expect.objectContaining({ scheme: 'vscode-remote' })
+        );
+
+        // readFile 相対パス
+        const content = new TextEncoder().encode('package.json content');
+        (vscode.workspace.fs.readFile as any).mockResolvedValue(content);
+        const fileResult = await remoteFs.readFile('package.json');
+        expect(fileResult.isSuccess).toBe(true);
+        expect(vscode.workspace.fs.readFile).toHaveBeenCalledWith(
+            expect.objectContaining({ scheme: 'vscode-remote', path: '/home/user/project/package.json' })
+        );
+    });
 });
+
 

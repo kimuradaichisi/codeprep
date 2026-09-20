@@ -48,8 +48,10 @@ interface Services extends Repositories, UseCases {
 
 export async function activate(context: vscode.ExtensionContext) {
   try {
-    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    const services = initServices(context, root);
+    const rootFolder = vscode.workspace.workspaceFolders?.[0];
+    const rootUri = rootFolder?.uri;
+    const root = rootUri ? (rootUri.scheme === 'file' ? rootUri.fsPath : rootUri.path) : undefined;
+    const services = initServices(context, root, rootUri);
     const treeView = setupTreeView(services.treeProvider);
     const commands = registerAllCommands(buildRegistryDeps(context, services, root));
     registerEvents(context, services, treeView, commands);
@@ -74,25 +76,26 @@ function buildRegistryDeps(context: vscode.ExtensionContext, s: Services, root: 
   };
 }
 
-function initServices(context: vscode.ExtensionContext, root: string | undefined): Services {
-  const fileSystem = new VSCodeFileSystem();
+function initServices(context: vscode.ExtensionContext, root: string | undefined, rootUri?: vscode.Uri): Services {
+  const fileSystem = new VSCodeFileSystem(rootUri);
   const gitClient = new GitCliClient();
   const gitWatcher = root ? new GitWatcher(root, gitClient) : undefined;
   const selection = new Selection();
-  const repos = createRepositories(context, root);
+  const repos = createRepositories(context, root, rootUri);
   const useCases = createUseCases(root, selection, repos, gitWatcher, fileSystem);
-  const treeProvider = new FileTreeProvider(root, selection, fileSystem, gitWatcher);
+  const treeProvider = new FileTreeProvider(root, selection, fileSystem, { gitWatcher, rootUri });
   const uiController = new UIController({ selection, tokenUseCase: useCases.tokenUseCase, treeProvider, fileSystem, root, gitWatcher });
   return { selection, ...useCases, ...repos, fileSystem, gitClient, gitWatcher, treeProvider, uiController };
 }
 
-function createRepositories(context: vscode.ExtensionContext, root: string | undefined): Repositories {
+function createRepositories(context: vscode.ExtensionContext, root: string | undefined, rootUri?: vscode.Uri): Repositories {
   return {
     selectionRepo: new VSCodeSelectionRepository(context.workspaceState),
-    workspaceRepo: new VSCodeWorkspaceRepository(root || ''),
+    workspaceRepo: new VSCodeWorkspaceRepository(root || '', rootUri),
     promptRepo: new VSCodePromptRepository()
   };
 }
+
 
 function createUseCases(root: string | undefined, selection: Selection, repos: Repositories, gitWatcher: GitWatcher | undefined, fileSystem: VSCodeFileSystem): UseCases {
   const selectionUseCase = new SelectionUseCase(selection, repos.selectionRepo, new VSCodeFileValidator(root || ''), gitWatcher);

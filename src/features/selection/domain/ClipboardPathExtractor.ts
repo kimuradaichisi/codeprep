@@ -5,7 +5,7 @@
 import { PathValidator } from '../../../shared/domain/PathValidator';
 
 export class ClipboardPathExtractor {
-  private readonly pathRegex = /([a-zA-Z0-9._\-/]+\.[a-zA-Z0-9]+)(?::\d+:\d+)?/g;
+  private readonly pathRegex = /([a-zA-Z0-9._/$\\\\-]+\.[a-zA-Z0-9]+)(?::\d+:\d+)?/g;
 
   /**
    * テキストからファイルパスを抽出し、一意な相対パスの配列として返す

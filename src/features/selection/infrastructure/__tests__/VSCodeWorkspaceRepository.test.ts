@@ -66,4 +66,26 @@ describe('VSCodeWorkspaceRepository (.gitignore integration)', () => {
         expect(capturedExclude).toBeDefined();
         expect(String(capturedExclude)).toContain('.vscode-test');
     });
+
+    it('rootUri を渡した場合に RelativePattern に rootUri を指定しファイルを解決すること', async () => {
+        const mockRemoteUri: any = {
+            scheme: 'vscode-remote',
+            authority: 'wsl+Ubuntu',
+            path: '/home/user/project',
+            fsPath: '\\home\\user\\project'
+        };
+        const repo = new VSCodeWorkspaceRepository('/home/user/project', mockRemoteUri);
+        let capturedPattern: any = undefined;
+        (vscode.workspace.findFiles as any).mockImplementation((pattern: any) => {
+            capturedPattern = pattern;
+            return Promise.resolve([
+                { scheme: 'vscode-remote', path: '/home/user/project/src/index.ts', fsPath: '/home/user/project/src/index.ts' }
+            ]);
+        });
+
+        const files = await repo.getAllFiles();
+        expect(capturedPattern.base).toBe(mockRemoteUri);
+        expect(files).toContain('src/index.ts');
+    });
 });
+

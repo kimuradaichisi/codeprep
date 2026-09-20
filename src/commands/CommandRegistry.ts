@@ -69,8 +69,13 @@ function extractFsPath(arg: unknown): string | undefined {
   if (!arg || typeof arg !== 'object') return typeof arg === 'string' ? arg : undefined;
   const o = arg as Record<string, unknown>;
   if (typeof o['fsPath'] === 'string') return o['fsPath'];
-  if (o['resourceUri'] && typeof (o['resourceUri'] as Record<string, unknown>)['fsPath'] === 'string') return (o['resourceUri'] as Record<string, unknown>)['fsPath'] as string;
+  if (o['resourceUri']) {
+    const res = o['resourceUri'] as Record<string, unknown>;
+    if (typeof res['fsPath'] === 'string') return res['fsPath'];
+    if (typeof res['path'] === 'string') return res['path'] as string;
+  }
   if (typeof o['fullPath'] === 'string') return o['fullPath'];
+  if (typeof o['path'] === 'string') return o['path'] as string;
   return undefined;
 }
 
@@ -97,12 +102,17 @@ function registerPromptCommands(prompt: PromptUseCase, selection: SelectionUseCa
     vscode.commands.registerCommand('codeprep.selectPrompt', () => handleSelectPrompt(prompt)),
     vscode.commands.registerCommand('codeprep.addToSelection', async (uri: vscode.Uri) => {
       if (uri && root) {
-        selection.currentSelection.set(path.relative(root, uri.fsPath).replace(/\\/g, '/'), true);
+        const asRel = vscode.workspace.asRelativePath ? vscode.workspace.asRelativePath(uri, false) : undefined;
+        const rel = (asRel && asRel !== uri.fsPath && asRel !== uri.path)
+          ? asRel
+          : path.relative(root, uri.fsPath || uri.path);
+        selection.currentSelection.set(rel.replace(/\\/g, '/'), true);
         await ui.refresh();
       }
     })
   ];
 }
+
 
 async function handleSelectPrompt(prompt: PromptUseCase): Promise<void> {
   const p = await prompt.getAvailablePrompts();

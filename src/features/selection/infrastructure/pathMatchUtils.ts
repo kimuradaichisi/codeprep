@@ -8,7 +8,7 @@ export function normalizeSeparators(p: string): string {
 }
 
 export function isAbsoluteCandidate(normalized: string): boolean {
-  return /^(\/)?[a-zA-Z]:\//.test(normalized) || normalized.startsWith('/');
+  return /^(\/)?[a-zA-Z]:\//.test(normalized) || normalized.startsWith('/') || /^\/\/(?:wsl\$|wsl\.localhost)/i.test(normalized);
 }
 
 export function extractWorkspaceRelativePath(candidate: string, workspaceRoot: string): string | undefined {
@@ -24,9 +24,20 @@ export function extractWorkspaceRelativePath(candidate: string, workspaceRoot: s
 }
 
 function resolveAbsoluteToRelative(normCand: string, normRoot: string): string | undefined {
-  const cleanCand = normCand.replace(/^\/([a-zA-Z]:)/, '$1');
-  const cleanRoot = normRoot.replace(/^\/([a-zA-Z]:)/, '$1');
+  const direct = matchPrefix(normCand, normRoot);
+  if (direct !== undefined) return direct;
 
+  const candLinux = toLinuxPathIfWsl(normCand);
+  const rootLinux = toLinuxPathIfWsl(normRoot);
+  if (candLinux !== normCand || rootLinux !== normRoot) {
+    return matchPrefix(candLinux, rootLinux);
+  }
+  return undefined;
+}
+
+function matchPrefix(cand: string, root: string): string | undefined {
+  const cleanCand = cand.replace(/^\/([a-zA-Z]:)/, '$1');
+  const cleanRoot = root.replace(/^\/([a-zA-Z]:)/, '$1');
   const lowerCand = cleanCand.toLowerCase();
   const lowerRoot = cleanRoot.toLowerCase();
 
@@ -37,11 +48,18 @@ function resolveAbsoluteToRelative(normCand: string, normRoot: string): string |
   return undefined;
 }
 
+function toLinuxPathIfWsl(p: string): string {
+  return p.replace(/^\/\/(?:wsl\$|wsl\.localhost)\/[^/]+/i, '');
+}
+
 function isStrictlyOutsideAbsolute(normCand: string, normRoot: string): boolean {
   if (/^(\/)?[a-zA-Z]:\//.test(normCand)) return true;
-  if (normRoot.startsWith('/') && normCand.startsWith('/')) return true;
+  const candLinux = toLinuxPathIfWsl(normCand);
+  const rootLinux = toLinuxPathIfWsl(normRoot);
+  if (rootLinux.startsWith('/') && candLinux.startsWith('/')) return true;
   return false;
 }
+
 
 function resolveRelativeToWorkspace(normCand: string): string | undefined {
   const clean = normCand.replace(/^(\.\/|\/)+/, '');

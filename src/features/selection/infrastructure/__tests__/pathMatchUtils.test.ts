@@ -54,4 +54,18 @@ describe('pathMatchUtils', () => {
     expect(isEligibleForFallback('C:/workspace/project/src/app.ts')).toBe(false);
     expect(isEligibleForFallback('../../secret.txt')).toBe(false);
   });
+
+  it('extractWorkspaceRelativePath: WSL UNCパスとLinuxパスの相互解決ができること', () => {
+    const wslRoot = '//wsl$/Ubuntu/home/user/project';
+    const linuxPath = '/home/user/project/src/app.ts';
+    expect(extractWorkspaceRelativePath(linuxPath, wslRoot)).toBe('src/app.ts');
+
+    const wslLocalhostCand = '//wsl.localhost/Ubuntu/home/user/project/src/app.ts';
+    expect(extractWorkspaceRelativePath(wslLocalhostCand, wslRoot)).toBe('src/app.ts');
+
+    const linuxRoot = '/home/user/project';
+    const wslCand = '\\\\wsl$\\Ubuntu\\home\\user\\project\\src\\app.ts';
+    expect(extractWorkspaceRelativePath(wslCand, linuxRoot)).toBe('src/app.ts');
+  });
 });
+

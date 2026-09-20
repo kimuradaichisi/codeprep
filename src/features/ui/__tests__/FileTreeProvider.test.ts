@@ -25,8 +25,17 @@ vi.mock('vscode', () => {
             event = vi.fn();
             fire = vi.fn();
         },
-        Uri: { file: vi.fn((p) => ({ fsPath: p })) },
+        Uri: {
+            file: vi.fn((p) => ({ scheme: 'file', fsPath: p, path: p })),
+            joinPath: vi.fn((base, ...segments) => ({
+                scheme: base.scheme,
+                authority: base.authority,
+                path: `${base.path}/${segments.join('/')}`.replace(/\/+/g, '/'),
+                fsPath: `${base.fsPath || base.path}/${segments.join('/')}`.replace(/\/+/g, '/')
+            }))
+        },
         FileType: { File: 1, Directory: 2 },
+
         workspace: {
             createFileSystemWatcher: vi.fn(() => ({
                 onDidCreate: vi.fn(),
@@ -155,5 +164,34 @@ describe('FileTreeProvider Optimization & Functionality', () => {
         expect(fireSpy).toHaveBeenCalledTimes(1);
         vi.useRealTimers();
     });
+
+    it('remote WSL: rootUriが渡された場合、FileNodeのuriがリモートURIを保持すること', async () => {
+        const mockRemoteUri: any = {
+            scheme: 'vscode-remote',
+            authority: 'wsl+Ubuntu',
+            path: '/home/user/project',
+            fsPath: '\\home\\user\\project'
+        };
+        const remoteProvider = new FileTreeProvider(
+            '/home/user/project',
+            selection,
+            mockFileSystem,
+            { gitWatcher: mockGitWatcher, rootUri: mockRemoteUri }
+        );
+
+
+        mockFileSystem.readDirectory.mockResolvedValue(ok([
+            ['src', 2],
+            ['app.ts', 1]
+        ]));
+
+        const children = await remoteProvider.getChildren();
+        expect(children).toHaveLength(2);
+        const appNode = children.find(c => c.label === 'app.ts');
+        expect(appNode).toBeDefined();
+        expect(appNode?.uri.scheme).toBe('vscode-remote');
+        expect(appNode?.uri.authority).toBe('wsl+Ubuntu');
+    });
 });
+
 
