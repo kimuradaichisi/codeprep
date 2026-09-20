@@ -1,0 +1,17 @@
+description = "Run a task using cost-aware Gemini routing: direct tools -> Flash-Lite -> Flash -> parent reasoning."
+prompt = """
+Use the `gemini-lean-routing` skill for this request.
+
+Apply cost-aware routing:
+- Execute a single trivial deterministic operation directly rather than spawning an agent.
+- Delegate repeated/read-heavy/large-input low-judgment work to @cheap-ops.
+- Delegate tiny exact edits to @cheap-edit.
+- Delegate small pattern-following implementation to @cheap-coder.
+- Use @reviewer or the parent model when interpretation is required.
+- Keep architecture, ambiguous requirements, security-sensitive decisions, migrations, concurrency, and cross-cutting decisions in the parent.
+- Cheap agents must return ESCALATE rather than guess.
+- Verify changes deterministically whenever possible.
+
+User task:
+{{args}}
+"""

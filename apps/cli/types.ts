@@ -28,6 +28,7 @@ export interface CliContextPackDto {
 }
 
 import type { ContextPackV2 } from '../../src/features/repository-context/domain/workingset';
+import type { ContextProjection } from '../../src/features/repository-context/domain/projection/ContextProjection';
 
 export interface CliContextResult {
   readonly schemaVersion: '1';
@@ -43,5 +44,5 @@ export interface CliContextResult {
   };
 }
 
-export type CliResult = CliContextResult | ContextPackV2;
+export type CliResult = CliContextResult | ContextPackV2 | ContextProjection;
 

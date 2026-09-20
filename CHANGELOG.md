@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## Phase 7L-A
+- feat(context): Phase 7L-A Context Request / Context Projection Foundation 実装（`docs/architecture/context-request-projection.md`）
+  - 「単一Taskのパッキングツール」から「Work Context Compiler」への拡張基盤を構築
+  - **Domain 層**:
+    - `ContextIntent`: 意図の宣言的定義（`change`, `review`, `understand`, `impact`, `investigate`, `document`, `test`）
+    - `ContextAnchor`: 起点情報の宣言（`file`, `symbol`, `text`, `directory`, `git-diff`）
+    - `ContextScope`: 探索境界の宣言（`auto`, `file`, `directory`, `feature`, `repository`）
+    - `ContextRequest`: 仕事の意図と制約を包括する不変オブジェクト
+    - `ContextProjection`: Intent に応じた構造化射影モデル（`RequestSummary`, `ProjectionEntry`, `ProjectionEvidence`, `ProjectionExclusion`, `ProjectionMetrics`）
+  - **Application 層**:
+    - `QueryInputCompiler`: `ContextRequest` を IR 検索・スコープフィルタ・バジェットオーバーライドへ安全に変換・正規化
+    - `ChangeContextProjectionPolicy`: `ContextPackV2` から `ContextProjection` へのロール判定（`primary-target`, `supporting`, `test`, `doc`）、アンカー寄与追跡、スコープ外除外記録
+    - `PrepareContextProjectionUseCase`: リクエストからパイプラインを実行し `projection` と `contextPackV2` を同時生成
+  - **Adapters & 後方互換性**:
+    - CLI (`apps/cli`): `--goal`, `--intent`, `--file`, `--symbol`, `--scope`, `--projection` をサポート。従来の `--task` は自動的に Legacy Task Request へ変換され完全互換
+    - MCP (`apps/mcp`): `codeprep_prepare_context` 入力スキーマを拡張し、`projection: true` 時の `ContextProjection` 出力をサポート
+    - Desktop (`apps/desktop`): `TaskContextPackV2Handler` を `PrepareContextProjectionUseCase` 経由へ移行し、`contextProjection` を追加。UI/IPC との完全互換を維持
+  - **成果と検証**:
+    - **Desktop / CLI / MCP Semantic Parity**: **100.0%**
+    - **5 必須シナリオ（Goal only, File Anchor, Symbol Anchor, Directory Scope, Legacy task）**: 全 PASS
+    - 全体テスト・品質ゲートすべて PASS
+
 ## [0.8.14] - 2026-09-20
 - fix(wsl): Remote WSL および WSL UNC パスにおけるファイルツリー・パス解決の不具合修正
 

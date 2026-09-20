@@ -82,5 +82,32 @@ describe('parseCliArguments', () => {
 
     expect(() => parseCliArguments(['--task', 't', '--strategy', 'unknown'])).toThrow('Invalid strategy: unknown');
   });
+
+  it('should parse ContextRequest options (--goal, --intent, --file, --symbol, --scope)', () => {
+    const args = parseCliArguments([
+      '--goal', 'Refactor billing logic',
+      '--intent', 'review',
+      '--file', 'src/billing/service.ts',
+      '--symbol', 'processPayment',
+      '--scope', 'directory',
+      '--scope-target', 'src/billing',
+    ]);
+
+    expect(args.task).toBe('Refactor billing logic');
+    expect(args.request!.goal).toBe('Refactor billing logic');
+    expect(args.request!.intent).toBe('review');
+    expect(args.request!.anchors).toHaveLength(2);
+    expect(args.request!.anchors[0]).toEqual({ kind: 'file', path: 'src/billing/service.ts' });
+    expect(args.request!.anchors[1]).toEqual({ kind: 'symbol', name: 'processPayment' });
+    expect(args.request!.scope).toEqual({ kind: 'directory', path: 'src/billing' });
+  });
+
+  it('should construct legacy request when only --task is supplied', () => {
+    const args = parseCliArguments(['--task', 'Fix bug']);
+    expect(args.request!.goal).toBe('Fix bug');
+    expect(args.request!.intent).toBe('change');
+    expect(args.request!.anchors).toHaveLength(0);
+    expect(args.request!.scope).toEqual({ kind: 'auto' });
+  });
 });
 

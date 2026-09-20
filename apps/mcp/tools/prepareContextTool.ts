@@ -4,8 +4,8 @@
  */
 import type { McpContextContainer } from '../composition';
 import type { McpPrepareContextResponse, McpPrepareContextResult } from '../types';
-import type { ContextPackV2, WorkingSetBudget } from '../../../src/features/repository-context/domain/workingset';
-import { createWorkingSetBudget } from '../../../src/features/repository-context/domain/workingset/WorkingSetBudget';
+import type { ContextPackV2 } from '../../../src/features/repository-context/domain/workingset';
+import type { ContextProjection } from '../../../src/features/repository-context/domain/projection/ContextProjection';
 import { transformCandidates } from './candidateTransformer';
 import { stderrLog, stderrError } from '../logger';
 import {
@@ -13,16 +13,37 @@ import {
   assertKnowledgeDbAvailable,
 } from '../../../src/features/repository-context/infrastructure/workingset/createPrepareContextPackV2UseCase';
 import type { RepositoryContextContainer } from '../../../src/features/repository-context/infrastructure/composition/RepositoryContextContainer';
+import { PrepareContextProjectionUseCase } from '../../../src/features/repository-context/application/projection/PrepareContextProjectionUseCase';
+import { McpRequestParser, type ParsedMcpPrepareInput } from './mcpRequestParser';
 
 export const PREPARE_CONTEXT_TOOL_NAME = 'codeprep_prepare_context';
 
 export const prepareContextToolDefinition = {
   name: PREPARE_CONTEXT_TOOL_NAME,
-  description: 'Single-entry repository context preparation: prepares task-specific Context Pack v2 (when strategy="knowledge") or discovers entry points.',
+  description: 'Single-entry repository context preparation: prepares task-specific Context Pack v2 / Context Projection (when strategy="knowledge") or discovers entry points.',
   inputSchema: {
     type: 'object',
     properties: {
-      task: { type: 'string', description: 'Task or bug description to prepare context for.' },
+      task: { type: 'string', description: 'Task or bug description to prepare context for (legacy compatible).' },
+      goal: { type: 'string', description: 'Goal of the context preparation.' },
+      intent: {
+        type: 'string',
+        enum: ['change', 'review', 'understand', 'impact', 'investigate', 'document', 'test'],
+        description: 'Context intent (default: "change").',
+      },
+      anchors: {
+        type: 'array',
+        items: { type: 'object' },
+        description: 'Context anchors (file, symbol, text, directory).',
+      },
+      scope: {
+        type: 'object',
+        description: 'Context scope restriction (auto, file, directory, feature, repository).',
+      },
+      projection: {
+        type: 'boolean',
+        description: 'Whether to return structured ContextProjection instead of ContextPackV2 (default: false).',
+      },
       strategy: {
         type: 'string',
         enum: ['fast', 'standard', 'knowledge'],
@@ -45,26 +66,17 @@ export const prepareContextToolDefinition = {
       enrichTopN: { type: 'number', description: 'Legacy option: Top candidates to enrich (default: 5).' },
       tokenLimit: { type: 'number', description: 'Legacy option: Token limit (default: 40000).' },
     },
-    required: ['task'],
     additionalProperties: false,
   },
 } as const;
 
-export type PrepareContextInput = {
-  task: string;
-  strategy?: 'fast' | 'standard' | 'knowledge';
-  budget?: WorkingSetBudget;
-  explicitPaths?: readonly string[];
-  maxCandidates?: number;
-  enrichTopN?: number;
-  tokenLimit?: number;
-};
+export type PrepareContextInput = ParsedMcpPrepareInput;
 
 export async function handlePrepareContext(
   container: McpContextContainer,
   rawInput: unknown
 ): Promise<McpPrepareContextResponse> {
-  const input = validateInput(rawInput);
+  const input = McpRequestParser.parse(rawInput);
   stderrLog(`Executing codeprep_prepare_context: ${input.task} (strategy=${input.strategy ?? 'legacy'})`);
 
   if (input.strategy === 'knowledge') {
@@ -76,17 +88,17 @@ export async function handlePrepareContext(
 
 async function handleKnowledgePrepare(
   container: McpContextContainer,
-  input: PrepareContextInput
-): Promise<ContextPackV2> {
+  input: ParsedMcpPrepareInput
+): Promise<ContextPackV2 | ContextProjection> {
   if (container.prepareContextPackV2UseCase) {
-    return container.prepareContextPackV2UseCase.execute({
+    const projectionUseCase = new PrepareContextProjectionUseCase(container.prepareContextPackV2UseCase);
+    const { projection, contextPackV2 } = await projectionUseCase.execute({
       project: container.project,
-      task: input.task,
+      request: input.request,
       snapshotId: 'latest',
-      budget: input.budget,
-      explicitPaths: input.explicitPaths,
       includeLegacyCandidates: true,
     });
+    return input.projection ? projection : contextPackV2;
   }
 
   return executeWithStandAloneStore(container, input);
@@ -94,20 +106,20 @@ async function handleKnowledgePrepare(
 
 async function executeWithStandAloneStore(
   container: McpContextContainer,
-  input: PrepareContextInput
-): Promise<ContextPackV2> {
+  input: ParsedMcpPrepareInput
+): Promise<ContextPackV2 | ContextProjection> {
   assertKnowledgeDbAvailable(container.project.rootPath);
   const { useCase, store } = createPrepareContextPackV2UseCase(container as unknown as RepositoryContextContainer);
+  const projectionUseCase = new PrepareContextProjectionUseCase(useCase);
   try {
     const snapshotId = await resolveSnapshotId(store, container.project.name);
-    return await useCase.execute({
+    const { projection, contextPackV2 } = await projectionUseCase.execute({
       project: container.project,
-      task: input.task,
+      request: input.request,
       snapshotId,
-      budget: input.budget,
-      explicitPaths: input.explicitPaths,
       includeLegacyCandidates: true,
     });
+    return input.projection ? projection : contextPackV2;
   } finally {
     await store.close();
   }
@@ -129,10 +141,9 @@ async function resolveSnapshotId(
   return 'latest';
 }
 
-
 async function handleLegacyPrepare(
   container: McpContextContainer,
-  input: PrepareContextInput
+  input: ParsedMcpPrepareInput
 ): Promise<McpPrepareContextResult> {
   try {
     const res = await container.prepareContextUseCase.execute(input);
@@ -160,42 +171,5 @@ function buildPrepareResponse(
     autoSelectedEntryPoints: res.decision.autoSelectedEntryPoints,
     contextPack: pack,
     warnings: p?.warnings ?? [],
-  };
-}
-
-function parseBudget(budgetRaw: unknown): WorkingSetBudget | undefined {
-  if (!budgetRaw || typeof budgetRaw !== 'object') return undefined;
-  const b = budgetRaw as Record<string, unknown>;
-  const maxFiles = typeof b.maxFiles === 'number' ? Math.max(1, b.maxFiles) : undefined;
-  const maxTokens = typeof b.maxTokens === 'number' ? Math.max(500, b.maxTokens) : undefined;
-  if (maxFiles === undefined && maxTokens === undefined) return undefined;
-  return createWorkingSetBudget({ maxFiles, maxEstimatedTokens: maxTokens });
-}
-
-function parseExplicitPaths(raw: unknown): readonly string[] | undefined {
-  if (!Array.isArray(raw)) return undefined;
-  const paths = raw.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
-  return paths.length > 0 ? Object.freeze(paths) : undefined;
-}
-
-function validateInput(raw: unknown): PrepareContextInput {
-  if (!raw || typeof raw !== 'object') throw new Error('Input must be an object');
-  const val = raw as Record<string, unknown>;
-  if (typeof val.task !== 'string' || !val.task.trim()) {
-    throw new Error('Field task must be a non-empty string');
-  }
-
-  const strategy = (val.strategy === 'knowledge' || val.strategy === 'fast' || val.strategy === 'standard')
-    ? val.strategy
-    : undefined;
-
-  return {
-    task: val.task.trim(),
-    strategy,
-    budget: parseBudget(val.budget),
-    explicitPaths: parseExplicitPaths(val.explicitPaths),
-    maxCandidates: typeof val.maxCandidates === 'number' ? Math.min(Math.max(val.maxCandidates, 1), 50) : 10,
-    enrichTopN: typeof val.enrichTopN === 'number' ? Math.max(val.enrichTopN, 1) : 5,
-    tokenLimit: typeof val.tokenLimit === 'number' ? Math.max(val.tokenLimit, 1000) : 40000,
   };
 }

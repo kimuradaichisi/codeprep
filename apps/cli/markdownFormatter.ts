@@ -7,11 +7,31 @@ import type { ContextPackV2 } from '../../src/features/repository-context/domain
 
 import { formatContextPackV2Markdown } from '../../src/features/repository-context/infrastructure/formatting/ContextPackV2Formatter';
 
+import type { ContextProjection } from '../../src/features/repository-context/domain/projection/ContextProjection';
+
 export function formatAsMarkdown(data: CliResult): string {
-  if (data.schemaVersion === '2') {
-    return formatContextPackV2Markdown(data);
+  if ('entries' in data && 'request' in data) {
+    return formatProjectionMarkdown(data as ContextProjection);
   }
-  return formatV1Markdown(data);
+  if ('schemaVersion' in data && data.schemaVersion === '2') {
+    return formatContextPackV2Markdown(data as ContextPackV2);
+  }
+  return formatV1Markdown(data as CliContextResult);
+}
+
+function formatProjectionMarkdown(proj: ContextProjection): string {
+  const parts: string[] = [
+    `# CodePrep Context Projection`,
+    `**Intent:** ${proj.request.intent}`,
+    `**Goal:** ${proj.request.goal}`,
+    `**Scope:** ${proj.request.requestedScope} (Inferred: ${proj.request.inferredScope})`,
+    '',
+    `## Projected Entries (${proj.metrics.totalFiles} files, ~${proj.metrics.totalTokens} tokens)`,
+  ];
+  for (const entry of proj.entries) {
+    parts.push(`- **\`${entry.relativePath}\`** [${entry.role}] (${entry.reasons.join(', ')})`);
+  }
+  return parts.join('\n');
 }
 
 function formatV1Markdown(data: CliContextResult): string {

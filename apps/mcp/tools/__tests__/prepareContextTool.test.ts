@@ -219,6 +219,31 @@ describe(PREPARE_CONTEXT_TOOL_NAME, () => {
         strategy: 'knowledge',
       })).rejects.toThrow(/Knowledge database not found/);
     });
+
+    it('returns ContextProjection when projection flag is true and parses goal/anchors/scope', async () => {
+      const executeMock = vi.fn().mockResolvedValue(mockContextPackV2);
+      const container: McpContextContainer = {
+        ...createMockContainer({}),
+        prepareContextPackV2UseCase: { execute: executeMock } as any,
+      };
+
+      const res = await handlePrepareContext(container, {
+        goal: 'Refactor discount calculation',
+        intent: 'review',
+        anchors: [{ kind: 'file', path: 'src/discount/DiscountCalculator.ts' }],
+        scope: { kind: 'directory', target: 'src/discount' },
+        strategy: 'knowledge',
+        projection: true,
+      });
+
+      expect('entries' in res).toBe(true);
+      if ('entries' in res) {
+        expect(res.request.goal).toBe('Refactor discount calculation');
+        expect(res.request.intent).toBe('review');
+        expect(res.entries.length).toBeGreaterThan(0);
+        expect(res.entries[0].relativePath).toBe('src/discount/DiscountCalculator.ts');
+      }
+    });
   });
 });
 

@@ -15,6 +15,7 @@ import {
   isKnowledgeDbAvailable,
 } from '../../src/features/repository-context/infrastructure/workingset/createPrepareContextPackV2UseCase';
 import { createWorkingSetBudget } from '../../src/features/repository-context/domain/workingset/WorkingSetBudget';
+import { PrepareContextProjectionUseCase } from '../../src/features/repository-context/application/projection/PrepareContextProjectionUseCase';
 
 export async function runContextCommand(
   args: CliArguments,
@@ -37,32 +38,28 @@ export async function runContextCommand(
   return result;
 }
 
+import { createLegacyTaskRequest } from '../../src/features/repository-context/domain/request/ContextRequest';
+
 async function handleKnowledgeStrategy(
   args: CliArguments,
   container: RepositoryContextContainer
 ): Promise<CliResult> {
-  logStderr(`Using Knowledge Graph strategy (Context Pack v2)`);
-  const { useCase, store } = createPrepareContextPackV2UseCase(container);
+  logStderr(`Using Knowledge Graph strategy (Context Pack v2 / Projection)`);
+  const { useCase: packUseCase, store } = createPrepareContextPackV2UseCase(container);
+  const projectionUseCase = new PrepareContextProjectionUseCase(packUseCase);
+  const request = args.request ?? createLegacyTaskRequest(args.task);
   try {
     const snapshotId = await resolveSnapshotId(store, container.project.name);
-    const budget = (args.maxFiles !== undefined || args.maxTokens !== undefined)
-      ? createWorkingSetBudget({
-          maxFiles: args.maxFiles ?? 10,
-          maxEstimatedTokens: args.maxTokens ?? 12000,
-        })
-      : undefined;
-
-    const packV2 = await useCase.execute({
+    const { projection, contextPackV2 } = await projectionUseCase.execute({
       project: container.project,
-      task: args.task,
+      request,
       snapshotId,
-      budget,
-      explicitPaths: args.explicitPaths,
       includeLegacyCandidates: true,
     });
-    const formatted = renderOutput(packV2, args.format);
+    const outputData: CliResult = args.projection ? projection : contextPackV2;
+    const formatted = renderOutput(outputData, args.format);
     writeOutput(formatted, args.output);
-    return packV2;
+    return outputData;
   } finally {
     await store.close();
   }

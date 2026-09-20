@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { runContextCommand } from '../contextCommand';
 import type { RepositoryContextContainer } from '../../../src/features/repository-context/infrastructure/composition/RepositoryContextContainer';
+import type { CliContextResult } from '../types';
 
 describe('runContextCommand', () => {
   let mockExecute: ReturnType<typeof vi.fn>;
@@ -66,7 +67,7 @@ describe('runContextCommand', () => {
       pack: false,
     };
 
-    const result = await runContextCommand(args, () => mockContainer);
+    const result = (await runContextCommand(args, () => mockContainer)) as CliContextResult;
 
     expect(mockExecute).toHaveBeenCalledWith({ task: 'Optimize checkout' });
     expect(result.schemaVersion).toBe('1');
@@ -98,7 +99,7 @@ describe('runContextCommand', () => {
       pack: true,
     };
 
-    const result = await runContextCommand(args, () => mockContainer);
+    const result = (await runContextCommand(args, () => mockContainer)) as CliContextResult;
 
     expect(result.schemaVersion).toBe('1');
     if (result.schemaVersion === '1') {
@@ -154,7 +155,7 @@ describe('runContextCommand', () => {
       strategy: 'knowledge' as const,
     };
 
-    const res = await runContextCommand(args, () => mockContainer);
+    const res = (await runContextCommand(args, () => mockContainer)) as CliContextResult;
     expect(res.schemaVersion).toBe('1');
     expect(mockExecute).toHaveBeenCalled();
   });

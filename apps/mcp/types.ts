@@ -59,5 +59,7 @@ export type McpPrepareContextResult = Readonly<{
   warnings: readonly string[];
 }>;
 
-export type McpPrepareContextResponse = McpPrepareContextResult | ContextPackV2;
+import type { ContextProjection } from '../../src/features/repository-context/domain/projection/ContextProjection';
+
+export type McpPrepareContextResponse = McpPrepareContextResult | ContextPackV2 | ContextProjection;
 

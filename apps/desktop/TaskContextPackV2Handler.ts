@@ -16,28 +16,35 @@ import {
   formatContextPackV2Content,
 } from '../../src/features/repository-context/infrastructure/formatting/ContextPackV2Formatter';
 
+import { PrepareContextProjectionUseCase } from '../../src/features/repository-context/application/projection/PrepareContextProjectionUseCase';
+import { createLegacyTaskRequest } from '../../src/features/repository-context/domain/request/ContextRequest';
+import type { ContextProjection } from '../../src/features/repository-context/domain/projection/ContextProjection';
+
 export async function handleBuildKnowledgePackV2(
   project: Project,
   request: BuildTaskContextRequest
 ): Promise<DesktopTaskContextResult> {
   const container = createRepositoryContextContainer(project.rootPath, project.id);
   const { useCase, store } = createPrepareContextPackV2UseCase(container);
+  const projectionUseCase = new PrepareContextProjectionUseCase(useCase);
 
   try {
     const snapshotId = await resolveSnapshotId(store, project.name);
     const budget = resolveV2Budget(request);
     const explicitPaths = resolveExplicitPaths(request);
+    const contextRequest = request.request ?? createLegacyTaskRequest(request.task, {
+      anchors: explicitPaths?.map((p) => ({ kind: 'file', path: p })),
+      budget: budget ? { maxFiles: budget.maxFiles, tokenLimit: budget.maxEstimatedTokens } : undefined,
+    });
 
-    const packV2 = await useCase.execute({
+    const { projection, contextPackV2: packV2 } = await projectionUseCase.execute({
       project,
-      task: request.task,
+      request: contextRequest,
       snapshotId,
-      budget,
-      explicitPaths,
       includeLegacyCandidates: true,
     });
 
-    return toDesktopV2Result(project, request.task, packV2);
+    return toDesktopV2Result(project, request.task, packV2, projection);
   } finally {
     await store.close();
   }
@@ -84,7 +91,8 @@ function resolveExplicitPaths(request: BuildTaskContextRequest): readonly string
 function toDesktopV2Result(
   project: Project,
   task: string,
-  packV2: ContextPackV2
+  packV2: ContextPackV2,
+  projection?: ContextProjection
 ): DesktopTaskContextResult {
   const markdown = formatContextPackV2Markdown(packV2);
   const content = formatContextPackV2Content(packV2);
@@ -99,6 +107,7 @@ function toDesktopV2Result(
     candidates: Object.freeze(candidates),
     warnings: Object.freeze([]),
     contextPackV2: packV2,
+    contextProjection: projection,
   });
 }
 

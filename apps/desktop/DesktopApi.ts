@@ -23,9 +23,14 @@ export type DesktopOutput = Readonly<{
 
 export type DesktopPackStrategy = AdaptivePackMode | 'auto' | 'knowledge';
 
+import type { ContextRequest } from '../../src/features/repository-context/domain/request/ContextRequest';
+import type { ContextProjection } from '../../src/features/repository-context/domain/projection/ContextProjection';
+
 export type BuildTaskContextRequest = Readonly<{
   projectId: string;
   task: string;
+  request?: ContextRequest;
+  projection?: boolean;
   entryPoints?: readonly string[];
   tokenLimit?: number;
   strategy?: DesktopPackStrategy;
@@ -60,6 +65,7 @@ export type DesktopTaskContextResult = Readonly<{
   candidates: readonly AnalyzedCandidate[];
   warnings: readonly string[];
   contextPackV2?: ContextPackV2;
+  contextProjection?: ContextProjection;
 }>;
 
 export type SaveOutputRequest = Readonly<{
