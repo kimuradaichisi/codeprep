@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { Dirent } from 'node:fs';
 import { GitignoreMatcher } from '../../../../shared/filesystem/GitignoreMatcher';
 import { DEFAULT_EXCLUDED_DIR_NAMES, DEFAULT_EXCLUDED_PATTERNS } from '../../../../shared/filesystem/defaultExcludes';
+import { tryListGitFiles } from './GitLsFilesScanner';
 
 export type ListProjectFilesOptions = Readonly<{
   useGitignore?: boolean;
@@ -22,17 +23,22 @@ export const listProjectFiles = async (
   root: string,
   options: boolean | ListProjectFilesOptions = true
 ): Promise<readonly string[]> => {
-  const opts: ListProjectFilesOptions = typeof options === 'boolean'
-    ? { useGitignore: options }
-    : options;
-  const useGitignore = opts.useGitignore ?? true;
-  const matcher = useGitignore
+  const opts = resolveOptions(options);
+  if (opts.useGitignore !== false && !opts.signal?.aborted) {
+    const gitFiles = await tryListGitFiles(root, opts);
+    if (gitFiles !== undefined) return gitFiles;
+  }
+  const matcher = (opts.useGitignore ?? true)
     ? await GitignoreMatcher.fromDirectory(root)
     : new GitignoreMatcher(DEFAULT_EXCLUDED_PATTERNS);
   const context: WalkContext = { root, matcher, options: opts, state: { count: 0 } };
   const files = await walkDirectory(root, '', context, 0);
   return [...files].sort((left, right) => left.localeCompare(right));
 };
+
+function resolveOptions(options: boolean | ListProjectFilesOptions): ListProjectFilesOptions {
+  return typeof options === 'boolean' ? { useGitignore: options } : options;
+}
 
 async function walkDirectory(
   current: string,

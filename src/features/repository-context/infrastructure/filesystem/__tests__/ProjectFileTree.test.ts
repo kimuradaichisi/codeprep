@@ -68,4 +68,11 @@ describe('ProjectFileTree', () => {
     const files = await listProjectFiles(tempDir, { signal: controller.signal });
     expect(files).toEqual([]);
   });
+
+  it('Git リポジトリ直下では高速パス（tryListGitFiles）によりファイル一覧を取得できること', async () => {
+    const files = await listProjectFiles(process.cwd(), true);
+    expect(files).toContain('package.json');
+    expect(files).toContain('src/features/repository-context/infrastructure/filesystem/ProjectFileTree.ts');
+    expect(files.some(f => f.startsWith('node_modules/'))).toBe(false);
+  });
 });
