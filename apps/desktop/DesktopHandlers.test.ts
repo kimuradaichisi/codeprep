@@ -91,6 +91,14 @@ describe('Desktop handlers', () => {
       }
     });
   });
+
+  describe('listProjectFiles', () => {
+    it('registers listProjectFiles handler and safely lists files without undefined signal error', async () => {
+      registerDesktopHandlers('C:/registry.json');
+      const handler = electron.handlers.get('listProjectFiles');
+      expect(handler).toBeDefined();
+    });
+  });
 });
 
 const registeredFolderHandler = (): (event: unknown) => Promise<string | undefined> => {

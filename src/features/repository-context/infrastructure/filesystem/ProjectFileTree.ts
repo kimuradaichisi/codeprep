@@ -21,7 +21,7 @@ type WalkContext = Readonly<{
 
 export const listProjectFiles = async (
   root: string,
-  options: boolean | ListProjectFilesOptions = true
+  options?: boolean | ListProjectFilesOptions
 ): Promise<readonly string[]> => {
   const opts = resolveOptions(options);
   if (opts.useGitignore !== false && !opts.signal?.aborted) {
@@ -36,7 +36,8 @@ export const listProjectFiles = async (
   return [...files].sort((left, right) => left.localeCompare(right));
 };
 
-function resolveOptions(options: boolean | ListProjectFilesOptions): ListProjectFilesOptions {
+function resolveOptions(options?: boolean | ListProjectFilesOptions): ListProjectFilesOptions {
+  if (options === undefined || options === null) return { useGitignore: true };
   return typeof options === 'boolean' ? { useGitignore: options } : options;
 }
 

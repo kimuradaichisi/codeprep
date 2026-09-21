@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.19] - 2026-09-21
+- fix(desktop): `listProjectFiles` の AbortSignal / options 参照エラー（TypeError: Cannot read properties of undefined）の解消
+  - **ローカルコントローラによる `activeScanController` 競合・NULL 参照の完全防止**:
+    - `DesktopHandlers.ts`: 複数プロジェクト同時走査や走査完了時にグローバル変数 `activeScanController` が `undefined` にクリアされた際、後続の `fetchFileSizes` で `activeScanController.signal` を参照して `TypeError: Cannot read properties of undefined (reading 'signal')` が発生し、ツリーが `no candidates yet` になる問題を修正。
+    - 関数スコープの不変なローカル `controller` を参照する設計に改修し、確実に有効な `controller.signal` を渡すよう堅牢化。
+  - **`resolveOptions` の安全化**:
+    - `ProjectFileTree.ts`: `options` に `undefined` や `null` が渡された場合でも安全に `{ useGitignore: true }` を補完するようガードを追加。
+
 ## [0.8.18] - 2026-09-21
 - perf(scan): Git リポジトリ走査における `git ls-files` 高速パスの実装
   - **Git リポジトリでの一括取得（ファイル走査を 0.25 秒に短縮）**:

@@ -75,4 +75,12 @@ describe('ProjectFileTree', () => {
     expect(files).toContain('src/features/repository-context/infrastructure/filesystem/ProjectFileTree.ts');
     expect(files.some(f => f.startsWith('node_modules/'))).toBe(false);
   });
+
+  it('options が undefined または null の場合でも TypeError にならずデフォルトで走査できること', async () => {
+    const filesUndefined = await listProjectFiles(tempDir, undefined);
+    expect(filesUndefined).toEqual(['b.js', 'c.log']);
+
+    const filesNull = await listProjectFiles(tempDir, null as unknown as boolean);
+    expect(filesNull).toEqual(['b.js', 'c.log']);
+  });
 });

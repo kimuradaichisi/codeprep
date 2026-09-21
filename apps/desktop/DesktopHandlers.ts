@@ -90,17 +90,20 @@ const listFiles = async (registry: ProjectRegistryStore, pIdVal: unknown, optVal
     ? (optVal as { useGitignore?: boolean }).useGitignore : undefined;
   const project = (await listProjects(registry)).find(item => item.id === projectId);
   if (!project) throw new Error('Project was not found.');
-  activeScanController = new AbortController();
+  const controller = new AbortController();
+  activeScanController = controller;
   currentScannedCount = 0;
   try {
     const relativePaths = await listProjectFiles(project.rootPath, {
       useGitignore,
-      signal: activeScanController.signal,
+      signal: controller.signal,
       onProgress: (count) => { currentScannedCount = count; },
     });
-    return await fetchFileSizes(project, relativePaths, activeScanController.signal);
+    return await fetchFileSizes(project, relativePaths, controller.signal);
   } finally {
-    activeScanController = undefined;
+    if (activeScanController === controller) {
+      activeScanController = undefined;
+    }
   }
 };
 
