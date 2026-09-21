@@ -9,6 +9,7 @@ import type { SetWorkspace, WorkspaceState } from './workspaceState';
 import { update } from './workspaceState';
 
 export const refreshProjects = async (api: DesktopApi, set: SetWorkspace, useGitignore?: boolean): Promise<void> => {
+  update(set, { isScanningProject: true });
   try {
     const projects = await loadProjects(api);
     const candidates = await fileCandidates(api, projects, useGitignore);
@@ -17,9 +18,10 @@ export const refreshProjects = async (api: DesktopApi, set: SetWorkspace, useGit
       projects,
       candidates: current.candidates.length ? current.candidates : candidates,
       projectNotice: undefined,
+      isScanningProject: false,
     }));
   } catch (error) {
-    update(set, { projectNotice: desktopErrorMessage(error) });
+    update(set, { projectNotice: desktopErrorMessage(error), isScanningProject: false });
   }
 };
 

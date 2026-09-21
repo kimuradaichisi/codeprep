@@ -14,6 +14,11 @@ All notable changes to this project will be documented in this file.
     - 走査中に検出されたファイル数をリアルタイムに取得し、「プロジェクトを走査しています... (〇〇 files found)」と表示。
   - **走査中断（Cancel / Stop）機能の実装**:
     - 走査中にインジケーター内に「Cancel」ボタンを配置。ユーザーが途中で走査を中断できるよう、Renderer および Main プロセス（`AbortSignal` / `cancelScanProjectFiles` IPC）に即時中断処理を導入。
+  - **デスクトップ起動時ローディング表示と二重起動防止**:
+    - `index.html`: JS/React ロード前から即座に画面中央に CodePrep ロゴと「デスクトップを起動しています...」スピナーを描画するインラインスプラッシュ画面を組み込み、起動中のフィードバックを即座に提供。
+    - `main.ts`: `backgroundColor: '#1e1e1e'` を設定し起動時の白いチラつきを排除。
+    - `main.ts`: `app.requestSingleInstanceLock()` を導入し、起動待ち時のアイコン連打による多重起動を防止（2重目のプロセスは終了し、既存ウィンドウを自動フォアグラウンド化）。
+    - `refreshProjects`: 起動時の登録プロジェクト走査中にもインジケーターを表示し、バックグラウンド読み込みを可視化。
 
 ## [0.8.15] - 2026-09-21
 - perf(tree): リモートディレクトリ走査のアルゴリズム最適化およびローディングスピナー（Loading Spinner）の追加
