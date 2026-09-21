@@ -5,13 +5,18 @@ import { registerDesktopHandlers } from './DesktopHandlers';
 let handlersRegistered = false;
 
 const createWindow = (): BrowserWindow => {
+  const version = app.getVersion();
   const window = new BrowserWindow({
-    width: 1100,
-    height: 800,
+    title: `CodePrep Desktop v${version}`,
+    width: 1400,
+    height: 900,
+    minWidth: 1000,
+    minHeight: 700,
     backgroundColor: '#1e1e1e',
     show: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false, preload: join(__dirname, 'preload.js') },
   });
+  window.maximize();
   if (process.env.NODE_ENV === 'development' || process.argv.includes('--debug')) {
     window.webContents.openDevTools();
   }

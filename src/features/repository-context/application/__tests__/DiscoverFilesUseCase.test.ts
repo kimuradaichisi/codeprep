@@ -45,9 +45,10 @@ describe('DiscoverFilesUseCase', () => {
         directoryProximity: { recommend: async () => [] },
       },
     };
+    const enabledSettings = { markdownLink: true, nameHeading: true, gitCoChange: true, directoryProximity: true };
     const result = await new DiscoverFilesUseCase(customPorts).discover({
       recipe: { kind: 'extension', extensions: ['.ts'] }, projectIds: ['p1'],
-      recommendationSettings: defaultRecommendationSettings(),
+      recommendationSettings: enabledSettings,
     });
 
     expect(result.candidates.map(file => file.relativePath)).toContain('README.md');
@@ -64,9 +65,10 @@ describe('DiscoverFilesUseCase', () => {
         directoryProximity: { recommend: async () => [] },
       },
     };
+    const enabledSettings = { markdownLink: true, nameHeading: true, gitCoChange: true, directoryProximity: true };
     const result = await new DiscoverFilesUseCase(customPorts).discover({
       recipe: { kind: 'extension', extensions: ['.ts'] }, projectIds: ['p1'],
-      recommendationSettings: defaultRecommendationSettings(),
+      recommendationSettings: enabledSettings,
     });
 
     expect(result.candidates.map(file => file.relativePath)).toEqual(['src/app.ts', 'src/auth.ts']);

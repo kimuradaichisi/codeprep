@@ -1,5 +1,6 @@
-// apps/desktop/renderer/hooks/workspaceProjectActions.ts
 import type { DesktopApi } from '../../DesktopApi';
+import type { AnalyzedCandidate } from '../../../../src/features/repository-context/application/ports';
+import type { Project } from '../../../../src/features/repository-context/domain/Project';
 import type { SearchRecipeKind } from '../../../../src/features/repository-context/domain/SearchRecipe';
 import type { RecommendationSettings } from '../../../../src/features/repository-context/domain/Recommendation';
 import type { DesktopWorkspace } from '../types';
@@ -9,19 +10,22 @@ import type { SetWorkspace, WorkspaceState } from './workspaceState';
 import { update } from './workspaceState';
 
 export const refreshProjects = async (api: DesktopApi, set: SetWorkspace, useGitignore?: boolean): Promise<void> => {
-  update(set, { isScanningProject: true });
+  update(set, { isScanningProject: true, scannedCount: 0 });
+  startProgressPolling(api, set);
   try {
     const projects = await loadProjects(api);
     const candidates = await fileCandidates(api, projects, useGitignore);
     set((current) => ({
       ...current,
       projects,
-      candidates: current.candidates.length ? current.candidates : candidates,
+      candidates,
       projectNotice: undefined,
-      isScanningProject: false,
     }));
   } catch (error) {
-    update(set, { projectNotice: desktopErrorMessage(error), isScanningProject: false });
+    update(set, { projectNotice: desktopErrorMessage(error) });
+  } finally {
+    stopProgressPolling();
+    update(set, { isScanningProject: false });
   }
 };
 
@@ -63,8 +67,15 @@ export const saveProject = async (api: DesktopApi, set: SetWorkspace, value: str
   startProgressPolling(api, set);
   try {
     const projects = await addProject(api, rootPath);
-    const candidates = await fileCandidates(api, projects, useGitignore);
-    update(set, { projects, candidates, projectNotice: undefined });
+    const newlyAdded = projects.find(p => p.rootPath === rootPath) ?? projects.at(-1);
+    const target = newlyAdded ? [newlyAdded] : projects;
+    const newCandidates = await fileCandidates(api, target, useGitignore);
+    set((current) => ({
+      ...current,
+      projects,
+      candidates: mergeCandidates(current.candidates, target, newCandidates),
+      projectNotice: undefined,
+    }));
   } catch (error) {
     update(set, { projectNotice: desktopErrorMessage(error) });
   } finally {
@@ -72,6 +83,15 @@ export const saveProject = async (api: DesktopApi, set: SetWorkspace, value: str
     update(set, { isScanningProject: false });
   }
 };
+
+function mergeCandidates(
+  current: readonly AnalyzedCandidate[],
+  targets: readonly Project[],
+  incoming: readonly AnalyzedCandidate[]
+): readonly AnalyzedCandidate[] {
+  const targetIds = new Set(targets.map(t => t.id));
+  return [...current.filter(c => !targetIds.has(c.projectId)), ...incoming];
+}
 
 export const chooseFolder = async (api: DesktopApi, set: SetWorkspace, useGitignore?: boolean): Promise<void> => {
   try {
@@ -82,12 +102,18 @@ export const chooseFolder = async (api: DesktopApi, set: SetWorkspace, useGitign
   }
 };
 
-export const deleteProject = async (api: DesktopApi, set: SetWorkspace, value: string, useGitignore?: boolean): Promise<void> => {
+export const deleteProject = async (api: DesktopApi, set: SetWorkspace, value: string, _useGitignore?: boolean): Promise<void> => {
   const projectId = value.trim();
   if (!projectId) return update(set, { projectNotice: 'Select a project to remove.' });
   try {
     const projects = await removeProject(api, projectId);
-    update(set, { projects, candidates: await fileCandidates(api, projects, useGitignore), selectedKeys: [], projectNotice: undefined });
+    set((current) => ({
+      ...current,
+      projects,
+      candidates: current.candidates.filter(c => c.projectId !== projectId),
+      selectedKeys: current.selectedKeys.filter(k => !k.startsWith(`${projectId}:`)),
+      projectNotice: undefined,
+    }));
   } catch (error) {
     update(set, { projectNotice: desktopErrorMessage(error) });
   }

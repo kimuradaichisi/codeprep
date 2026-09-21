@@ -59,7 +59,7 @@
     list-style: none;
     margin: 8px 0 0;
     padding: 0;
-    max-height: 80px;
+    max-height: 240px;
     overflow-y: auto;
 }
 
@@ -165,7 +165,7 @@
 }
 
 .projects-drawer.open {
-    width: 260px;
+    width: 320px;
     opacity: 1;
 }
 

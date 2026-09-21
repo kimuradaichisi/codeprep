@@ -64,10 +64,10 @@ describe('DesktopRequestParser', () => {
   });
 
   describe('toDiscoverInput', () => {
-    it('uses enabled recommendation defaults when settings are absent', () => {
+    it('uses disabled recommendation defaults when settings are absent', () => {
       const result = toDiscoverInput({ projectIds: ['p1'], recipe: { kind: 'gitDiff' } });
       expect(result.recommendationSettings).toEqual({
-        markdownLink: true, nameHeading: true, gitCoChange: true, directoryProximity: true,
+        markdownLink: false, nameHeading: false, gitCoChange: false, directoryProximity: false,
       });
     });
 

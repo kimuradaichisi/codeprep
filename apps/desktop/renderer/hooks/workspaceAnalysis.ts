@@ -24,18 +24,21 @@ export const fileCandidates = async (
   projects: readonly Project[],
   useGitignore?: boolean,
 ): Promise<readonly AnalyzedCandidate[]> => {
-  const entries = await Promise.all(projects.map(async project => {
+  const allCandidates: AnalyzedCandidate[] = [];
+  for (const project of projects) {
     const files = await api.listProjectFiles(project.id, { useGitignore });
-    return files.map(f => ({
-      projectId: project.id,
-      relativePath: f.relativePath,
-      reasons: ['pathAffinity'] as const,
-      excluded: false,
-      score: 0,
-      size: f.size,
-    }));
-  }));
-  return entries.flat();
+    for (const f of files) {
+      allCandidates.push({
+        projectId: project.id,
+        relativePath: f.relativePath,
+        reasons: ['pathAffinity'] as const,
+        excluded: false,
+        score: 0,
+        size: f.size,
+      });
+    }
+  }
+  return allCandidates;
 };
 
 export type AnalysisResultUpdate = Readonly<{

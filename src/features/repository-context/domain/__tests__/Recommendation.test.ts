@@ -14,10 +14,10 @@ describe('Recommendation', () => {
     expect(isRecommendationSource('gitCoChange')).toBe(true);
     expect(isRecommendationSource('directoryProximity')).toBe(true);
     expect(defaultRecommendationSettings()).toEqual({
-      markdownLink: true,
-      nameHeading: true,
-      gitCoChange: true,
-      directoryProximity: true,
+      markdownLink: false,
+      nameHeading: false,
+      gitCoChange: false,
+      directoryProximity: false,
     });
   });
 

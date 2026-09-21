@@ -1,15 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { AppShellProps } from '../types';
+import { version } from '../../../../package.json';
 
 export const AppShell = ({
   projects, search, tree, output, isProjectsOpen, toggleProjects, openSettings, openHelp,
 }: AppShellProps) => {
   const [isOutputOpen, setIsOutputOpen] = useState(true);
 
+  useEffect(() => {
+    document.title = `CodePrep Desktop v${version}`;
+  }, []);
+
   return (
     <main className="desktop-workspace">
       <header className="workspace-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div><p className="eyebrow">CODEPREP DESKTOP</p><h1>Context workspace</h1></div>
+        <div>
+          <p className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+            CODEPREP DESKTOP
+            <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
+              v{version}
+            </span>
+          </p>
+          <h1 style={{ margin: '2px 0 0' }}>Context workspace</h1>
+        </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             onClick={() => setIsOutputOpen(!isOutputOpen)}

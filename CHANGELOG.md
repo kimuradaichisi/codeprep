@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.20] - 2026-09-21
+- feat(desktop): ウィンドウサイズ最大化・バージョン表示・重複走査根絶・Related suggestionsデフォルトOFF
+  - **画面サイズへの自動フィット・ウィンドウ最大化**:
+    - `main.ts`: 起動時に `window.maximize()` を実行しディスプレイ全体を有効活用。初期サイズを 1400x900、最小サイズを 1000x700 に拡大。
+    - `desktop-layout.css`: 複数プロジェクト登録時に一覧が窮屈だった `.project-list` の `max-height` を 80px から 240px に拡張し、サイドバー（`.projects-drawer`）の幅も 320px に拡大。
+  - **画面タイトルおよびヘッダーへのバージョン表示**:
+    - ウィンドウタイトルに `CodePrep Desktop v0.8.20` を設定（OSタイトルバー）。
+    - アプリ画面ヘッダー（`AppShell.tsx`）にもバージョンバッジ（`v0.8.20`）を表示し、実行中のバージョンを一目で把握可能に改善。
+  - **プロジェクト走査の重複・再走査の完全根絶（files foundチラつき解消）**:
+    - `saveProject`: プロジェクト追加時、既存プロジェクトの再走査を完全スキップし、新規追加プロジェクトのみを単一走査して候補一覧にマージする方式に最適化。
+    - `deleteProject`: 削除時に全プロジェクトを再走査していた無駄を撤廃し、メモリ上の候補から即座にフィルタ除外。
+    - `fileCandidates`: 複数プロジェクト走査時の並行 IPC 衝突を解消するため直列実行化。
+  - **Related suggestions のデフォルト全チェック解除**:
+    - `defaultRecommendationSettings`: `markdownLink`, `nameHeading`, `gitCoChange`, `directoryProximity` の全 4 項目をデフォルト `false`（OFF）に変更。不要な関連ファイルが自動選択されないよう改善。
+
 ## [0.8.19] - 2026-09-21
 - fix(desktop): `listProjectFiles` の AbortSignal / options 参照エラー（TypeError: Cannot read properties of undefined）の解消
   - **ローカルコントローラによる `activeScanController` 競合・NULL 参照の完全防止**:

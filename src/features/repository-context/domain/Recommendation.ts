@@ -38,10 +38,10 @@ export const isRecommendationSource = (value: unknown): value is RecommendationS
   typeof value === 'string' && recommendationSources.includes(value as RecommendationSource);
 
 export const defaultRecommendationSettings = (): RecommendationSettings => ({
-  markdownLink: true,
-  nameHeading: true,
-  gitCoChange: true,
-  directoryProximity: true,
+  markdownLink: false,
+  nameHeading: false,
+  gitCoChange: false,
+  directoryProximity: false,
 });
 
 export const createRecommendation = (input: Readonly<{
