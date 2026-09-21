@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import { FileTreeProvider } from '../FileTreeProvider';
+import { FileNode } from '../models/FileNode';
 import { Selection } from '../../selection/domain/Selection';
 import { ok } from '../../../shared/domain/Result';
 
@@ -15,12 +16,15 @@ vi.mock('vscode', () => {
     class MockRelativePattern {
         constructor(public base: any, public pattern: string) { }
     }
+    class MockThemeIcon {
+        constructor(public id: string, public color?: any) { }
+    }
     return {
         TreeItem: MockTreeItem,
         TreeItemCollapsibleState: { None: 0, Collapsed: 1, Expanded: 2 },
         TreeItemCheckboxState: { Unchecked: 0, Checked: 1 },
         RelativePattern: MockRelativePattern,
-        ThemeIcon: vi.fn(id => id),
+        ThemeIcon: MockThemeIcon,
         EventEmitter: class {
             event = vi.fn();
             fire = vi.fn();
@@ -44,6 +48,9 @@ vi.mock('vscode', () => {
                 dispose: vi.fn()
             })),
             getConfiguration: vi.fn()
+        },
+        window: {
+            withProgress: vi.fn((_opts, task) => task())
         }
     };
 });
@@ -191,6 +198,63 @@ describe('FileTreeProvider Optimization & Functionality', () => {
         expect(appNode).toBeDefined();
         expect(appNode?.uri.scheme).toBe('vscode-remote');
         expect(appNode?.uri.authority).toBe('wsl+Ubuntu');
+    });
+
+    it('loading spinner: ルート取得時に withProgress が呼ばれローディング状態が管理されること', async () => {
+        mockFileSystem.readDirectory.mockResolvedValue(ok([['src', 2]]));
+        const withProgressSpy = vi.spyOn(vscode.window, 'withProgress');
+
+        const children = await provider.getChildren();
+        expect(withProgressSpy).toHaveBeenCalledWith(
+            { location: { viewId: 'codeprep.fileTree' } },
+            expect.any(Function)
+        );
+        expect(children).toHaveLength(1);
+    });
+
+    it('loading spinner: ローディングノードの getTreeItem で loading~spin アイコンが設定されること', () => {
+        const loadingNode = FileNode.createLoadingNode('読み込み中...');
+        const item = provider.getTreeItem(loadingNode);
+
+        expect(item.label).toBe('読み込み中...');
+        expect(item.contextValue).toBe('loading');
+        expect((item.iconPath as any).id).toBe('loading~spin');
+    });
+
+    it('bindTreeView: treeView がバインドされた場合ロード中に message が設定され完了後に消去されること', async () => {
+        const mockTreeView: any = { message: undefined };
+        provider.bindTreeView(mockTreeView);
+
+        mockFileSystem.readDirectory.mockImplementation(async () => {
+            expect(mockTreeView.message).toBe('読み込み中...');
+            return ok([['file.ts', 1]]);
+        });
+
+        await provider.getChildren();
+        expect(mockTreeView.message).toBeUndefined();
+    });
+
+    it('algorithm: DirectoryCache により同一ディレクトリの再走査時はファイルシステム呼び出しが発生しないこと', async () => {
+        mockFileSystem.readDirectory.mockResolvedValue(ok([['index.ts', 1]]));
+
+        await provider.getChildren();
+        await provider.getChildren();
+
+        expect(mockFileSystem.readDirectory).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshImmediate: 遅延なく即座にリフレッシュが実行されキャッシュがクリアされること', async () => {
+        mockFileSystem.readDirectory.mockResolvedValue(ok([['index.ts', 1]]));
+        await provider.getChildren();
+
+        const fireSpy = vi.spyOn((provider as any)._onDidChangeTreeData, 'fire');
+        provider.refreshImmediate();
+
+        expect(fireSpy).toHaveBeenCalledTimes(1);
+
+        // キャッシュクリアされているため再度 readDirectory が呼ばれること
+        await provider.getChildren();
+        expect(mockFileSystem.readDirectory).toHaveBeenCalledTimes(2);
     });
 });
 

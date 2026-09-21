@@ -21,13 +21,17 @@ export class UIController {
 
   constructor(private readonly deps: UIControllerDeps) { }
 
-  public async refresh(): Promise<void> {
+  public async refresh(immediate = false): Promise<void> {
     this.deps.gitWatcher?.updateCache();
-    this.deps.treeProvider.refresh();
+    this.deps.treeProvider.refresh(undefined, immediate);
     const selectedPaths = this.deps.selection.getPaths();
     await vscode.commands.executeCommand('setContext', 'codeprep.selectionEmpty', selectedPaths.length === 0);
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => this.startTokenUpdate(selectedPaths), 800);
+    this.debounceTimer = setTimeout(() => this.startTokenUpdate(selectedPaths), immediate ? 100 : 800);
+  }
+
+  public async refreshImmediate(): Promise<void> {
+    return this.refresh(true);
   }
 
   private async startTokenUpdate(paths: string[]): Promise<void> {

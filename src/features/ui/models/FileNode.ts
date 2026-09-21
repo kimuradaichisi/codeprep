@@ -6,6 +6,7 @@ export interface FileNodeProps {
     relativePath: string;
     isDirectory: boolean;
     uri?: vscode.Uri;
+    isLoading?: boolean;
 }
 
 export class FileNode {
@@ -14,6 +15,7 @@ export class FileNode {
     public readonly relativePath: string;
     public readonly isDirectory: boolean;
     public readonly uri: vscode.Uri;
+    public readonly isLoading: boolean;
 
     constructor(props: FileNodeProps) {
         this.label = props.label;
@@ -21,6 +23,17 @@ export class FileNode {
         this.relativePath = props.relativePath;
         this.isDirectory = props.isDirectory;
         this.uri = props.uri ?? vscode.Uri.file(props.fullPath);
+        this.isLoading = props.isLoading ?? false;
+    }
+
+    public static createLoadingNode(label = 'Loading...'): FileNode {
+        return new FileNode({
+            label,
+            fullPath: '__loading__',
+            relativePath: '__loading__',
+            isDirectory: false,
+            isLoading: true
+        });
     }
 }
 

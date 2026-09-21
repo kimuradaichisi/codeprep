@@ -65,5 +65,10 @@ describe('UIController', () => {
     expect(vscode.commands.executeCommand).toHaveBeenCalledWith('setContext', 'codeprep.showSelectAll', false);
   });
 
+  it('refreshImmediate: should call treeProvider.refresh with immediate true', async () => {
+    await controller.refreshImmediate();
+    expect(deps.treeProvider.refresh).toHaveBeenCalledWith(undefined, true);
+  });
+
 });
 

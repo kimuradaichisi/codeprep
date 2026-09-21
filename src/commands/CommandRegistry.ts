@@ -89,7 +89,7 @@ function registerMenuCommands(selCmd: SelectionCommands, gitCmd: GitCommands): v
 
 function registerActionCommands(ui: UIController, out: OutputCommands): vscode.Disposable[] {
   return [
-    vscode.commands.registerCommand('codeprep.refreshTree', () => ui.refresh()),
+    vscode.commands.registerCommand('codeprep.refreshTree', () => ui.refreshImmediate()),
     vscode.commands.registerCommand('codeprep.generate', () => out.generate()),
     vscode.commands.registerCommand('codeprep.generateStructure', () => out.generateStructure()),
     vscode.commands.registerCommand('codeprep.openSettings', () =>

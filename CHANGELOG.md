@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.15] - 2026-09-21
+- perf(tree): リモートディレクトリ走査のアルゴリズム最適化およびローディングスピナー（Loading Spinner）の追加
+  - **ローディングスピナー追加**:
+    - `vscode.window.withProgress`（`location: { viewId: 'codeprep.fileTree' }`）により、ツリーデータ取得中に VSCode ネイティブの進行スピナー/プログレスバーを表示
+    - `FileNode.createLoadingNode`: `isLoading` フラグおよび `ThemeIcon('loading~spin')` アイコンによるローディングスピナー表示をサポート
+    - `treeView.message`: ロード中の状態メッセージ（「読み込み中...」）の表示と完了後の自動消去に対応
+  - **アルゴリズム刷新・高速化**:
+    - `DirectoryCache`: ディレクトリ走査結果のインメモリキャッシュを導入し、リモート環境での重複ファイルシステムアクセスを削減
+    - **親相対パス継承による O(1) パス解決**: 子ノード構築時に親ノードの `relativePath` を直接継承することで、`path.relative` と正規化処理の多重呼び出しを完全排除
+    - **不要遅延の撤廃**: 起動時および手動リフレッシュ（`codeprep.refreshTree`）時の多重 `setTimeout`（1000ms）を排除し、`refreshImmediate` による即時ロードを実現
+  - **Desktop ProjectPanel ローディング化**:
+    - `Add` ボタン: プロジェクト追加処理中に「`Adding...`」およびインラインスピナーを表示し、ボタンを `disabled` にして二重送信を防止
+    - `Choose` ボタン: フォルダ選択〜プロジェクト追加処理中もボタンを `disabled` に制御
+    - 走査インジケーター: プロジェクト登録およびファイル走査中に「プロジェクトを走査しています...」のバナーとスピナーを表示
+
 ## Phase 7L-A
 - feat(context): Phase 7L-A Context Request / Context Projection Foundation 実装（`docs/architecture/context-request-projection.md`）
   - 「単一Taskのパッキングツール」から「Work Context Compiler」への拡張基盤を構築

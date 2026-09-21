@@ -53,10 +53,11 @@ export async function activate(context: vscode.ExtensionContext) {
     const root = rootUri ? (rootUri.scheme === 'file' ? rootUri.fsPath : rootUri.path) : undefined;
     const services = initServices(context, root, rootUri);
     const treeView = setupTreeView(services.treeProvider);
+    services.treeProvider.bindTreeView(treeView);
     const commands = registerAllCommands(buildRegistryDeps(context, services, root));
     registerEvents(context, services, treeView, commands);
     await services.uiController.updateButtonContexts();
-    setTimeout(() => services.uiController.refresh(), 1000);
+    await services.uiController.refreshImmediate();
   } catch (error) {
     console.error('CodePrep activation failed:', error);
   }
