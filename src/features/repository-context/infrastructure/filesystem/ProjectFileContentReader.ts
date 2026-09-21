@@ -6,7 +6,7 @@ export const getProjectFileSize = async (
   project: Project,
   relativePath: string,
 ): Promise<number> => {
-  const path = await resolveReadableProjectFile(project.rootPath, relativePath);
+  const path = resolveProjectFile(project.rootPath, relativePath);
   if (!path) return 0;
   try { const s = await stat(path); return s.size; } catch { return 0; }
 };

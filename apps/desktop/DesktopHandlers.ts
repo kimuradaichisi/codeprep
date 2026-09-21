@@ -98,11 +98,35 @@ const listFiles = async (registry: ProjectRegistryStore, pIdVal: unknown, optVal
       signal: activeScanController.signal,
       onProgress: (count) => { currentScannedCount = count; },
     });
-    return await Promise.all(relativePaths.map(async rel => ({ relativePath: rel, size: await getProjectFileSize(project, rel) })));
+    return await fetchFileSizes(project, relativePaths, activeScanController.signal);
   } finally {
     activeScanController = undefined;
   }
 };
+
+async function fetchFileSizes(
+  project: Project,
+  paths: readonly string[],
+  signal?: AbortSignal
+): Promise<readonly Readonly<{ relativePath: string; size: number }>[]> {
+  const concurrency = 32;
+  const results: { relativePath: string; size: number }[] = new Array(paths.length);
+  let cursor = 0;
+
+  const worker = async () => {
+    while (cursor < paths.length) {
+      if (signal?.aborted) return;
+      const index = cursor++;
+      const rel = paths[index];
+      const size = await getProjectFileSize(project, rel);
+      results[index] = { relativePath: rel, size };
+    }
+  };
+
+  const pool = Array.from({ length: Math.min(concurrency, paths.length) }, worker);
+  await Promise.all(pool);
+  return results.filter(Boolean);
+}
 
 const addProject = async (registry: ProjectRegistryStore, value: unknown) => {
   const rootPath = requiredString(value, 'Project path');

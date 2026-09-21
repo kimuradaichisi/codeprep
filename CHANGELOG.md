@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.17] - 2026-09-21
+- perf(desktop): WSL UNC パス（ネットワークフォルダ）でのファイル走査・サイズ取得の大幅高速化
+  - **`realpath` 重複呼び出しの完全撤廃（RPC 5,700回削減）**:
+    - `ProjectFileContentReader`: 従来 `getProjectFileSize` で 1 ファイルあたり `realpath(rootPath)` と `realpath(path)` の計 2 回の重いネットワーク UNC RPC を実行していた（2,860 ファイルで約 5,720 回）のを撤廃。
+    - 文字列境界チェック `resolveProjectFile` ＋ `stat` のみに改修し、WSL/ネットワークフォルダへの RPC を 1 ファイル 1 回の `stat` に削減。
+  - **ファイルサイズ一括取得の並行度制御（Concurrency Worker Pool）**:
+    - `DesktopHandlers.ts`: 従来全走査ファイルに対して `Promise.all` で一斉に RPC を発行していたのを、concurrency: 32 の制御されたワーカープール方式に刷新。Windows UNC / WSL 9P サーバーのソケット・バッファ詰まりによるタイムアウト・ハングを解消。
+    - サイズ取得ループ内でも `activeScanController.signal` による即時中断（Cancel）を検知。
+  - **パス計算の O(1) 連結化と再帰・シンボリックリンクガード**:
+    - `ProjectFileTree.ts`: 各ファイルで `relative(context.root, full)` という重い UNC パス解析文字列処理を行っていたのを親ノードからの `${currentRel}/${entry.name}` 連結（O(1)）に最適化。
+    - `entry.isSymbolicLink()` のスキップにより、無限循環や別ドライブ脱出によるハングを防止。
+    - 最大深度ガード（depth > 30）およびパーミッションエラー保護（`readSafeEntries`）を導入。
+
 ## [0.8.16] - 2026-09-21
 - fix(desktop): 大規模プロジェクト・WSL環境でのファイル走査最適化、進捗表示、および中断（Cancel）機能の追加
   - **不要ディレクトリの即時スキップによる走査爆発防止**:
