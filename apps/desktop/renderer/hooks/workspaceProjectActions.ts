@@ -23,14 +23,51 @@ export const refreshProjects = async (api: DesktopApi, set: SetWorkspace, useGit
   }
 };
 
+let scanProgressTimer: ReturnType<typeof setInterval> | undefined = undefined;
+
+const startProgressPolling = (api: DesktopApi, set: SetWorkspace): void => {
+  if (!api.getScanProgress) return;
+  stopProgressPolling();
+  scanProgressTimer = setInterval(async () => {
+    try {
+      const progress = await api.getScanProgress?.();
+      if (progress) update(set, { scannedCount: progress.count });
+    } catch {
+      // ignore
+    }
+  }, 150);
+};
+
+const stopProgressPolling = (): void => {
+  if (scanProgressTimer) {
+    clearInterval(scanProgressTimer);
+    scanProgressTimer = undefined;
+  }
+};
+
+export const cancelScan = async (api: DesktopApi, set: SetWorkspace): Promise<void> => {
+  stopProgressPolling();
+  try {
+    await api.cancelScanProjectFiles?.();
+  } finally {
+    update(set, { isScanningProject: false, projectNotice: '走査を中止しました (Scanning was cancelled).' });
+  }
+};
+
 export const saveProject = async (api: DesktopApi, set: SetWorkspace, value: string, useGitignore?: boolean): Promise<void> => {
   const rootPath = value.trim();
   if (!rootPath) return update(set, { projectNotice: 'Enter a project path.' });
+  update(set, { isScanningProject: true, scannedCount: 0, projectNotice: undefined });
+  startProgressPolling(api, set);
   try {
     const projects = await addProject(api, rootPath);
-    update(set, { projects, candidates: await fileCandidates(api, projects, useGitignore), projectNotice: undefined });
+    const candidates = await fileCandidates(api, projects, useGitignore);
+    update(set, { projects, candidates, projectNotice: undefined });
   } catch (error) {
     update(set, { projectNotice: desktopErrorMessage(error) });
+  } finally {
+    stopProgressPolling();
+    update(set, { isScanningProject: false });
   }
 };
 

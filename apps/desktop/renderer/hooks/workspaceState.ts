@@ -34,6 +34,8 @@ export type WorkspaceState = Readonly<{
   isSaving: boolean;
   isAnalyzing: boolean;
   isGenerating: boolean;
+  isScanningProject?: boolean;
+  scannedCount?: number;
   projectNotice: string | undefined;
   searchNotice: string | undefined;
   outputNotice: string | undefined;
@@ -103,6 +105,8 @@ export const initialWorkspaceState: WorkspaceState = {
   isSaving: false,
   isAnalyzing: false,
   isGenerating: false,
+  isScanningProject: false,
+  scannedCount: 0,
   projectNotice: undefined,
   searchNotice: undefined,
   outputNotice: undefined,

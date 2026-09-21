@@ -15,12 +15,18 @@ export const ProjectPanel = ({
   addProject,
   chooseProjectFolder,
   removeProject,
+  isScanning,
+  scannedCount,
+  cancelScan,
 }: ProjectPanelProps) => {
   const [path, setPath] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [isChoosing, setIsChoosing] = useState(false);
+
+  const isBusy = isAdding || Boolean(isScanning);
 
   const submit = async (): Promise<void> => {
-    if (!path.trim() || isAdding) return;
+    if (!path.trim() || isBusy) return;
     setIsAdding(true);
     try {
       await addProject(path);
@@ -31,13 +37,18 @@ export const ProjectPanel = ({
   };
 
   const handleChoose = async (): Promise<void> => {
-    if (isAdding) return;
-    setIsAdding(true);
+    if (isBusy || isChoosing) return;
+    setIsChoosing(true);
     try {
       await chooseProjectFolder();
     } finally {
-      setIsAdding(false);
+      setIsChoosing(false);
     }
+  };
+
+  const handleCancel = (): void => {
+    setIsAdding(false);
+    cancelScan?.();
   };
 
   return (
@@ -49,18 +60,18 @@ export const ProjectPanel = ({
       <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
         <button
           className="primary-button"
-          disabled={isAdding}
+          disabled={isBusy || isChoosing}
           onClick={() => void handleChoose()}
           style={{ flex: '0 0 auto', padding: '4px 8px', fontSize: '11px', height: '28px', whiteSpace: 'nowrap' }}
         >
-          Choose
+          {isChoosing ? 'Choosing...' : 'Choose'}
         </button>
         <div style={{ display: 'flex', gap: '4px', flex: 1, minWidth: 0 }}>
           <input
             id="project-path"
             placeholder="Project path..."
             aria-label="Project path"
-            disabled={isAdding}
+            disabled={isBusy}
             value={path}
             onChange={event => setPath(event.target.value)}
             onKeyDown={event => { if (event.key === 'Enter') void submit(); }}
@@ -68,15 +79,15 @@ export const ProjectPanel = ({
           />
           <button
             onClick={() => void submit()}
-            disabled={isAdding || !path.trim()}
+            disabled={isBusy || !path.trim()}
             style={{ flex: '0 0 auto', padding: '4px 8px', fontSize: '11px', height: '28px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
           >
-            {isAdding && <span className="inline-spinner" />}
-            {isAdding ? 'Adding...' : 'Add'}
+            {isBusy && <span className="inline-spinner" />}
+            {isBusy ? 'Adding...' : 'Add'}
           </button>
         </div>
       </div>
-      {isAdding && (
+      {isBusy && (
         <div
           role="status"
           aria-live="polite"
@@ -84,6 +95,7 @@ export const ProjectPanel = ({
             fontSize: '11px',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '6px',
             padding: '4px 8px',
             background: 'rgba(59, 130, 246, 0.12)',
@@ -92,8 +104,32 @@ export const ProjectPanel = ({
             color: '#93c5fd'
           }}
         >
-          <span className="inline-spinner" />
-          <span>プロジェクトを走査しています... (Scanning project files...)</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="inline-spinner" />
+            <span>
+              プロジェクトを走査しています...
+              {typeof scannedCount === 'number' && scannedCount > 0
+                ? ` (${scannedCount} files found)`
+                : ' (Scanning project files...)'}
+            </span>
+          </div>
+          {cancelScan && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              style={{
+                fontSize: '10px',
+                padding: '2px 6px',
+                background: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#fca5a5',
+                borderRadius: '3px',
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          )}
         </div>
       )}
       {indexStatus && (

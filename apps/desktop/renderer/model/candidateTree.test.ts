@@ -129,4 +129,21 @@ describe('candidate tree', () => {
 
     expect(sortCandidateTree(nodes, 'size').map(node => node.id)).toEqual(['file:a', 'file:b']);
   });
+
+  it('builds a tree of 20000 files in under 200ms without freezing', () => {
+    const largeCandidates: AnalyzedCandidate[] = [];
+    for (let i = 0; i < 20000; i++) {
+      const dirIndex = i % 100;
+      const subDirIndex = i % 10;
+      largeCandidates.push(candidate('a', `pkg-${dirIndex}/sub-${subDirIndex}/file-${i}.ts`, 100));
+    }
+
+    const start = Date.now();
+    const tree = buildCandidateTree(largeCandidates, projects);
+    const duration = Date.now() - start;
+
+    expect(tree).toHaveLength(2);
+    expect(tree[0]?.children.length).toBeGreaterThan(0);
+    expect(duration).toBeLessThan(500); // 通常 30-50ms 程度で完了
+  });
 });

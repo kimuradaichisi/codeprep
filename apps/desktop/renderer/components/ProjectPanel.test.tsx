@@ -98,7 +98,7 @@ describe('ProjectPanel', () => {
     expect(container.querySelector('[role="status"]')).toBeNull();
   });
 
-  it('Choose ボタン押下時も処理中はボタンが無効化され走査インジケーターが表示されること', async () => {
+  it('Choose ボタン押下時はダイアログ表示中としてボタンが無効化され、走査インジケーターは表示されないこと', async () => {
     let resolveChoose: () => void = () => {};
     const choosePromise = new Promise<void>((resolve) => { resolveChoose = resolve; });
     const chooseProjectFolder = vi.fn().mockReturnValue(choosePromise);
@@ -106,15 +106,15 @@ describe('ProjectPanel', () => {
     const props = createProps({ chooseProjectFolder });
     const container = await renderPanel(props);
     const chooseButton = container.querySelectorAll<HTMLButtonElement>('button')[0];
-    const addButton = container.querySelectorAll<HTMLButtonElement>('button')[1];
 
     act(() => {
       chooseButton.click();
     });
 
     expect(chooseButton.disabled).toBe(true);
-    expect(addButton.disabled).toBe(true);
-    expect(container.querySelector('[role="status"]')).not.toBeNull();
+    expect(chooseButton.textContent).toBe('Choosing...');
+    // フォルダ選択ダイアログ中なので走査インジケーターは出ないこと
+    expect(container.querySelector('[role="status"]')).toBeNull();
 
     await act(async () => {
       resolveChoose();
@@ -122,6 +122,30 @@ describe('ProjectPanel', () => {
     });
 
     expect(chooseButton.disabled).toBe(false);
-    expect(container.querySelector('[role="status"]')).toBeNull();
+    expect(chooseButton.textContent).toBe('Choose');
+  });
+
+  it('isScanning が true のときはファイル数進捗が表示され、Cancel ボタンで cancelScan が呼ばれること', async () => {
+    const cancelScan = vi.fn();
+    const props = createProps({
+      isScanning: true,
+      scannedCount: 150,
+      cancelScan,
+    });
+    const container = await renderPanel(props);
+
+    const indicator = container.querySelector('[role="status"]');
+    expect(indicator).not.toBeNull();
+    expect(indicator?.textContent).toContain('150 files found');
+
+    const cancelButton = indicator?.querySelector('button');
+    expect(cancelButton).not.toBeNull();
+    expect(cancelButton?.textContent).toBe('Cancel');
+
+    act(() => {
+      cancelButton?.click();
+    });
+
+    expect(cancelScan).toHaveBeenCalledTimes(1);
   });
 });

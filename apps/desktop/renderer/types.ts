@@ -48,6 +48,9 @@ export type ProjectPanelProps = Readonly<{
   knowledgeDbStatus?: string; knowledgeDbMessage?: string;
   addProject(rootPath: string): Promise<void>; chooseProjectFolder(): Promise<void>; removeProject(projectId: string): Promise<void>;
   refreshIndex?(): Promise<void>;
+  isScanning?: boolean;
+  scannedCount?: number;
+  cancelScan?(): void;
 }>;
 
 export type SearchPanelProps = Readonly<{

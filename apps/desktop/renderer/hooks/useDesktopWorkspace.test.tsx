@@ -337,6 +337,19 @@ describe('useDesktopWorkspace', () => {
       await act(async () => { await genAction; });
       expect(result.current?.isGenerating).toBe(false);
     });
+
+    it('cancels project scan when cancelScan is triggered', async () => {
+      const cancelScanProjectFiles = vi.fn().mockResolvedValue(undefined);
+      const { result } = await renderWorkspace({ cancelScanProjectFiles });
+
+      await act(async () => {
+        result.current?.projectPanel.cancelScan?.();
+      });
+
+      expect(cancelScanProjectFiles).toHaveBeenCalled();
+      expect(result.current?.projectPanel.isScanning).toBe(false);
+      expect(result.current?.projectPanel.projectNotice).toContain('走査を中止しました');
+    });
   });
 });
 const renderWorkspace = async (overrides: Partial<DesktopApi> = {}) => {

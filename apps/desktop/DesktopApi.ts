@@ -135,4 +135,6 @@ export type DesktopApi = Readonly<{
   discoverEntryPointCandidates(request: DiscoverEntryPointCandidatesRequest): Promise<DiscoverEntryPointCandidatesResponse>;
   getRepositoryIndexStatus(workspaceId: string): Promise<RepositoryIndexStatusResponse>;
   refreshRepositoryIndex(workspaceId: string): Promise<RefreshRepositoryIndexResponse>;
+  cancelScanProjectFiles?(): Promise<void>;
+  getScanProgress?(): Promise<Readonly<{ count: number }>>;
 }>;

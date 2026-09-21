@@ -61,4 +61,11 @@ describe('ProjectFileTree', () => {
     expect(files).not.toContain('server.key');
     expect(files).not.toContain('id_rsa');
   });
+
+  it('stops scanning immediately when aborted by AbortSignal', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const files = await listProjectFiles(tempDir, { signal: controller.signal });
+    expect(files).toEqual([]);
+  });
 });

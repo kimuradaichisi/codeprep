@@ -6,8 +6,8 @@ describe('IPC allowlist', () => {
     const api = createDesktopApi(createSafeIpcInvoker(async () => []));
 
     expect(Object.keys(api).sort()).toEqual([
-      'addProject', 'analyzeProjects', 'buildTaskContext', 'chooseProjectFolder', 'copyOutput', 'discoverEntryPointCandidates', 'discoverFiles',
-      'generateOutput', 'getRepositoryIndexStatus', 'listProjectFiles', 'listProjects', 'readFileContent', 'refreshRepositoryIndex', 'removeProject', 'saveOutput',
+      'addProject', 'analyzeProjects', 'buildTaskContext', 'cancelScanProjectFiles', 'chooseProjectFolder', 'copyOutput', 'discoverEntryPointCandidates', 'discoverFiles',
+      'generateOutput', 'getRepositoryIndexStatus', 'getScanProgress', 'listProjectFiles', 'listProjects', 'readFileContent', 'refreshRepositoryIndex', 'removeProject', 'saveOutput',
     ]);
   });
 

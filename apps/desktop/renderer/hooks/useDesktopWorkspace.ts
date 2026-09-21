@@ -12,7 +12,7 @@ import { useWorkspaceRepositoryIndex } from './workspaceRepositoryIndex';
 import { initialWorkspaceState, loadFavorites, update, type SetWorkspace, type WorkspaceState } from './workspaceState';
 import { buildPresetPatch } from './workspacePresets';
 import { handleDocGraphRelations } from './workspaceDocGraph';
-import { analyze, chooseFolder, deleteProject, refreshProjects, saveProject } from './workspaceProjectActions';
+import { analyze, cancelScan, chooseFolder, deleteProject, refreshProjects, saveProject } from './workspaceProjectActions';
 import { analyzeTask, copyPackContent, discoverEntryPoints, resetTaskContext, toggleEntryPointCandidate } from './workspaceTaskActions';
 import { clearSearch, copy, generate, save } from './workspaceOutputActions';
 
@@ -87,7 +87,14 @@ const buildWorkspace = (
   };
 
   const treePanel = { tree: ctx.tree, candidates: state.candidates, selectedKeys: state.selectedKeys, tokenLimit: state.tokenLimit, sortKey: ctx.sortKey, setSortKey: ctx.setSortKey, favorites: ctx.favorites, favoritesOnly: ctx.favoritesOnly, isLoading: state.isAnalyzing, toggleTreeNode: actions.toggleTreeNode, selectAll, clearAll, viewFile, setFilePackMode, setFavoritesOnly: ctx.setFavoritesOnly, toggleFavorite: ctx.toggleFavorite };
-  const projectPanel = { projects: state.projects, projectNotice: state.projectNotice, ...ctx.indexInfo, ...actions.project };
+  const projectPanel = {
+    projects: state.projects,
+    projectNotice: state.projectNotice,
+    isScanning: state.isScanningProject,
+    scannedCount: state.scannedCount,
+    ...ctx.indexInfo,
+    ...actions.project,
+  };
   const searchPanel = {
     discoveryMode: state.discoveryMode, taskInput: state.taskInput, entryPointInput: state.entryPointInput,
     setDiscoveryMode: (d: DiscoveryMode) => update(set, { discoveryMode: d }),
@@ -124,6 +131,7 @@ const actionsFor = (api: DesktopApi, state: WorkspaceState, set: SetWorkspace) =
     addProject: (p: string) => saveProject(api, set, p, state.useGitignore),
     chooseProjectFolder: () => chooseFolder(api, set, state.useGitignore),
     removeProject: (id: string) => deleteProject(api, set, id, state.useGitignore),
+    cancelScan: () => cancelScan(api, set),
   },
   analyze: (query = state.query) => analyze(api, set, query, state.recipeKind, state.contextLines, state.projects, state.recommendationSettings),
   analyzeTask: () => analyzeTask(api, set, state),

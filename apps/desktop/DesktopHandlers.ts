@@ -39,6 +39,8 @@ export const registerDesktopHandlers = (registryPath: string): void => {
   ipcMain.handle('discoverEntryPointCandidates', (_e, val: unknown) => handleDiscoverEntryPointCandidates(registry, val));
   ipcMain.handle('getRepositoryIndexStatus', (_e, wsId: unknown) => handleGetRepositoryIndexStatus(indexesDir, wsId, registry));
   ipcMain.handle('refreshRepositoryIndex', (_e, wsId: unknown) => handleRefreshRepositoryIndex(registry, indexesDir, wsId));
+  ipcMain.handle('cancelScanProjectFiles', () => cancelScanFiles());
+  ipcMain.handle('getScanProgress', () => getScanProgress());
 };
 
 let lastChosenPath: string | undefined = undefined;
@@ -68,14 +70,38 @@ const requiredString = (value: unknown, label: string): string => {
   return value;
 };
 
+let activeScanController: AbortController | undefined = undefined;
+let currentScannedCount = 0;
+
+const cancelScanFiles = async (): Promise<void> => {
+  if (activeScanController) {
+    activeScanController.abort();
+    activeScanController = undefined;
+  }
+};
+
+const getScanProgress = async (): Promise<Readonly<{ count: number }>> => ({
+  count: currentScannedCount,
+});
+
 const listFiles = async (registry: ProjectRegistryStore, pIdVal: unknown, optVal: unknown) => {
   const projectId = requiredString(pIdVal, 'Project id');
   const useGitignore = optVal && typeof optVal === 'object' && typeof (optVal as { useGitignore?: unknown }).useGitignore === 'boolean'
     ? (optVal as { useGitignore?: boolean }).useGitignore : undefined;
   const project = (await listProjects(registry)).find(item => item.id === projectId);
   if (!project) throw new Error('Project was not found.');
-  const relativePaths = await listProjectFiles(project.rootPath, useGitignore);
-  return Promise.all(relativePaths.map(async rel => ({ relativePath: rel, size: await getProjectFileSize(project, rel) })));
+  activeScanController = new AbortController();
+  currentScannedCount = 0;
+  try {
+    const relativePaths = await listProjectFiles(project.rootPath, {
+      useGitignore,
+      signal: activeScanController.signal,
+      onProgress: (count) => { currentScannedCount = count; },
+    });
+    return await Promise.all(relativePaths.map(async rel => ({ relativePath: rel, size: await getProjectFileSize(project, rel) })));
+  } finally {
+    activeScanController = undefined;
+  }
 };
 
 const addProject = async (registry: ProjectRegistryStore, value: unknown) => {

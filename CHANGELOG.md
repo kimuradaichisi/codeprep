@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.16] - 2026-09-21
+- fix(desktop): 大規模プロジェクト・WSL環境でのファイル走査最適化、進捗表示、および中断（Cancel）機能の追加
+  - **不要ディレクトリの即時スキップによる走査爆発防止**:
+    - `ProjectFileTree`: `node_modules` や `.git` などの `DEFAULT_EXCLUDED_DIR_NAMES` に一致するディレクトリを、相対パスマッチに頼らずディレクトリエントリ名単体で即座に O(1) スキップするよう修正。WSL / UNC パス等での相対パス不整合による `node_modules` 再帰潜入（20,000ファイル化）を根本解消。
+  - **Candidate ツリー構築の O(N) Trie 高速化**:
+    - `candidateTree.ts`: 階層ごとの全候補総当たり（O(N²)・1億回ループ）によりメインスレッドが完全停止・フリーズしていた問題を解決。1パスの Trie 木（Map 構造）構築アルゴリズムに刷新し、20,000 ファイルでも 30ms 程度で瞬時にツリーを描画可能に最適化。
+  - **Choose ボタンのダイアログ中ローディング誤表示の修正**:
+    - `ProjectPanel`: フォルダ選択ダイアログ表示中は「走査中」にせず、フォルダが実際に決定されて追加処理が開始された時のみ走査中インジケーターを表示するよう修正。
+  - **走査ファイル数進捗（Progress）表示**:
+    - 走査中に検出されたファイル数をリアルタイムに取得し、「プロジェクトを走査しています... (〇〇 files found)」と表示。
+  - **走査中断（Cancel / Stop）機能の実装**:
+    - 走査中にインジケーター内に「Cancel」ボタンを配置。ユーザーが途中で走査を中断できるよう、Renderer および Main プロセス（`AbortSignal` / `cancelScanProjectFiles` IPC）に即時中断処理を導入。
+
 ## [0.8.15] - 2026-09-21
 - perf(tree): リモートディレクトリ走査のアルゴリズム最適化およびローディングスピナー（Loading Spinner）の追加
   - **ローディングスピナー追加**:
