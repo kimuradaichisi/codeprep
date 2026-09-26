@@ -3,9 +3,18 @@
   "displayName": "CodePrep",
   "description": "VSCode-first context preparation and safe patch preview workflow for browser-based AI coding.",
   "icon": "assets/icon.png",
-  "version": "0.8.20",
+  "version": "0.8.22",
   "publisher": "codeprep",
-
+  "bin": {
+    "codeprep": "./dist-cli/index.js"
+  },
+  "files": [
+    "dist-cli",
+    "out/extension.js",
+    "assets/icon.png",
+    "README.md",
+    "LICENSE"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/kimuradaichisi/codeprep.git"
@@ -23,6 +32,7 @@
     "context"
   ],
   "engines": {
+    "node": ">=22.0.0",
     "vscode": "^1.84.0"
   },
   "categories": [
@@ -449,6 +459,8 @@
     "lint:standards:file": "ts-node scripts/check-standards.ts",
     "context": "ts-node apps/cli/index.ts",
     "codeprep": "ts-node apps/cli/index.ts",
+    "cli:build": "esbuild apps/cli/index.ts --bundle --platform=node --format=cjs --minify --outfile=dist-cli/index.js",
+    "cli:verify-install": "ts-node scripts/verify-installed-cli.ts",
     "cli:test": "vitest run apps/cli",
     "cli:docs": "ts-node scripts/generate-cli-docs.ts",
     "cli:docs:check": "ts-node scripts/generate-cli-docs.ts --check",
@@ -459,8 +471,10 @@
     "eval:native-evidence": "ts-node scripts/evaluate-native-evidence.ts",
     "eval:agent-context": "ts-node evaluation/agent-context/runEvaluation.ts",
     "eval:haiku": "ts-node evaluation/agent-context/runHaikuEvaluation.ts",
+    "eval:cli-distribution": "ts-node scripts/evaluate-cli-distribution.ts",
     "claude:haiku": "node scripts/claude-haiku.mjs",
-    "check": "npm run compile && npm run mcp:build && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit",
+    "build": "npm run compile && npm run cli:build && npm run mcp:build",
+    "check": "npm run build && npm run check-types && npm run lint && npm run lint:standards && npm run test:unit",
     "dev:phase:start": "ts-node scripts/dev-harness/phaseStart.ts",
     "dev:verify": "ts-node scripts/dev-harness/verify.ts",
     "dev:verify:fast": "ts-node scripts/dev-harness/verify.ts --mode fast",

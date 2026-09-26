@@ -136,24 +136,30 @@ function renderExamples(examples: CliCommandSpec['examples']): string[] {
 
 export function renderGlobalHelp(commands: readonly CliCommandSpec[]): string {
   const parts: string[] = [
+    'CodePrep prepares repository context for coding agents.',
+    '',
     'Usage: codeprep <command> [subcommand] [options]',
     '',
+    'Typical flow:',
+    '  codeprep status --format json',
+    '  codeprep context prepare --task "<task>" --format json',
+    '',
     'Commands:',
-  ];
-  for (const cmd of commands) {
-    const pad = cmd.name.padEnd(22, ' ');
-    parts.push(`  ${pad} ${cmd.summary}`);
-  }
-  parts.push(
+    ...renderCommandsList(commands),
     '',
     'Global Options:',
     '  --help, -h             Show help information',
     '  --version, -v          Show version number',
     '',
-    'Run "codeprep <command> --help" for more information on a specific command.',
-    'Run "codeprep commands --json" for machine-readable discovery.'
-  );
+    'Discover all commands:',
+    '  codeprep commands --json',
+    '  codeprep <command> --help',
+  ];
   return parts.join('\n');
+}
+
+function renderCommandsList(commands: readonly CliCommandSpec[]): string[] {
+  return commands.map((cmd) => `  ${cmd.name.padEnd(22, ' ')} ${cmd.summary}`);
 }
 
 export function renderCommandHelp(cmd: CliCommandSpec): string {

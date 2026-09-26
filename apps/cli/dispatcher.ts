@@ -13,6 +13,7 @@ import { CliError, CLI_EXIT_CODES, createStructuredErrorResponse, resolveExitCod
 import { logCliError, writeCliResult } from './io/cliOutput';
 import type { AdaptiveStrategyOverride } from '../../src/features/repository-context/domain/ContextConfidence';
 
+import { CODEPREP_CLI_VERSION } from './version';
 import { createCliContainer } from './composition';
 import type { RepositoryContextContainer } from '../../src/features/repository-context/infrastructure/composition/RepositoryContextContainer';
 
@@ -23,7 +24,10 @@ export async function dispatchCli(
   const isJsonMode = detectJsonMode(argv);
   try {
     if (isVersionRequest(argv)) {
-      writeCliResult('0.8.20');
+      const output = isJsonMode
+        ? JSON.stringify({ version: CODEPREP_CLI_VERSION }, null, 2)
+        : `codeprep ${CODEPREP_CLI_VERSION}`;
+      writeCliResult(output);
       return;
     }
     if (isGlobalHelpRequest(argv)) {
@@ -210,7 +214,7 @@ function isGlobalHelpRequest(argv: readonly string[]): boolean {
 }
 
 function isVersionRequest(argv: readonly string[]): boolean {
-  return argv.length === 1 && (argv[0] === '--version' || argv[0] === '-v');
+  return argv.includes('--version') || argv.includes('-v');
 }
 
 function hasHelpFlag(args: readonly string[]): boolean {

@@ -14,6 +14,7 @@ import {
 } from '../../../src/features/repository-context/infrastructure/workingset/createPrepareContextPackV2UseCase';
 import { PrepareContextProjectionUseCase } from '../../../src/features/repository-context/application/projection/PrepareContextProjectionUseCase';
 import { createLegacyTaskRequest } from '../../../src/features/repository-context/domain/request/ContextRequest';
+import { CliError, CLI_EXIT_CODES } from '../errors/cliError';
 import { writeCliResult, logCliProgress } from '../io/cliOutput';
 
 export async function runContextCommand(
@@ -24,10 +25,15 @@ export async function runContextCommand(
   const container = containerFactory(args.workspace);
 
   if (args.strategy === 'knowledge') {
-    if (isKnowledgeDbAvailable(args.workspace)) {
-      return handleKnowledgeStrategy(args, container);
+    if (!isKnowledgeDbAvailable(args.workspace)) {
+      throw new CliError({
+        message: `Knowledge database not found in workspace: ${args.workspace}`,
+        errorCode: 'KNOWLEDGE_MISSING',
+        exitCode: CLI_EXIT_CODES.KNOWLEDGE_MISSING,
+        suggestedAction: "Run 'codeprep status --format json' to check workspace readiness, or omit '--strategy knowledge' to use standard analysis.",
+      });
     }
-    logCliProgress(`Knowledge database not found in ${args.workspace}. Explicitly falling back to standard strategy.`, args.quiet);
+    return handleKnowledgeStrategy(args, container);
   }
 
   const res = await container.prepareContextUseCase.execute({ task: args.task });

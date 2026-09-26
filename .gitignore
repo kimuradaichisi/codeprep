@@ -47,5 +47,6 @@ meta.json
 .superpowers/
 dist-desktop/
 dist-mcp/
+dist-cli/
 reports/semantic-evaluation/indexes/
 .codeprep/

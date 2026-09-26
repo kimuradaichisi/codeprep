@@ -146,7 +146,7 @@ describe('runContextCommand', () => {
     }
   });
 
-  it('falls back gracefully to standard context when knowledge db does not exist', async () => {
+  it('throws CliError with KNOWLEDGE_MISSING when knowledge db does not exist', async () => {
     const args = {
       task: 'Optimize checkout',
       workspace: 'C:/non-existent-ws-for-db',
@@ -155,9 +155,9 @@ describe('runContextCommand', () => {
       strategy: 'knowledge' as const,
     };
 
-    const res = (await runContextCommand(args, () => mockContainer)) as CliContextResult;
-    expect(res.schemaVersion).toBe('1');
-    expect(mockExecute).toHaveBeenCalled();
+    await expect(runContextCommand(args, () => mockContainer)).rejects.toThrow(
+      'Knowledge database not found in workspace'
+    );
   });
 });
 

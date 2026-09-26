@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.22] - 2026-09-26
+- feat(cli): Phase 7M-B Installable CLI + Agent-Native Discovery
+  - **Installable CLI (npm pack / tarball 配布 & PATH からの実行)**:
+    - `dist-cli/index.js`: esbuild によるスタンドアロン Node.js バンドル（minify適用により 3.5MB、起動時間 < 800ms）。
+    - `package.json`: `bin: { codeprep: "./dist-cli/index.js" }`, `files` を厳選（7ファイル、tarball 2.3MB）、`engines: { node: ">=22.0.0" }`。
+    - グローバルインストールおよびクリーン再インストール（uninstall -> install -> run）の成立性を検証。
+  - **CWD Independence (外部リポジトリからの完全独立実行)**:
+    - 外部の任意ディレクトリ（Small TS, Medium React, Non-TS Python）から `codeprep` を直接呼び出し、リポジトリ探索およびコンテキスト生成が正常に動作することを保証。
+  - **Agent-Native Discovery & Root Help の強化**:
+    - `codeprep --help`: AI エージェントが最初に読んだ際に直感的に進める「What CodePrep does」「Typical flow」「Discover all commands」を整備。
+    - `codeprep --version`: `codeprep 0.8.22` を正式Contractとして出力。`--json` での `{ version: "0.8.22" }` 出力に対応。
+    - `docs/integration/agent-bootstrap.md`: エージェント向け最小 Bootstrap 指針（3行プロンプト）および推奨実行フローを整備。
+    - `docs/guides/install-cli.md`: インストール・検証・アンインストールガイドを整備。
+  - **Knowledge Bootstrapping & リカバリー契約**:
+    - `--strategy knowledge` 指定時にデータベースが存在しない場合、`KNOWLEDGE_MISSING` (exit code: 3) と実在するコマンドによる回復指針（`suggestedAction`）を構造化返却。
+  - **パッケージ検証自動化 & 総合評価**:
+    - `scripts/verify-installed-cli.ts`: npm pack 生成、tarball 検査、外部 CWD 実行、dev/installed 間の Semantic Parity 100% の自動検証ゲートを配備。
+    - `scripts/evaluate-cli-distribution.ts`: 外部リポジトリ 3 種での検証、各コマンドの高速起動（平均 700〜850ms）、エージェント自己発見シミュレーション（無効コマンド 0 件で有用コンテキスト取得）を実証。
+
 ## [0.8.21] - 2026-09-26
 - feat(cli): Phase 7M-A CLI Agent UX Hardening + Canonical Command Catalog
   - **CLI Taxonomy の体系化 & Canonical Command Catalog (SSoT) 導入**:

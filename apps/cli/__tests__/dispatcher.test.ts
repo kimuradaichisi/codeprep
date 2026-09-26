@@ -66,7 +66,7 @@ describe('CLI Dispatcher Tests', () => {
   it('outputs version string on --version', async () => {
     await dispatchCli(['--version']);
     const output = stdoutChunks.join('');
-    expect(output.trim()).toBe('0.8.20');
+    expect(output.trim()).toBe('codeprep 0.8.22');
   });
 
   it('runs status command and outputs structured JSON by default', async () => {
@@ -130,5 +130,24 @@ describe('CLI Dispatcher Tests', () => {
 
     expect(parsed.schemaVersion).toBe('1');
     expect(parsed.task).toBe('Fix checkout issue');
+  });
+
+  it('outputs version JSON for --version --json', async () => {
+    await dispatchCli(['--version', '--json']);
+    const output = stdoutChunks.join('');
+    const parsed = JSON.parse(output);
+    expect(parsed.version).toBe('0.8.22');
+  });
+
+  it('returns KNOWLEDGE_MISSING error when knowledge strategy requested without db', async () => {
+    const emptyWorkspace = path.resolve(__dirname, 'non-existent-ws');
+    await dispatchCli(['context', 'prepare', '--task', 'test', '--strategy', 'knowledge', '--workspace', emptyWorkspace, '--json']);
+    const output = stdoutChunks.join('');
+    const parsed = JSON.parse(output);
+
+    expect(process.exitCode).toBe(CLI_EXIT_CODES.KNOWLEDGE_MISSING);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error.code).toBe('KNOWLEDGE_MISSING');
+    expect(parsed.error.suggestedAction).toContain('status');
   });
 });

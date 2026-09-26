@@ -89,6 +89,7 @@ export function executeFinalVerify(phase = 'current', format: 'text' | 'json' = 
     runSingleGate('check', 'npm', ['run', 'check']),
     runSingleGate('desktop:test', 'npm', ['run', 'desktop:test']),
     runSingleGate('cli:test', 'npm', ['run', 'cli:test']),
+    runSingleGate('cli:verify-install', 'npm', ['run', 'cli:verify-install']),
     runSingleGate('mcp:test', 'npm', ['run', 'mcp:test']),
     runSingleGate('standards:changed', 'npm', ['run', 'lint:standards:changed']),
   ];
