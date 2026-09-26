@@ -105,12 +105,12 @@
     {
       "id": "TASK-07-DOCS-CENTRIC",
       "category": "7. Docs中心のTask",
-      "task": "repository knowledge refresh 仕様書および development harness 設計ドキュメントの更新",
+      "task": "product boundary 仕様書および agent cli contract 設計ドキュメントの更新",
       "mustHave": [
-        "docs/architecture/repository-knowledge-refresh.md"
+        "docs/architecture/product-boundary.md"
       ],
       "niceToHave": [
-        "docs/architecture/repository-knowledge-store.md",
+        "docs/architecture/agent-cli-contract.md",
         "CHANGELOG.md"
       ],
       "mustNotDominate": [

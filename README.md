@@ -1,163 +1,172 @@
-# 📦 CodePrep
+# CodePrep
 
-> **Stop making AI coding agents rediscover your repository every time.**  
-> AI コーディングエージェント（Claude Desktop, Cursor, Roo, Codex）が、タスクのたびにリポジトリをゼロから手動探索する無駄を根絶します。
+> **Repository Analysis API for AI Agents and Developer Tools**
+
+CodePrep は、リポジトリの現在状態を解析し、AI Agent や開発者ツールが利用できる構造化・根拠付きの結果を CLI および MCP (Model Context Protocol) 経由で返す **Repository Analysis API** です。
+
+```
+Repository / Working Tree
+        ↓
+    CodePrep
+ Analyze / Resolve / Project
+        ↓
+Versioned Structured Output
+    (JSON / JSONL)
+        ↓
+     CLI / MCP
+        ↓
+Agent / RepoScout / Other Tools
+```
 
 ---
 
-## 🎯 The Problem & How CodePrep Helps
+## 🎯 Why CodePrep?
 
-- **問題 (Problem)**: AI コーディングエージェントにタスクを投げると、関連ファイルを特定するために `grep` や `find`、大量のファイル読み込みを繰り返し、時間・トークン・注意力を浪費します。
-- **解決策 (How CodePrep Helps)**: CodePrep はリポジトリの依存関係・呼び出しグラフ・Git 変更履歴から **タスク専用の作業セット (Context Pack v2: CORE / SUPPORTING / RECALL_RESERVE)** を即座に構築し、CLI および MCP (Model Context Protocol) 経由で構造化 JSON として提供します。
+AI コーディングエージェントがタスクに着手する際、無秩序な `grep` や全ファイル探索を行うと、膨大なトークン・時間・注意力を浪費します。  
+CodePrep は、リポジトリの依存関係・構文解析・Git 変更共起履歴をもとに、**タスクに関連する正確なコンテキストとエビデンス（Context Projection / Context Pack）** を即座に解決し、機械可読な JSON / JSONL として提供します。
 
-### ⏱️ 30-Second Usage (CLI & MCP Quickstart)
+---
+
+## ✅ What CodePrep Does (中核責務)
+
+- **Repository Analysis**: 作業ツリーおよび Git コミット履歴に基づく決定論的なコード・構造解析。
+- **Fact & Evidence Extraction**: ファイル、シンボル、依存関係、Git 共起関係などの事実抽出。
+- **On-demand Context Projection**: タスク指示に応じた動的サブグラフ解決およびコンテキスト投影（Context Projection / Context Pack）。
+- **Versioned Structured Output**: 終了コードおよび `schemaVersion` を伴う JSON / JSONL 形式の標準出力。
+- **CLI / MCP Transport**: シェル自動化（CLI）およびエージェント連携（MCP）の第一級インターフェース提供。
+- **Internal Rebuildable Cache**: クエリ高速化のための内部ローカルキャッシュ / SQLite 一時インデックスの自己管理。
+
+---
+
+## 🚫 What CodePrep Does Not Do (非責務)
+
+- **Long-term Knowledge Ownership**: 長期・永続的なビジネス知識やドメイン知識のマスター管理（下流の RepoScout 等が担当）。
+- **Upper-level Document Generation**: 仕様書、設計書、PR 本文などの高次ドキュメント生成。
+- **Planning / Work Management**: 開発ロードマップ、タスク管理、意思決定履歴の管理。
+- **Cross-repository Knowledge Platform**: 複数リポジトリを跨ぐ知識ベースの統合管理。
+- **Database Schema as Public API**: 内部 SQLite テーブル構造やキャッシュスキーマの外部公開・依存。
+
+詳細は [Product Boundary Architecture Decision](docs/architecture/product-boundary.md) をご覧ください。
+
+---
+
+## 📦 Install
+
+### 前提条件
+- **Node.js**: `v22.0.0` 以上 (組み込み `node:sqlite` 機能を利用)
+
+### グローバルインストール (ローカル Tarball 配布)
+```bash
+# CodePrep リポジトリでパッケージをビルド & pack
+npm run build
+npm pack
+
+# 生成された tarball をグローバルインストール
+npm install -g ./codeprep-vscode-*.tgz
+
+# インストール確認
+codeprep --version
+# 出力例: codeprep 0.8.22
+```
+
+詳細な手順やアンインストール方法は [Install Guide](docs/guides/install-cli.md) をご覧ください。
+
+---
+
+## 🚀 Quick Start
+
+任意の作業ディレクトリから、PATH 経由で直接実行できます。
 
 ```bash
-# 1. 利用可能なコマンドの探索 (Machine-readable)
-npm run codeprep -- commands --json
+# 1. 利用可能な全コマンドの機械可読探索
+codeprep commands --json
 
-# 2. ワークスペース状態の診断
-npm run codeprep -- status
+# 2. カレントワークスペースのバインド状態とインデックス確認
+codeprep status --format json
 
-# 3. タスクを与えて必要なコンテキストを一括取得 (Context Pack v2 / Projection)
-npm run codeprep -- context prepare --task "Support custom tokenLimit in PrepareTaskContextUseCase" --strategy knowledge
+# 3. タスクに応じたコンテキスト候補・プロジェクションの取得
+codeprep context prepare --task "Fix authentication token refresh" --format json
+
+# 4. 特定ファイルを境界づけたコンテキストパックの構築
+codeprep context pack --task "Refactor checkout" --file src/checkout.ts --format json
 ```
-
-> 📖 **CLI Reference**: 完全なコマンド一覧・オプション・終了コード契約・エージェント向け推奨フローは [docs/reference/cli-reference.md](docs/reference/cli-reference.md) をご覧ください（Canonical Command Catalog より自動生成されます）。
-
-#### 📋 Example Output (Context Pack v2):
-```
-[CORE] (最初に読むべき中心ロジック)
-- src/features/repository-context/application/PrepareTaskContextUseCase.ts
-
-[SUPPORTING] (型定義・オーケストレーター)
-- src/features/repository-context/application/ports/SourceExtractorPort.ts
-- src/features/repository-context/domain/workingset/WorkingSetBudget.ts
-
-[RECALL RESERVE] (語彙一致による見落とし防止バックアップ)
-- docs/mcp.md
-```
-
-### 📊 Measured Results (Agent Dogfooding 実測値)
-| 指標 | 通常探索 (Control) | CodePrep 先行 (Treatment) | 効果 |
-| :--- | :---: | :---: | :---: |
-| **着手前閲覧ファイル数 (平均)** | 8.0 ファイル | **1.3 ファイル** | **-83.8% 削減** |
-| **手動検索回数 (平均)** | 3.7 回 | **0.0 回** | **-100% 削減** |
-| **初回編集までの時間 (平均)** | 54.0 秒 | **9.8 秒** | **5.5倍 高速化** |
-| **編集必須ファイルの未推薦** | - | **0 件** | **漏れゼロ** |
-| **CLI / MCP 一致率 (Semantic Parity)** | - | **100.0%** | **完全パリティ** |
-
-詳細な利用手順は [Agent Quickstart Guide](docs/guides/agent-quickstart.md) および [Context Pack v2 Agent Integration](docs/architecture/context-pack-v2-agent-integration.md) をご覧ください。
 
 ---
 
-## 💻 CodePrep for VSCode & Desktop
+## 🤖 Agent Usage
 
-## ✨ Key Features (主な機能)
+AI Agent 向けの設定ファイル（`AGENTS.md`, `CLAUDE.md`, `GEMINI.md` 等）に以下の最小指示を追加するだけで、エージェントは自律的に CodePrep を発見・活用できます:
 
-- 🌳 **直感的なツリー選択**: 専用サイドバーからファイル/フォルダをチェックボックスで選択。
-- 🩹 **Autonomous Patch & Heal**: AI が生成した（一部が省略された）コードをクリップボードから読み取り、既存コードとインテリジェントにマージ。VSCode の Diff エディタで確認しながら安全に適用できます。
-- 🔍 **Git Diff セレクション**: 変更されたファイルと、それに関連するテストファイルをワンクリックで抽出。
- - 📁 **ディレクトリのみ選択**: ファイル一覧から親ディレクトリのみを抽出して選択できます（プロジェクト構成を要約するときに便利です）。
-- 📊 **トークン数リアルタイム計算**: 選択ファイルの推定トークン数をステータスバーに表示し、上限超過を警告。
-- 📝 **選べる出力フォーマット**: `Markdown` (デフォルト), `XML`, `JSON` に対応。
-- 🤖 **カスタムプロンプト & 自動注入**: 「Code Review」「Refactor」などの指示を管理。また、パッチを当てやすい形式で回答させる指示をプロンプトに自動付与できます。
-- 🌐 **DocGraph 関連提案 (Desktop 限定)**: 設計書（Markdown）等を選択した際、プロジェクト内の DocGraph ナレッジグラフ（`.docgraph/graph.db`）を元に、関連ドキュメントを `Related` バッジ（緑色）とともに自動的に Suggested 候補として提案します。
-- 🌍 **多言語対応 (i18n)**: UI は日本語と英語の両方に完全対応。
-
-## 🚀 Usage (使い方)
-
-### Desktop MVP
-
-Electron desktop MVP requires [ripgrep (`rg`)](https://github.com/BurntSushi/ripgrep) to be installed and available on `PATH`. Run `npm run desktop:dev` to build and start the desktop application.
-
-#### Desktop 版の配布
-
-Windows 用の Desktop exe は GitHub Releases から配布します。Desktop 版のリリースには `desktop-v*` タグを使用します。
-
-```powershell
-git tag desktop-v0.8.7
-git push origin desktop-v0.8.7
+```markdown
+CodePrep is available in PATH.
+Before broad repository exploration, use CodePrep to obtain task-relevant context.
+Start with `codeprep --help` or `codeprep commands --json`.
 ```
 
-ローカルで exe を作成する場合は `npm run desktop:package` を実行してください。`npm run desktop:build` はアプリのバンドルのみを更新し、exe は作成しません。生成物は `dist-desktop/CodePrepDesktop.exe` です。
-
-VSIX の既存リリースには `v*` タグを使用していましたが、今後の VSIX 更新は予定していません。
-
-#### 🌐 DocGraph 連携 (Desktop 限定)
-
-Desktop アプリで右ペインの `Include related docs (DocGraph)` を有効にすると、設計書ファイル（`.md`）を選択した際に関連ドキュメントが自動的に Suggested としてツリーに追加されます。
-`docgraph` 実行ファイルのパスは、以下の順序で自動解決されます：
-1. 環境変数 `CODEPREP_DOCGRAPH_PATH`
-2. アプリの実行バイナリと同ディレクトリの `docgraph.exe`（または `docgraph`）
-3. システム環境変数 `PATH` の `docgraph`
-
-**プロンプト生成フロー:**
-1. アクティビティバーから **CodePrep** アイコンをクリックします。
-2. ツリービューでLLMに渡したいファイルにチェックを入れます。
-3. `Select Prompt` アイコンから、追加の指示（例: "Patch Mode"）を選択します。
-4. `Generate & Copy` ボタンを実行すると、内容がクリップボードにコピーされ、エディタで開かれます。
-
-**パッチ適用フロー (AI 回答の反映):**
-1. AI が出力した1つ、または複数のコードブロック（パス指定と `// ... existing code ...` を含む Markdown）をまとめてコピーします。
-2. CodePrep ツリー右上の **「＋（プラス）」アイコン (Preview Patch from Clipboard)** をクリックします。
-3. 検出されたすべてのファイルの Diff エディタが独立したタブで開くので、内容を確認して右上の **「反映（Apply）」** ボタンを押して完了です。
-
-## ⚙️ Extension Settings (設定項目)
-
-### 🩹 パッチ & ヒーリング設定
-| 設定キー                              | デフォルト値 | 説明                                                                         |
-| ------------------------------------- | ------------ | ---------------------------------------------------------------------------- |
-| `codeprep.alwaysAddPatchInstructions` | `true`       | プロンプト生成時、常にパッチ適用用のフォーマット指示を末尾に自動付与します。 |
-
-### 🎨 UI & 出力設定
-| 設定キー                     | デフォルト値 | 説明                                                           |
-| ---------------------------- | ------------ | -------------------------------------------------------------- |
-| `codeprep.outputFormat`      | `"markdown"` | 出力形式。`"markdown"`, `"xml"`, `"json"`                      |
-| `codeprep.openAfterGenerate` | `true`       | 生成完了後に、内容を新しいエディタで開きます。                 |
-| `codeprep.visibleButtons`    | `[...]`      | ツリービュー上部に表示するアイコンボタンをカスタマイズします。 |
-
-## ⌨️ Commands (コマンド一覧)
-
-- `CodePrep: Preview Patch from Clipboard` - クリップボードの内容を解析してパッチをプレビュー
-- `CodePrep: Apply Patch` - プレビュー中の変更をファイルに反映
-- `CodePrep: Open Settings` - 設定画面を開く
-- `CodePrep: Select All` / `Clear All` - すべて選択 / クリア
-- `CodePrep: Select Prompt` - 挿入するカスタムプロンプトの選択
-- `CodePrep: Generate & Copy` - パックを生成し、クリップボードコピーとエディタ展開を行う
+エージェント向けガイドラインの詳細は [Agent Bootstrap Guide](docs/integration/agent-bootstrap.md) を参照してください。
 
 ---
 
-## 🆕 What's New (最新の更新)
+## 🔌 Interfaces: CLI / MCP / Desktop
 
-ご要望いただいた追加機能の概要と、Gitコミットメッセージをまとめました。
+| インターフェース | 役割 | 想定利用者 |
+| :--- | :--- | :--- |
+| **CLI** | **Production First-Class** | AI Agent、シェル自動化、スクリプトパイプライン、CI/バッチ |
+| **MCP** | **Production First-Class** | Claude Desktop、Cursor、Roo Code 等のエージェントツール連携 |
+| **Desktop GUI** | **Human Inspector / Explorer** | 人間によるインスペクタ、探索、説明可能性（Explainability）確認、デモ |
+
+> **Note**: CLI と MCP は内部の Application UseCase を 100% 共有しており、同一のセマンティックパリティを保証します。Desktop GUI は共有 UseCase の薄いビューワーであり、独自のビジネスロジックや永続層を持ちません。
+
+- 完全な CLI 仕様は [CLI Reference](docs/reference/cli-reference.md)（Command Catalog より自動生成）を参照してください。
 
 ---
 
-## 🏗️ Architecture & Development Standards (開発者向け)
+## 📄 Output Contract
 
-本プロジェクトは、厳格な **DDD（ドメイン駆動設計）** と **「God-Class Killer」ポリシー** に基づいて構築されています。
-詳細はリポジトリ内の `AGENTS.md` をご参照ください。
+CodePrep は予測可能でスクリプトフレンドリーな入出力契約を厳格に維持します:
 
-## 🤖 AI-assisted Development
+- **stdout**: 成功結果のみ（純粋な JSON / JSONL または指定形式）を出力。ログや進捗メッセージの混入はゼロ。
+- **stderr**: 診断・進捗ログ（`[codeprep-cli]`）およびエラーログのみを出力。
+- **Exit Codes**:
+  - `0`: SUCCESS
+  - `1`: UNEXPECTED_FAILURE
+  - `2`: INVALID_ARGUMENTS
+  - `3`: KNOWLEDGE_MISSING
+  - `4`: KNOWLEDGE_STALE
+  - `5`: REPOSITORY_UNAVAILABLE
+  - `6`: ENTITY_NOT_FOUND
+- **Structured Error (JSON)**: エラー発生時、`schemaVersion: 1`, `ok: false`, `code`, `message`, `suggestedAction` を返却。
 
-This project was developed primarily with AI coding assistance.
+---
 
-Most of the implementation was generated with AI tools, then reviewed, adjusted, and tested by the maintainer before publication. The project is provided as-is, without warranty. Please review the code, behavior, and license compatibility carefully before using it in production environments.
+## 🏗️ Architecture
 
-日本語: 本プロジェクトは主にAIコーディング支援を用いて開発されました。実装の多くはAIにより生成され、メンテナーが確認・修正・テストを行っています。利用は自己責任でお願いします。
+CodePrep は Feature-First DDD (Domain-Driven Design) を採用しています:
 
-## 🙏 Acknowledgements
+- **Domain Layer**: リポジトリ解析モデル、プロジェクションロジック、エンティティ（外部依存なし）。
+- **Application Layer**: UseCase、Ports インターフェース。
+- **Infrastructure / Adapters Layer**: ファイルシステム、AST/言語パーサー、SQLite 一時キャッシュ、CLI / MCP アダプタ。
 
-CodePrep is inspired by the general idea of preparing repository context for LLMs, as popularized by tools such as Repomix. CodePrep is an independent project and is not affiliated with Repomix.
+開発規約およびガードレールの詳細は [AGENTS.md](AGENTS.md) をご覧ください。
 
-## ⚠️ Safety
+---
 
-CodePrep does not send your source code to external AI services by itself. Generated context is copied to your clipboard or opened locally in VSCode. If you paste that content into a browser-based AI tool, the handling of that content is governed by the AI service you choose to use.
+## 🛠️ Development
 
-AI-generated patches are not applied silently. CodePrep previews detected changes in VSCode diff editors before they are applied. Please review all generated content and code changes carefully before applying them.
+```bash
+# ビルド
+npm run build
 
-## 📜 Disclaimer
+# テスト実行
+npm run cli:test
+npm run mcp:test
 
-AI-generated code may be incorrect, incomplete, insecure, or incompatible with your project. CodePrep provides context generation, patch parsing, confidence hints, and diff previews, but it does not guarantee correctness or safety of AI-generated changes. You are responsible for reviewing and validating all changes before applying them.
+# ドキュメント同期検証 (SSoT)
+npm run cli:docs:check
 
+# インストール検証 (自動パッケージング & 外部CWD実行テスト)
+npm run cli:verify-install
+
+# 総合品質ゲート
+npm run check
+```

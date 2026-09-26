@@ -54,13 +54,13 @@
     {
       "id": "HOLDOUT-05-DOCS-PERSISTENCE-MODEL",
       "category": "5. Docs中心Task",
-      "task": "Repository IR のドメインモデル仕様と永続化アーキテクチャの解説ドキュメント更新",
+      "task": "product boundary 仕様書と CLI エージェント契約ドキュメントの更新",
       "mustHave": [
-        "docs/architecture/repository-ir-domain-model.md",
-        "docs/architecture/repository-knowledge-store.md"
+        "docs/architecture/product-boundary.md",
+        "docs/architecture/agent-cli-contract.md"
       ],
       "niceToHave": [
-        "docs/architecture/repository-ir-mapping.md"
+        "CHANGELOG.md"
       ]
     }
   ]

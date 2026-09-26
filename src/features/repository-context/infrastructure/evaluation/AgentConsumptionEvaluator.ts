@@ -91,10 +91,10 @@ export class AgentConsumptionEvaluator {
     {
       id: 'task-c',
       type: 'cross-docs-implementation',
-      task: 'Update context pack v2 architecture docs with mcp integration details',
+      task: 'Update product boundary architecture docs with cli and mcp contract details',
       changedFiles: Object.freeze([
-        'docs/architecture/context-pack-v2.md',
-        'docs/mcp.md',
+        'docs/architecture/product-boundary.md',
+        'docs/architecture/agent-cli-contract.md',
       ]),
       control: { filesReadBeforeEdit: 8, searches: 4, timeToFirstEditMs: 55000 },
       treatmentEstimate: { timeToFirstEditMs: 9800 },
