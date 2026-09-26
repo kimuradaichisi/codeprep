@@ -10,15 +10,20 @@
 - **問題 (Problem)**: AI コーディングエージェントにタスクを投げると、関連ファイルを特定するために `grep` や `find`、大量のファイル読み込みを繰り返し、時間・トークン・注意力を浪費します。
 - **解決策 (How CodePrep Helps)**: CodePrep はリポジトリの依存関係・呼び出しグラフ・Git 変更履歴から **タスク専用の作業セット (Context Pack v2: CORE / SUPPORTING / RECALL_RESERVE)** を即座に構築し、CLI および MCP (Model Context Protocol) 経由で構造化 JSON として提供します。
 
-### ⏱️ 30-Second Usage (CLI & MCP)
+### ⏱️ 30-Second Usage (CLI & MCP Quickstart)
 
 ```bash
-# 1. ナレッジグラフを構築 (初回のみ、またはコミット後)
-npm run index
+# 1. 利用可能なコマンドの探索 (Machine-readable)
+npm run codeprep -- commands --json
 
-# 2. タスクを与えて必要なコンテキストを一括取得
-npm run context -- --task "Support custom tokenLimit in PrepareTaskContextUseCase" --strategy knowledge
+# 2. ワークスペース状態の診断
+npm run codeprep -- status
+
+# 3. タスクを与えて必要なコンテキストを一括取得 (Context Pack v2 / Projection)
+npm run codeprep -- context prepare --task "Support custom tokenLimit in PrepareTaskContextUseCase" --strategy knowledge
 ```
+
+> 📖 **CLI Reference**: 完全なコマンド一覧・オプション・終了コード契約・エージェント向け推奨フローは [docs/reference/cli-reference.md](docs/reference/cli-reference.md) をご覧ください（Canonical Command Catalog より自動生成されます）。
 
 #### 📋 Example Output (Context Pack v2):
 ```

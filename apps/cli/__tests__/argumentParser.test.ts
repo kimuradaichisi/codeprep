@@ -109,5 +109,16 @@ describe('parseCliArguments', () => {
     expect(args.request!.anchors).toHaveLength(0);
     expect(args.request!.scope).toEqual({ kind: 'auto' });
   });
+
+  it('should parse --quiet flag', () => {
+    const args = parseCliArguments(['--task', 'Fix bug', '--quiet']);
+    expect(args.quiet).toBe(true);
+  });
+
+  it('should throw when --stdin is used with --task', () => {
+    expect(() => parseCliArguments(['--stdin', '--task', 'Fix bug'])).toThrow(
+      'Cannot specify --stdin together with --task or --task-file'
+    );
+  });
 });
 

@@ -18,6 +18,8 @@ export interface CliArguments {
   readonly maxFiles?: number;
   readonly maxTokens?: number;
   readonly explicitPaths?: readonly string[];
+  readonly stdin?: boolean;
+  readonly quiet?: boolean;
 }
 
 type RawOptions = RawRequestOptions & {
@@ -31,6 +33,8 @@ type RawOptions = RawRequestOptions & {
   maxFiles?: number;
   maxTokens?: number;
   explicitPaths?: string[];
+  stdin?: boolean;
+  quiet?: boolean;
 };
 
 export function parseCliArguments(argv: readonly string[], env: NodeJS.ProcessEnv = process.env): CliArguments {
@@ -38,7 +42,10 @@ export function parseCliArguments(argv: readonly string[], env: NodeJS.ProcessEn
   if (raw.task && raw.taskFile) {
     throw new Error('Cannot specify both --task and --task-file');
   }
-  const taskFallback = raw.taskFile ? readTaskFile(raw.taskFile) : undefined;
+  if (raw.stdin && (raw.task || raw.taskFile)) {
+    throw new Error('Cannot specify --stdin together with --task or --task-file');
+  }
+  const taskFallback = raw.stdin ? readStdin() : raw.taskFile ? readTaskFile(raw.taskFile) : undefined;
   const request = CliRequestParser.parse(raw, taskFallback);
   const task = request.goal;
   const workspace = raw.workspace ? path.resolve(raw.workspace) : process.cwd();
@@ -57,6 +64,8 @@ export function parseCliArguments(argv: readonly string[], env: NodeJS.ProcessEn
     maxFiles: raw.maxFiles,
     maxTokens: raw.maxTokens,
     explicitPaths: raw.explicitPaths ? Object.freeze(raw.explicitPaths) : undefined,
+    stdin: Boolean(raw.stdin),
+    quiet: Boolean(raw.quiet),
   });
 }
 
@@ -102,6 +111,8 @@ function applyEnvFallback(opt: RawOptions, env: NodeJS.ProcessEnv): void {
   }
   if (!opt.maxFiles && env.npm_config_max_files) opt.maxFiles = Number(env.npm_config_max_files);
   if (!opt.maxTokens && env.npm_config_max_tokens) opt.maxTokens = Number(env.npm_config_max_tokens);
+  if (!opt.stdin && (env.npm_config_stdin === 'true' || env.npm_config_stdin === '')) opt.stdin = true;
+  if (!opt.quiet && (env.npm_config_quiet === 'true' || env.npm_config_quiet === '')) opt.quiet = true;
 }
 
 function parseOptionAt(argv: readonly string[], i: number, opt: RawOptions): number {
@@ -182,7 +193,17 @@ function parseOptionAtQuinary(argv: readonly string[], i: number, opt: RawOption
     opt.explicitPaths.push(a.slice(16));
     return 1;
   }
+  if (a === '--stdin') { opt.stdin = true; return 1; }
+  if (a === '--quiet') { opt.quiet = true; return 1; }
   return 0;
+}
+
+function readStdin(): string {
+  try {
+    return fs.readFileSync(0, 'utf-8').trim();
+  } catch (err) {
+    throw new Error('Failed to read from standard input: ' + (err instanceof Error ? err.message : String(err)));
+  }
 }
 
 function readTaskFile(filePath: string): string {

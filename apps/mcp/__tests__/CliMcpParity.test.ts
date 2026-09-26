@@ -5,8 +5,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { RepositoryContextContainer } from '../../../src/features/repository-context/infrastructure/composition/RepositoryContextContainer';
 import type { McpContextContainer } from '../composition';
-import { runContextCommand } from '../../cli/contextCommand';
+import { runStatusCommand } from '../../cli/commands/statusCommand';
 import { handlePrepareContext } from '../tools/prepareContextTool';
+import { handleWorkspaceStatus } from '../tools/workspaceStatusTool';
 import type {
   ContextPackV2,
   WorkingSetEntry,
@@ -156,4 +157,34 @@ describe('CLI / MCP Parity Oracle', () => {
     expect(normalizedMcp.excluded).toEqual(normalizedCli.excluded);
     expect(normalizedMcp.metrics).toEqual(normalizedCli.metrics);
   });
+
+  it('achieves 100% semantic parity for workspace status between CLI and MCP', async () => {
+    const mockStatusResult = {
+      workspaceRoot: 'D:/test-ws',
+      workspaceBound: true,
+      repositoryIndex: 'ready' as const,
+      knowledgeIndex: 'ready' as const,
+      semanticIndex: 'ready' as const,
+      diagnostics: [],
+    };
+
+    const mockContainer = {
+      project: { id: 'test-p', name: 'Test', rootPath: 'D:/test-ws', excludePatterns: [] },
+      filesPort: { list: vi.fn().mockResolvedValue([{ relativePath: 'a.ts' }]) } as unknown as import('../../../src/features/repository-context/application/ports').ProjectFilePort,
+      structuredKnowledgeStore: { load: vi.fn().mockResolvedValue({ nodes: [] }) } as unknown as import('../../../src/features/repository-context/application/structuredKnowledgePorts').StructuredKnowledgeIndexStore,
+      semanticStore: { load: vi.fn().mockResolvedValue({ embeddings: [] }) } as unknown as import('../../../src/features/repository-context/application/semanticIndexPorts').SemanticIndexStore,
+      embeddingAdapter: { embed: vi.fn().mockResolvedValue([[0.1]]) } as unknown as import('../../../src/features/repository-context/application/semanticIndexPorts').EmbeddingPort,
+      checkStatus: vi.fn().mockResolvedValue(mockStatusResult),
+    } as unknown as McpContextContainer & RepositoryContextContainer;
+
+    const mcpStatus = await handleWorkspaceStatus(mockContainer);
+    const cliStatus = await runStatusCommand({ workspace: 'D:/test-ws', quiet: true }, () => mockContainer);
+
+    expect(cliStatus.schemaVersion).toBe(1);
+    expect(cliStatus.workspaceBound).toBe(mcpStatus.workspaceBound);
+    expect(cliStatus.repositoryIndex).toBe(mcpStatus.repositoryIndex);
+    expect(cliStatus.knowledgeIndex).toBe(mcpStatus.knowledgeIndex);
+    expect(cliStatus.semanticIndex).toBe(mcpStatus.semanticIndex);
+  });
 });
+

@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.21] - 2026-09-26
+- feat(cli): Phase 7M-A CLI Agent UX Hardening + Canonical Command Catalog
+  - **CLI Taxonomy の体系化 & Canonical Command Catalog (SSoT) 導入**:
+    - `CANONICAL_COMMAND_CATALOG`: 全 CLI コマンド仕様（オプション、終了コード、入出力形式、使用例、MCP対応、共有UseCase）を Single Source of Truth として定義。
+    - `codeprep commands --json`: AI エージェントが実行時に利用可能なコマンド群を機械可読 JSON で自律探索可能に。
+    - `codeprep commands`: 人間向けに整形されたコマンド一覧テーブルを表示。
+  - **ドキュメント自動生成 & 乖離検知 (Zero Documentation Drift)**:
+    - `docs/reference/cli-reference.md`: Catalog よりコマンドリファレンスおよびエージェント向け推奨フローを完全自動生成。
+    - `npm run cli:docs` (生成) および `npm run cli:docs:check` (差分検証ゲート) を新設。
+  - **Agent 向け入出力契約 (Agent-oriented Output Contract)**:
+    - stdout: 成功結果のみ（純粋な JSON または Markdown）を出力し、進捗ログや警告の混入を厳禁化。
+    - stderr: 診断・進捗（`[codeprep-cli]`）およびエラー（`[codeprep-cli:error]`）のみに完全分離。
+    - 終了コードの標準化: `CLI_EXIT_CODES` (0: SUCCESS, 1: UNEXPECTED_FAILURE, 2: INVALID_ARGUMENTS, 3: KNOWLEDGE_MISSING, 4: KNOWLEDGE_STALE, 5: REPOSITORY_UNAVAILABLE, 6: ENTITY_NOT_FOUND)。
+    - 構造化エラーレスポンス: JSON モード時、`{ schemaVersion: 1, ok: false, error: { code, message, suggestedAction } }` を stdout へ出力。
+  - **Non-interactive / パイプライン連携 / オプション拡張**:
+    - `--stdin`: 標準入力からタスク文字列を直接流し込むシェルパイプラインに対応。
+    - `--quiet`: stderr の非必須ログ出力を抑制。
+    - `--output`: ファイルへの直接保存に対応。
+  - **CLI / MCP 100% Semantic Parity & 既存 CLI 後方互換性**:
+    - `status`: MCP `codeprep_workspace_status` と同一の判定ロジックを共有。
+    - `context pack`: MCP `codeprep_build_context_pack` と同一のコンテキスト生成ユースケースを共有。
+    - 既存の `npm run context -- --task "..."` 呼び出しおよび各種フラグ（`--goal`, `--file`, `--symbol` 等）を `context prepare` のエイリアスとして 100% 後方互換維持。
+
 ## [0.8.20] - 2026-09-21
 - feat(desktop): ウィンドウサイズ最大化・バージョン表示・重複走査根絶・Related suggestionsデフォルトOFF
   - **画面サイズへの自動フィット・ウィンドウ最大化**:
